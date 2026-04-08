@@ -1,0 +1,252 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Power Calculator</title>
+  <style>
+    :root{
+      --bg:#05070a; --fg:#b7ff3c; --muted:#72c64a;
+      --panel: rgba(15, 28, 12, .75);
+      --border: rgba(183, 255, 60, .35);
+      --link:#b7ff3c;
+    }
+    *{ box-sizing:border-box; }
+    body{
+      margin:0;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono","Courier New", monospace;
+      background:var(--bg); color:var(--fg);
+    }
+    .scanlines{
+      position:fixed; inset:0; pointer-events:none;
+      background: repeating-linear-gradient(to bottom,
+        rgba(255,255,255,0.05),
+        rgba(0,0,0,0.05) 2px,
+        rgba(0,0,0,0) 4px);
+      opacity:.35; mix-blend-mode:overlay;
+    }
+    header{
+      padding:22px 18px 14px;
+      border-bottom:1px solid var(--border);
+      background: linear-gradient(180deg, rgba(183,255,60,.10), rgba(183,255,60,0));
+    }
+    .toprow{
+      max-width:980px; margin:0 auto;
+      display:flex; gap:12px; align-items:baseline; justify-content:space-between; flex-wrap:wrap;
+    }
+    .title{ display:flex; gap:10px; align-items:baseline; flex-wrap:wrap; }
+    .brand{ font-weight:900; text-transform:uppercase; letter-spacing:.12em; font-size:26px; }
+    .sub{ color: rgba(183,255,60,.85); }
+    a.back{
+      color: var(--link);
+      text-decoration:none;
+      border:1px solid var(--border);
+      padding:8px 12px;
+      border-radius:10px;
+      background: rgba(0,0,0,.15);
+    }
+    main{ max-width:980px; margin:0 auto; padding:18px; }
+    .card{
+      background: var(--panel);
+      border:1px solid var(--border);
+      border-radius:12px;
+      padding:18px;
+      box-shadow: 0 0 22px rgba(183,255,60,.06);
+    }
+    h2{ margin:0 0 10px; }
+    .grid{ display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+    @media (max-width:760px){ .grid{ grid-template-columns:1fr; } }
+    label{
+      display:block;
+      color: rgba(183,255,60,.85);
+      margin-bottom:6px;
+      font-size:12px;
+      letter-spacing:.02em;
+    }
+    input, select{
+      width:100%;
+      padding:10px 12px;
+      border-radius:10px;
+      border:1px solid rgba(183,255,60,.35);
+      background: rgba(0,0,0,.18);
+      color: var(--fg);
+      outline:none;
+      font-family: inherit;
+    }
+    .row{
+      display:flex; gap:10px; flex-wrap:wrap; align-items:center;
+      margin-top:10px;
+    }
+    button{
+      border:1px solid rgba(183,255,60,.6);
+      background: rgba(183,255,60,.12);
+      color: var(--fg);
+      padding:10px 14px;
+      border-radius:10px;
+      cursor:pointer;
+      font-weight:800;
+    }
+    button:hover{ box-shadow: 0 0 18px rgba(183,255,60,.18); }
+    .results{
+      margin-top:14px;
+      border-top:1px solid rgba(183,255,60,.25);
+      padding-top:14px;
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:12px;
+    }
+    .metric{
+      background: rgba(0,0,0,.12);
+      border:1px solid rgba(183,255,60,.25);
+      border-radius:10px;
+      padding:12px;
+    }
+    .metric .k{ color: rgba(183,255,60,.8); font-size:12px; }
+    .metric .v{ font-size:18px; font-weight:900; margin-top:6px; }
+    footer{ margin-top:12px; color: rgba(183,255,60,.75); font-size:12px; padding:0 2px; }
+  </style>
+</head>
+<body>
+  <div class="scanlines"></div>
+
+  <header>
+    <div class="toprow">
+      <div class="title">
+        <div class="brand">POWER</div>
+        <div class="sub">Calculator</div>
+      </div>
+      <a class="back" href="../">← Back to Glossary</a>
+    </div>
+  </header>
+
+  <main>
+    <div class="card">
+      <h2>Single-phase / Three-phase (Solve for P, V, I, or PF)</h2>
+
+      <div class="grid">
+        <div>
+          <label>Connection</label>
+          <select id="mode">
+            <option value="single">Single-phase (1Φ)</option>
+            <option value="three" selected>Three-phase (3Φ)</option>
+          </select>
+        </div>
+
+        <div>
+          <label>Solve for</label>
+          <select id="solveFor">
+            <option value="P" selected>Real Power (P)</option>
+            <option value="V">Voltage (V)</option>
+            <option value="I">Current (I)</option>
+            <option value="PF">Power Factor (PF)</option>
+          </select>
+        </div>
+
+        <div>
+          <label>Voltage (V)</label>
+          <input id="V" type="number" step="any" placeholder="e.g., 120 or 480" />
+        </div>
+
+        <div>
+          <label>Current (I)</label>
+          <input id="I" type="number" step="any" placeholder="e.g., 10" />
+        </div>
+
+        <div>
+          <label>Power Factor (PF)</label>
+          <input id="PF" type="number" step="any" min="0" max="1" placeholder="e.g., 0.85" />
+        </div>
+
+        <div>
+          <label>Real Power (P)</label>
+          <input id="P" type="number" step="any" placeholder="e.g., 5000 (W)" />
+        </div>
+      </div>
+
+      <div class="row">
+        <button type="button" onclick="calc()">Calculate</button>
+        <div style="color:rgba(183,255,60,.75); font-size:12px;">
+          For 3Φ: P = √3 · V · I · PF and V is line-to-line voltage.
+        </div>
+      </div>
+
+      <div class="results">
+        <div class="metric"><div class="k">Computed P</div><div class="v" id="outP">—</div></div>
+        <div class="metric"><div class="k">Computed S</div><div class="v" id="outS">—</div></div>
+        <div class="metric"><div class="k">Computed V</div><div class="v" id="outV">—</div></div>
+        <div class="metric"><div class="k">Computed I</div><div class="v" id="outI">—</div></div>
+        <div class="metric" style="grid-column:1/-1;"><div class="k">Computed PF</div><div class="v" id="outPF">—</div></div>
+      </div>
+
+      <footer>Leave the field you chose in “Solve for” blank, and enter the other 3.</footer>
+    </div>
+  </main>
+
+  <script>
+    const sqrt3 = Math.sqrt(3);
+
+    function getNum(id){
+      const raw = document.getElementById(id).value;
+      if (raw === "" || raw === null) return NaN;
+      const v = parseFloat(raw);
+      return Number.isFinite(v) ? v : NaN;
+    }
+
+    function fmt(n, unit){
+      if (!Number.isFinite(n)) return "—";
+      const abs = Math.abs(n);
+      const s = (abs >= 1000) ? n.toFixed(0) : n.toFixed(3).replace(/\.?0+$/,'');
+      return unit ? `${s} ${unit}` : s;
+    }
+
+    function calc(){
+      const mode = document.getElementById('mode').value;      // single | three
+      const solveFor = document.getElementById('solveFor').value;// P | V | I | PF
+      const k = (mode === 'three') ? sqrt3 : 1;               // scaling for P and S
+
+      let V = getNum('V');
+      let I = getNum('I');
+      let PF = getNum('PF');
+      let P = getNum('P');
+
+      // Core equation: P = k*V*I*PF
+      // Apparent: S = k*V*I
+
+      function need(a,msg){
+        if (!Number.isFinite(a)) { alert(msg); return false; }
+        return true;
+      }
+
+      if (solveFor === 'P') {
+        if (!need(V,'Enter Voltage (V).') ) return;
+        if (!need(I,'Enter Current (I).') ) return;
+        if (!need(PF,'Enter Power Factor (PF).') ) return;
+        P = k * V * I * PF;
+      } else if (solveFor === 'V') {
+        if (!need(I,'Enter Current (I).') ) return;
+        if (!need(PF,'Enter Power Factor (PF).') ) return;
+        if (!need(P,'Enter Real Power (P).') ) return;
+        V = P / (k * I * PF);
+      } else if (solveFor === 'I') {
+        if (!need(V,'Enter Voltage (V).') ) return;
+        if (!need(PF,'Enter Power Factor (PF).') ) return;
+        if (!need(P,'Enter Real Power (P).') ) return;
+        I = P / (k * V * PF);
+      } else if (solveFor === 'PF') {
+        if (!need(V,'Enter Voltage (V).') ) return;
+        if (!need(I,'Enter Current (I).') ) return;
+        if (!need(P,'Enter Real Power (P).') ) return;
+        PF = P / (k * V * I);
+      }
+
+      const S = (Number.isFinite(V) && Number.isFinite(I)) ? (k * V * I) : NaN;
+
+      document.getElementById('outP').textContent  = fmt(P,'W');
+      document.getElementById('outS').textContent  = fmt(S,'VA');
+      document.getElementById('outV').textContent  = fmt(V,'V');
+      document.getElementById('outI').textContent  = fmt(I,'A');
+      document.getElementById('outPF').textContent = Number.isFinite(PF) ? PF.toFixed(4).replace(/\.?0+$/,'') : "—";
+    }
+  </script>
+</body>
+</html>
