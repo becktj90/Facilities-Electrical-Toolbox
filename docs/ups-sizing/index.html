@@ -1,0 +1,202 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>UPS Sizing</title>
+  <style>
+    :root{ --bg:#05070a; --fg:#b7ff3c; --muted:#72c64a; --panel:rgba(15,28,12,.75); --border:rgba(183,255,60,.35); }
+    *{ box-sizing:border-box; }
+    body{ margin:0; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono","Courier New", monospace; background:var(--bg); color:var(--fg); }
+    .scanlines{ position:fixed; inset:0; pointer-events:none;
+      background: repeating-linear-gradient(to bottom, rgba(255,255,255,0.05), rgba(0,0,0,0.05) 2px, rgba(0,0,0,0) 4px);
+      opacity:.35; mix-blend-mode:overlay; }
+    header{ padding:22px 18px 14px; border-bottom:1px solid var(--border); }
+    .toprow{ max-width:980px; margin:0 auto; display:flex; gap:12px; align-items:baseline; justify-content:space-between; flex-wrap:wrap; }
+    .brand{ font-weight:900; text-transform:uppercase; letter-spacing:.12em; font-size:26px; }
+    a.back{ color:var(--fg); text-decoration:none; border:1px solid var(--border); padding:8px 12px; border-radius:10px; background:rgba(0,0,0,.15); }
+    main{ max-width:980px; margin:0 auto; padding:18px; }
+    .card{ background:var(--panel); border:1px solid var(--border); border-radius:12px; padding:18px; box-shadow:0 0 22px rgba(183,255,60,.06); }
+    h2{ margin:0 0 10px; }
+    .grid{ display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+    @media (max-width:760px){ .grid{ grid-template-columns:1fr; } }
+    label{ display:block; color:rgba(183,255,60,.85); margin-bottom:6px; font-size:12px; letter-spacing:.02em; }
+    input, select{
+      width:100%; padding:10px 12px; border-radius:10px; border:1px solid rgba(183,255,60,.35);
+      background:rgba(0,0,0,.18); color:var(--fg); outline:none; font-family:inherit;
+    }
+    .row{ display:flex; gap:10px; flex-wrap:wrap; align-items:center; margin-top:10px; }
+    button{ border:1px solid rgba(183,255,60,.6); background:rgba(183,255,60,.12); color:var(--fg); padding:10px 14px; border-radius:10px; cursor:pointer; font-weight:800; }
+    button:hover{ box-shadow:0 0 18px rgba(183,255,60,.18); }
+    .results{ margin-top:14px; border-top:1px solid rgba(183,255,60,.25); padding-top:14px;
+      display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+    .metric{ background:rgba(0,0,0,.12); border:1px solid rgba(183,255,60,.25); border-radius:10px; padding:12px; }
+    .metric .k{ color:rgba(183,255,60,.8); font-size:12px; }
+    .metric .v{ font-size:18px; font-weight:900; margin-top:6px; word-break:break-word; }
+    footer{ margin-top:12px; color:rgba(183,255,60,.75); font-size:12px; }
+  </style>
+</head>
+<body>
+  <div class="scanlines"></div>
+
+  <header>
+    <div class="toprow">
+      <div>
+        <div class="brand">UPS</div>
+        <div style="color:rgba(183,255,60,.85);margin-top:2px;font-size:12px;">Sizing calculator</div>
+      </div>
+      <a class="back" href="../">← Back to Glossary</a>
+    </div>
+  </header>
+
+  <main>
+    <div class="card">
+      <h2>Battery runtime sizing (simple)</h2>
+
+      <div class="grid">
+        <div>
+          <label>Load (Watts, W)</label>
+          <input id="loadW" type="number" step="any" placeholder="e.g., 500" />
+        </div>
+
+        <div>
+          <label>Runtime (minutes)</label>
+          <input id="runtimeMin" type="number" step="any" placeholder="e.g., 30" />
+        </div>
+
+        <div>
+          <label>Power Factor (PF, 0–1) for UPS VA estimate</label>
+          <input id="pf" type="number" step="any" min="0" max="1" placeholder="e.g., 0.9" value="0.9" />
+        </div>
+
+        <div>
+          <label>Reserve / margin factor</label>
+          <input id="margin" type="number" step="any" min="1" placeholder="e.g., 1.2" value="1.2" />
+        </div>
+
+        <div>
+          <label>Battery voltage (V)</label>
+          <input id="battV" type="number" step="any" placeholder="e.g., 48" value="48" />
+        </div>
+
+        <div>
+          <label>Efficiency (0–1)</label>
+          <input id="eff" type="number" step="any" min="0" max="1" placeholder="e.g., 0.85" value="0.85" />
+        </div>
+
+        <div>
+          <label>Depth of Discharge (DoD, 0–1)</label>
+          <input id="dod" type="number" step="any" min="0" max="1" placeholder="e.g., 0.8" value="0.8" />
+        </div>
+
+        <div>
+          <label>Optional: show energy</label>
+          <select id="showMode">
+            <option value="both" selected>Show Wh + Ah</option>
+            <option value="ah">Show only Ah</option>
+            <option value="wh">Show only Wh</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="row">
+        <button type="button" onclick="calc()">Calculate</button>
+        <div style="color:rgba(183,255,60,.75);font-size:12px;">
+          Uses: Energy = Load·Runtime·Margin / Efficiency; Ah = Energy / (V·DoD)
+        </div>
+      </div>
+
+      <div class="results">
+        <div class="metric">
+          <div class="k">Recommended UPS output (approx.)</div>
+          <div class="v" id="upsVA">—</div>
+        </div>
+
+        <div class="metric">
+          <div class="k">Battery capacity needed (Ah)</div>
+          <div class="v" id="battAh">—</div>
+        </div>
+
+        <div class="metric">
+          <div class="k">Battery energy needed (Wh)</div>
+          <div class="v" id="battWh">—</div>
+        </div>
+
+        <div class="metric">
+          <div class="k">Quick sanity checks</div>
+          <div class="v" id="notes">—</div>
+        </div>
+      </div>
+
+      <footer>
+        This is a simplified sizing approach. Actual results depend on battery type, discharge curves, temperature, and inverter losses.
+      </footer>
+    </div>
+  </main>
+
+  <script>
+    function getNum(id){
+      const raw = document.getElementById(id).value;
+      if(raw === "" || raw === null) return NaN;
+      const v = parseFloat(raw);
+      return Number.isFinite(v) ? v : NaN;
+    }
+    function fmt(n){
+      if(!Number.isFinite(n)) return "—";
+      const abs = Math.abs(n);
+      if(abs >= 1000) return n.toFixed(0);
+      if(abs >= 100) return n.toFixed(2).replace(/\.?0+$/,'');
+      return n.toFixed(3).replace(/\.?0+$/,'');
+    }
+
+    function calc(){
+      const loadW = getNum('loadW');
+      const runtimeMin = getNum('runtimeMin');
+      const pf = getNum('pf');
+      const margin = getNum('margin');
+      const battV = getNum('battV');
+      const eff = getNum('eff');
+      const dod = getNum('dod');
+      const showMode = document.getElementById('showMode').value;
+
+      if(!Number.isFinite(loadW) || loadW <= 0) return alert("Enter a valid Load (Watts).");
+      if(!Number.isFinite(runtimeMin) || runtimeMin <= 0) return alert("Enter a valid Runtime (minutes).");
+      if(!Number.isFinite(pf) || pf <= 0 || pf > 1) return alert("Enter a valid PF between 0 and 1.");
+      if(!Number.isFinite(margin) || margin < 1) return alert("Reserve/margin must be >= 1.");
+      if(!Number.isFinite(battV) || battV <= 0) return alert("Enter a valid battery voltage (V).");
+      if(!Number.isFinite(eff) || eff <= 0 || eff > 1) return alert("Enter a valid efficiency between 0 and 1.");
+      if(!Number.isFinite(dod) || dod <= 0 || dod > 1) return alert("Enter a valid DoD between 0 and 1.");
+
+      const runtimeH = runtimeMin / 60;
+
+      // UPS VA estimate from W and PF (approx)
+      const upsVA = (loadW * margin) / pf;
+
+      // Battery energy required (Wh)
+      const battWh = (loadW * runtimeH * margin) / eff;
+
+      // Battery capacity in Ah
+      const battAh = battWh / (battV * dod);
+
+      document.getElementById('upsVA').textContent = `${fmt(upsVA)} VA`;
+
+      document.getElementById('battAh').textContent = `${fmt(battAh)} Ah`;
+
+      // show/hide based on mode
+      if(showMode === "ah"){
+        document.getElementById('battWh').textContent = "—";
+      } else {
+        document.getElementById('battWh').textContent = `${fmt(battWh)} Wh`;
+      }
+
+      const notes = [
+        `Runtime hours: ${fmt(runtimeH)} h`,
+        `Energy includes margin & efficiency`,
+        `Ah uses DoD limit`
+      ].join(" • ");
+      document.getElementById('notes').textContent = notes;
+    }
+    document.addEventListener('keydown', (e)=>{ if(e.key === 'Enter') calc(); });
+  </script>
+</body>
+</html>

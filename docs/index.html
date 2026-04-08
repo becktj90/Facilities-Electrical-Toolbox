@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Retro Glossary</title>
+  <style>
+    :root{ --bg:#05070a; --fg:#b7ff3c; --muted:#72c64a; --border:rgba(183,255,60,.35); --panel:rgba(15,28,12,.75); --link:#b7ff3c; }
+    *{ box-sizing:border-box; }
+    body{ margin:0; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono","Courier New", monospace; background:var(--bg); color:var(--fg); }
+    .scanlines{ position:fixed; inset:0; pointer-events:none;
+      background: repeating-linear-gradient(to bottom, rgba(255,255,255,0.05), rgba(0,0,0,0.05) 2px, rgba(0,0,0,0) 4px);
+      opacity:.35; mix-blend-mode:overlay; }
+    header{ padding:28px 18px 14px; border-bottom:1px solid var(--border); }
+    .title{ display:flex; flex-wrap:wrap; gap:14px; align-items:baseline; max-width:980px; margin:0 auto; }
+    .brand{ font-weight:900; letter-spacing:.12em; text-transform:uppercase; font-size:clamp(26px,4vw,38px); text-shadow:0 0 12px rgba(183,255,60,.35); }
+    .brand2{ font-weight:900; letter-spacing:.12em; text-transform:uppercase; font-size:clamp(20px,3.3vw,32px); color:var(--muted); }
+    .wrap{ max-width:980px; margin:0 auto; padding:18px; }
+    .card{ background:var(--panel); border:1px solid var(--border); border-radius:12px; padding:18px; box-shadow:0 0 22px rgba(183,255,60,.06); }
+    .grid{ display:grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap:12px; }
+    a.tool{ display:block; padding:14px; border:1px solid rgba(183,255,60,.35); border-radius:10px;
+            text-decoration:none; color:var(--link); background:rgba(0,0,0,.15);
+            transition:transform .08s ease, box-shadow .15s ease, border-color .15s ease; }
+    a.tool:hover{ transform:translateY(-2px); border-color:rgba(183,255,60,.75); box-shadow:0 0 18px rgba(183,255,60,.18); }
+    .tool-name{ font-weight:900; margin-bottom:6px; }
+    .tool-meta{ color:rgba(183,255,60,.75); font-size:12px; word-break:break-word; }
+    footer{ margin-top:16px; padding:8px 2px 0; color:rgba(183,255,60,.75); }
+  </style>
+</head>
+<body>
+  <div class="scanlines"></div>
+
+  <header>
+    <div class="title">
+      <div class="brand">RETRO</div>
+      <div class="brand2">GLOSSARY</div>
+    </div>
+    <div style="max-width:980px;margin:8px auto 0;color:rgba(183,255,60,.85);padding:0 18px;">Pick a tool:</div>
+  </header>
+
+  <main class="wrap">
+    <section class="card">
+      <h2 style="margin:0 0 10px;">Tools</h2>
+      <div class="grid">
+        <a class="tool" href="./ups-sizing/">
+          <div class="tool-name">UPS Sizing</div>
+          <div class="tool-meta">Battery runtime sizing (W/Wh/Ah)</div>
+        </a>
+
+        <a class="tool" href="./power-calculator/">
+          <div class="tool-name">Power Calculator</div>
+          <div class="tool-meta">Solve for P, V, I, or PF (1Φ / 3Φ)</div>
+        </a>
+      </div>
+      <footer>Built for GitHub Pages • Retro mode: ON</footer>
+    </section>
+  </main>
+</body>
+</html>
