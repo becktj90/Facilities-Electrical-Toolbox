@@ -17,7 +17,7 @@
     <span class="bolt">⚡</span>
     <div>
       <h1>Facilities Electrical Toolbox<span class="cursor">_</span></h1>
-      <div class="subtitle">C:\ELEC&gt; Formulas &amp; Calculators — Ugly's Electrical References &amp; NEC</div>
+      <div class="subtitle">C:\ELEC&gt; Tools for Facilities Electrical Engineering</div>
     </div>
     <div class="header-status">
       SYS: <span class="status-ok">ONLINE</span><br>
@@ -76,6 +76,12 @@
       <button class="nav-btn" data-target="sec-cm">Circular Mils</button>
       <button class="nav-btn" data-target="sec-arcade">🚀 Rocket Arcade</button>
     </div>
+    <div class="sidebar-section">
+      <div class="sidebar-section-title">Advanced Tools</div>
+      <button class="nav-btn" data-target="sec-lsi">LSI Breaker Visualizer</button>
+      <button class="nav-btn" data-target="sec-bess">BESS Peak-Shave</button>
+      <button class="nav-btn" data-target="sec-tap">Tap-Changer Calc</button>
+    </div>
   </nav>
 
   <!-- ── MAIN CONTENT ── -->
@@ -132,7 +138,7 @@
               <strong>1 kW = 1000 W &nbsp;|&nbsp; 1 HP = 746 W</strong>
             </div>
             <div class="note">
-              ℹ Ugly's uses <em>E</em> for EMF/voltage and <em>I</em> for current. Both notations are standard.
+              ℹ Some references use <em>E</em> for EMF/voltage and <em>I</em> for current. Both notations are standard.
             </div>
           </div>
         </div>
@@ -1933,9 +1939,202 @@
       </div>
     </section>
 
+
+    <!-- ════════════════════════════════════════
+         LSI BREAKER SETTINGS VISUALIZER
+         ════════════════════════════════════════ -->
+    <section id="sec-lsi" class="section">
+      <div class="section-header">
+        <h2>&#9889; LSI Breaker Settings Visualizer</h2>
+        <p>Enter Long-time, Short-time, and Instantaneous pickup/delay settings to visualize a simplified TCC curve on a log-log scale.</p>
+      </div>
+      <div class="card-grid">
+
+        <div class="card">
+          <div class="card-title">Breaker Settings</div>
+          <div class="card-body">
+            <div class="formula-box">
+              L = Long-time region &nbsp;|&nbsp; S = Short-time region &nbsp;|&nbsp; I = Instantaneous region
+            </div>
+            <div class="input-group">
+              <div>
+                <label>Long-time Pickup (A)</label>
+                <input type="number" id="lsi_lt_pickup" placeholder="e.g. 400" step="any" min="0">
+              </div>
+              <div>
+                <label>Long-time Delay (s)</label>
+                <input type="number" id="lsi_lt_delay" placeholder="e.g. 30" step="any" min="0">
+              </div>
+            </div>
+            <div class="input-group">
+              <div>
+                <label>Short-time Pickup (A)</label>
+                <input type="number" id="lsi_st_pickup" placeholder="e.g. 2000" step="any" min="0">
+              </div>
+              <div>
+                <label>Short-time Delay (s)</label>
+                <input type="number" id="lsi_st_delay" placeholder="e.g. 0.3" step="any" min="0">
+              </div>
+            </div>
+            <div class="input-group single">
+              <div>
+                <label>Instantaneous Pickup (A)</label>
+                <input type="number" id="lsi_inst_pickup" placeholder="e.g. 8000" step="any" min="0">
+              </div>
+            </div>
+            <button class="btn" onclick="drawLsiTcc()">Draw TCC Curve</button>
+            <div id="lsi_result" class="result"></div>
+          </div>
+        </div>
+
+        <div class="card" style="grid-column:1/-1">
+          <div class="card-title">TCC Curve (Log-Log)</div>
+          <div class="card-body" style="text-align:center">
+            <canvas id="lsiCanvas" width="620" height="420" style="display:block;margin:0 auto;border:1px solid var(--green-dim);max-width:100%"></canvas>
+            <div class="note" style="text-align:left;margin-top:8px">
+              &#9432; The curve shows the three protection regions: Long-time (L), Short-time (S), and Instantaneous (I). Axes are logarithmic. Vertical axis = time (s), Horizontal axis = current (A).
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ════════════════════════════════════════
+         BESS PEAK-SHAVE OPTIMIZER
+         ════════════════════════════════════════ -->
+    <section id="sec-bess" class="section">
+      <div class="section-header">
+        <h2>&#128267; BESS Peak-Shave Optimizer</h2>
+        <p>Use linear programming to select the highest-priority loads that can be served by available battery + solar capacity.</p>
+      </div>
+      <div class="card-grid">
+
+        <div class="card" style="grid-column:1/-1">
+          <div class="card-title">Available Capacity</div>
+          <div class="card-body">
+            <div class="formula-box">
+              Available Power = Battery Capacity + Solar Generation &nbsp;|&nbsp; Maximize: &#931; Priority Score of selected loads &nbsp;|&nbsp; Subject to: &#931; Load (kW) &le; Available Power
+            </div>
+            <div class="input-group">
+              <div>
+                <label>Available Battery Capacity (kW)</label>
+                <input type="number" id="bess_battery" placeholder="e.g. 150" step="any" min="0" value="150">
+              </div>
+              <div>
+                <label>Solar Generation Forecast (kW)</label>
+                <input type="number" id="bess_solar" placeholder="e.g. 80" step="any" min="0" value="80">
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card" style="grid-column:1/-1">
+          <div class="card-title">Facility Loads</div>
+          <div class="card-body">
+            <div class="input-group triple">
+              <div><label>Load Name</label></div>
+              <div><label>Load (kW)</label></div>
+              <div><label>Priority (1–10)</label></div>
+            </div>
+            <div class="input-group triple">
+              <div><input type="text" id="bess_name_1" placeholder="e.g. HVAC" value="HVAC"></div>
+              <div><input type="number" id="bess_kw_1" placeholder="kW" step="any" min="0" value="60"></div>
+              <div><input type="number" id="bess_pri_1" placeholder="1–10" step="1" min="1" max="10" value="9"></div>
+            </div>
+            <div class="input-group triple">
+              <div><input type="text" id="bess_name_2" placeholder="e.g. Lighting" value="Lighting"></div>
+              <div><input type="number" id="bess_kw_2" placeholder="kW" step="any" min="0" value="30"></div>
+              <div><input type="number" id="bess_pri_2" placeholder="1–10" step="1" min="1" max="10" value="7"></div>
+            </div>
+            <div class="input-group triple">
+              <div><input type="text" id="bess_name_3" placeholder="e.g. Servers" value="Servers"></div>
+              <div><input type="number" id="bess_kw_3" placeholder="kW" step="any" min="0" value="50"></div>
+              <div><input type="number" id="bess_pri_3" placeholder="1–10" step="1" min="1" max="10" value="10"></div>
+            </div>
+            <div class="input-group triple">
+              <div><input type="text" id="bess_name_4" placeholder="e.g. EV Chargers" value="EV Chargers"></div>
+              <div><input type="number" id="bess_kw_4" placeholder="kW" step="any" min="0" value="80"></div>
+              <div><input type="number" id="bess_pri_4" placeholder="1–10" step="1" min="1" max="10" value="3"></div>
+            </div>
+            <div class="input-group triple">
+              <div><input type="text" id="bess_name_5" placeholder="e.g. Process Equipment" value="Process Equip"></div>
+              <div><input type="number" id="bess_kw_5" placeholder="kW" step="any" min="0" value="100"></div>
+              <div><input type="number" id="bess_pri_5" placeholder="1–10" step="1" min="1" max="10" value="6"></div>
+            </div>
+            <button class="btn" onclick="calcBessPeakShave()">Optimize</button>
+            <div id="bess_result" class="result"></div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ════════════════════════════════════════
+         TRANSFORMER TAP-CHANGER CALCULATOR
+         ════════════════════════════════════════ -->
+    <section id="sec-tap" class="section">
+      <div class="section-header">
+        <h2>&#128268; Transformer Tap-Changer Calculator</h2>
+        <p>For 23 kV to 480 V transformers. Calculate the recommended tap setting to bring secondary voltage closer to 480 V nominal.</p>
+      </div>
+      <div class="card-grid">
+
+        <div class="card">
+          <div class="card-title">Tap Setting Calculator</div>
+          <div class="card-body">
+            <div class="formula-box">
+              Turns Ratio = V<sub>primary</sub> / V<sub>secondary</sub> &nbsp;|&nbsp; Tap adjusts primary turns &nbsp;|&nbsp;
+              V<sub>sec,new</sub> = V<sub>pri</sub> / (Nominal Ratio &times; (1 + Tap%/100))
+            </div>
+            <div class="input-group">
+              <div>
+                <label>Measured Secondary Voltage (V)</label>
+                <input type="number" id="tap_measured_v" placeholder="e.g. 472" step="any" min="0" value="472">
+              </div>
+              <div>
+                <label>Current Tap Setting</label>
+                <select id="tap_current_setting">
+                  <option value="-5">&#8722;5.0%</option>
+                  <option value="-2.5">&#8722;2.5%</option>
+                  <option value="0" selected>0% (Nominal)</option>
+                  <option value="2.5">+2.5%</option>
+                  <option value="5">+5.0%</option>
+                </select>
+              </div>
+            </div>
+            <button class="btn" onclick="calcTapChanger()">Calculate Recommendation</button>
+            <div id="tap_result" class="result"></div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">Tap Setting Reference — 23 kV / 480 V</div>
+          <div class="card-body">
+            <div class="formula-box">
+              <strong>Nominal Ratio:</strong> 23,000 / 480 = 47.917<br><br>
+              <strong>Tap positions (primary side):</strong><br>
+              &#8722;5.0% tap &rarr; Lower primary turns &rarr; Higher secondary V<br>
+              &#8722;2.5% tap &rarr; Slightly higher secondary V<br>
+              &nbsp; 0.0% tap &rarr; Nominal 480 V output<br>
+              +2.5% tap &rarr; Slightly lower secondary V<br>
+              +5.0% tap &rarr; Higher primary turns &rarr; Lower secondary V<br><br>
+              <strong>Rule:</strong> If secondary is low, use a lower (more negative) tap.
+              If secondary is high, use a higher (more positive) tap.
+            </div>
+            <div class="note">
+              &#9432; Actual tap positions vary by transformer manufacturer. Always verify with nameplate data. Common de-energized tap changer (DETC) steps are ±2.5% and ±5%.
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
   </main><!-- end .main -->
 </div><!-- end .layout -->
 
+<script src="https://cdn.jsdelivr.net/npm/javascript-lp-solver/prod/solver.js"></script>
 <script src="js/app.js"></script>
 </body>
 </html>
