@@ -1679,6 +1679,274 @@ window.calcTapChanger = function () {
   showResult('tap_result', rows);
 };
 
+  showResult('tap_result', rows);
+};
+
+/* ============================================================
+   HAZARDOUS AREA MATERIAL LOOKUP (NEC 500)
+   ============================================================ */
+const HAZ_DATA = {
+  hydrogen: {
+    name: 'Hydrogen (H₂)',
+    class: 'Class I',
+    division: 'Division 1 (near release points) / Division 2 (general area)',
+    group: 'Group B',
+    tcode: 'T1 (AIT 500°C — equipment max surface temp ≤ 450°C)',
+    notes: 'Most stringent gas group. Requires Group B listed equipment. Very wide flammability range (4–75% in air). Used as LH₂ propellant. Venting areas are typically Class I, Div 1 within a defined radius.'
+  },
+  rp1: {
+    name: 'RP-1 Kerosene (Rocket Propellant-1)',
+    class: 'Class I',
+    division: 'Division 1 (fueling operations) / Division 2 (storage/handling areas)',
+    group: 'Group D',
+    tcode: 'T3 (AIT 210°C — equipment max surface temp ≤ 200°C)',
+    notes: 'Petroleum-based fuel similar to kerosene. Flash point ~43–72°C. Classified similarly to kerosene/fuel oil. Group D applies to most petroleum distillates. Division 1 applies during active fueling; Division 2 for storage areas.'
+  },
+  methane: {
+    name: 'Methane (CH₄) / LNG / Natural Gas',
+    class: 'Class I',
+    division: 'Division 1 (near equipment and release points) / Division 2 (general storage area)',
+    group: 'Group D',
+    tcode: 'T1 (AIT 537°C — equipment max surface temp ≤ 450°C)',
+    notes: 'Natural gas and LNG (liquefied natural gas) are primarily methane. Lighter than air — tends to accumulate at ceiling level. Flammability range 5–15% in air. Used as Methox (CH₄/LOX) propellant. Group D per NEC 500.6.'
+  },
+  ammonia: {
+    name: 'Ammonia (NH₃)',
+    class: 'Class I',
+    division: 'Division 1 (near release points) / Division 2 (storage and handling)',
+    group: 'Group D',
+    tcode: 'T1 (AIT 651°C — equipment max surface temp ≤ 450°C)',
+    notes: 'Ammonia is classified as a Group D material per NEC 500.6(A)(4). Flammability range 15–28% in air. Also a toxic gas — TLV-TWA 25 ppm. Used as a propellant in some green propulsion systems. Refrigeration systems using NH₃ in machine rooms require Class I, Div 2 classification.'
+  },
+  lox_venting: {
+    name: 'LOX Venting / Oxygen-Enriched Atmosphere (OEA)',
+    class: 'Not a flammable gas (oxidizer)',
+    division: 'N/A — Oxygen is not classified under NEC 500 (not flammable)',
+    group: 'N/A',
+    tcode: 'N/A — but OEA significantly lowers ignition energy of all other materials',
+    notes: 'Liquid Oxygen (LOX) and oxygen-enriched atmospheres are oxidizers, not flammables — they do not fall under NEC 500 Class/Division. However, OEA dramatically lowers the ignition energy of adjacent flammable materials. Areas with LOX venting must have oxygen monitoring, strict material controls, and may require enhanced electrical safety measures. Consult NFPA 50B and facility-specific hazard analysis.'
+  },
+  nitrogen: {
+    name: 'Nitrogen (N₂) / Inert Purge Gas',
+    class: 'Non-flammable / Non-classified',
+    division: 'N/A — Not a flammable gas; no NEC 500 classification applies',
+    group: 'N/A',
+    tcode: 'N/A',
+    notes: 'Pure nitrogen is inert and non-flammable. Inert purge gas systems using N₂ do not create NEC 500 classified areas by themselves. However, nitrogen is an asphyxiant — confined space procedures and O₂ monitoring are required. Areas purged with N₂ eliminate flammable atmospheres, reducing or eliminating NEC 500 classification where previously classified.'
+  }
+};
+
+window.lookupHazArea = function () {
+  const sub = document.getElementById('haz_substance').value;
+  if (!sub) return showError('haz_result', 'Select a substance from the dropdown.');
+  const d = HAZ_DATA[sub];
+  if (!d) return showError('haz_result', 'Substance data not found.');
+  showResult('haz_result', [
+    ['Substance',    d.name],
+    ['NEC Class',    d.class],
+    ['Division',     d.division],
+    ['Group',        d.group],
+    ['T-Code',       d.tcode],
+    ['Notes',        d.notes]
+  ]);
+};
+
+/* ============================================================
+   LIGHTING LOAD & VOLTAGE DROP OPTIMIZER (LP)
+   ============================================================ */
+const LO_WIRE_SIZES = [
+  { awg: '14',  cm: 4110,   cost: 1.0  },
+  { awg: '12',  cm: 6530,   cost: 1.5  },
+  { awg: '10',  cm: 10380,  cost: 2.5  },
+  { awg: '8',   cm: 16510,  cost: 4.0  },
+  { awg: '6',   cm: 26240,  cost: 6.0  },
+  { awg: '4',   cm: 41740,  cost: 9.5  },
+  { awg: '2',   cm: 66360,  cost: 14.5 },
+  { awg: '1',   cm: 83690,  cost: 18.0 },
+  { awg: '1/0', cm: 105600, cost: 24.0 },
+  { awg: '2/0', cm: 133100, cost: 30.0 }
+];
+
+window.calcLightingOptimizer = function () {
+  const count   = val('lo_count');
+  const watts   = val('lo_watts');
+  const length  = val('lo_length');
+  const vdPct   = val('lo_vd');
+  const voltage = parseFloat(document.getElementById('lo_voltage').value);
+  const matEl   = document.getElementById('lo_material');
+  const K = matEl.value === 'CU' ? 12.9 : 21.2;
+
+  if (!isPos(count, watts, length, vdPct, voltage))
+    return showError('lo_result', 'Enter all fields with positive values.');
+
+  const totalW = count * watts;
+  const I      = totalW / voltage;
+  const vdMax  = (vdPct / 100) * voltage;  /* max absolute VD in volts */
+
+  /* Find all wire sizes that satisfy VD constraint */
+  const passing = LO_WIRE_SIZES.filter(w => {
+    const vd = (2 * K * I * length) / w.cm;
+    return vd <= vdMax;
+  });
+
+  let chosen, note;
+  if (passing.length === 0) {
+    /* No size passes — use largest available and flag */
+    chosen = LO_WIRE_SIZES[LO_WIRE_SIZES.length - 1];
+    const actualVd = (2 * K * I * length) / chosen.cm;
+    const actualPct = (actualVd / voltage) * 100;
+    note = 'WARNING: No standard size meets ' + vdPct + '% VD. Largest size (' + chosen.awg + ' AWG) gives ' + fmt(actualPct, 2) + '% VD. Consider splitting the circuit.';
+  } else {
+    /* LP objective: minimize cost — the passing array is already sorted by ascending CM (ascending cost) */
+    chosen = passing[0];
+    note = null;
+  }
+
+  const actualVd     = (2 * K * I * length) / chosen.cm;
+  const actualVdPct  = (actualVd / voltage) * 100;
+  const totalVA      = totalW;   /* unity PF assumption for lighting */
+
+  const rows = [
+    ['Total Load',            fmt(totalW) + ' W (' + fmt(totalVA / 1000, 2) + ' kVA)'],
+    ['Circuit Current (I)',   fmt(I, 2) + ' A'],
+    ['Run Length',            fmt(length) + ' ft (one-way)'],
+    ['Conductor Material',    matEl.value === 'CU' ? 'Copper (K=12.9)' : 'Aluminum (K=21.2)'],
+    ['Target VD%',            fmt(vdPct, 1) + '%'],
+    ['Optimal Wire Size',     chosen.awg + ' AWG'],
+    ['Actual VD at this size',fmt(actualVd, 2) + ' V (' + fmt(actualVdPct, 2) + '%)'],
+    ['VD Constraint',         actualVdPct <= vdPct ? 'PASS ✓' : 'EXCEED — see note']
+  ];
+  if (note) rows.push(['⚠ Note', note]);
+  showResult('lo_result', rows);
+};
+
+/* ============================================================
+   BUILDING SERVICE LOAD CALCULATOR (NEC 220)
+   ============================================================ */
+const BL_VA_PER_SQFT = {
+  industrial: 1.0,
+  office:     3.5,
+  warehouse:  0.25,
+  retail:     3.0,
+  school:     3.0,
+  hospital:   2.0
+};
+
+window.calcBuildingLoad = function () {
+  const sqft    = val('bl_sqft');
+  const outlets = val('bl_outlets');
+  const voltage = parseFloat(document.getElementById('bl_voltage').value);
+  const phases  = parseInt(document.getElementById('bl_phases').value, 10);
+  const occ     = document.getElementById('bl_occupancy').value;
+
+  if (!isPos(sqft, voltage) || isNaN(outlets) || outlets < 0)
+    return showError('bl_result', 'Enter square footage (>0) and outlet count (≥0).');
+
+  const vaPerSqFt = BL_VA_PER_SQFT[occ] || 1.0;
+
+  /* NEC 220.12 — General Lighting Load */
+  const lightingVA = sqft * vaPerSqFt;
+
+  /* NEC 220.14(I) — Receptacle Load */
+  const receptacleVA_raw = outlets * 180;
+
+  /* NEC Table 220.44 — Receptacle Demand Factor */
+  let receptacleVA_demand;
+  if (receptacleVA_raw <= 10000) {
+    receptacleVA_demand = receptacleVA_raw; /* 100% of first 10 kVA */
+  } else {
+    receptacleVA_demand = 10000 + (receptacleVA_raw - 10000) * 0.5;
+  }
+
+  const totalVA = lightingVA + receptacleVA_demand;
+
+  /* Service Amperes */
+  let serviceAmps;
+  if (phases === 3) {
+    serviceAmps = totalVA / (Math.sqrt(3) * voltage);
+  } else {
+    serviceAmps = totalVA / voltage;
+  }
+
+  /* NEC 210.20 — Continuous load sizing: multiply by 1.25 for breaker/conductor */
+  const designAmps = serviceAmps * 1.25;
+
+  showResult('bl_result', [
+    ['Occupancy Type',              document.getElementById('bl_occupancy').options[document.getElementById('bl_occupancy').selectedIndex].text],
+    ['Lighting Load Rate',          fmt(vaPerSqFt, 2) + ' VA/sq ft (NEC Table 220.12)'],
+    ['General Lighting Load',       fmt(lightingVA) + ' VA (' + fmt(lightingVA / 1000, 2) + ' kVA)'],
+    ['Receptacle Load (raw)',        fmt(receptacleVA_raw) + ' VA (' + outlets + ' outlets × 180 VA)'],
+    ['Receptacle Load (after demand)',fmt(receptacleVA_demand, 0) + ' VA (NEC Table 220.44)'],
+    ['Total Calculated Load',       fmt(totalVA) + ' VA (' + fmt(totalVA / 1000, 2) + ' kVA)'],
+    ['Service Voltage',             (phases === 3 ? '3Ø ' : '1Ø ') + voltage + ' V'],
+    ['Calculated Service Current',  fmt(serviceAmps, 2) + ' A'],
+    ['Design Amps (×1.25 NEC 210.20)', fmt(designAmps, 2) + ' A']
+  ]);
+};
+
+/* ============================================================
+   INTRINSICALLY SAFE LOOP VERIFIER
+   ============================================================ */
+window.verifyISLoop = function () {
+  const voc  = val('is_voc');
+  const isc  = val('is_isc');
+  const ca   = val('is_ca');
+  const la   = val('is_la');
+  const vmax = val('is_vmax');
+  const imax = val('is_imax');
+  const ci   = val('is_ci');
+  const li   = val('is_li');
+
+  if (!isPos(voc, isc, ca, la) || !isPos(vmax, imax))
+    return showError('is_result', 'Enter all barrier and device parameters (all must be > 0). Ci and Li may be 0.');
+
+  /* Ci and Li may be 0 — treat NaN as 0 */
+  const ciVal = isFinite(ci) && ci >= 0 ? ci : 0;
+  const liVal = isFinite(li) && li >= 0 ? li : 0;
+
+  const vPass  = voc  <= vmax;
+  const iPass  = isc  <= imax;
+  const cPass  = ca   >= ciVal;
+  const lPass  = la   >= liVal;
+  const allPass = vPass && iPass && cPass && lPass;
+
+  const checkMark = s => s ? 'PASS ✓' : 'FAIL ✗';
+
+  const rows = [
+    ['─── Barrier Parameters ───', ''],
+    ['Barrier Voc',                fmt(voc, 2) + ' V'],
+    ['Barrier Isc',                fmt(isc, 2) + ' mA'],
+    ['Barrier Ca (max allowed C)', fmt(ca, 4) + ' µF'],
+    ['Barrier La (max allowed L)', fmt(la, 4) + ' mH'],
+    ['─── Field Device Parameters ───', ''],
+    ['Device Vmax',                fmt(vmax, 2) + ' V'],
+    ['Device Imax',                fmt(imax, 2) + ' mA'],
+    ['Device Ci (internal C)',     fmt(ciVal, 4) + ' µF'],
+    ['Device Li (internal L)',     fmt(liVal, 4) + ' mH'],
+    ['─── Entity Check Results ───', ''],
+    ['Voltage:  Voc (' + fmt(voc,2) + ') ≤ Vmax (' + fmt(vmax,2) + ')',  checkMark(vPass)],
+    ['Current:  Isc (' + fmt(isc,2) + ') ≤ Imax (' + fmt(imax,2) + ')', checkMark(iPass)],
+    ['Capacitance: Ca (' + fmt(ca,4) + ') ≥ Ci (' + fmt(ciVal,4) + ')', checkMark(cPass)],
+    ['Inductance:  La (' + fmt(la,4) + ') ≥ Li (' + fmt(liVal,4) + ')', checkMark(lPass)],
+    ['─── OVERALL RESULT ───',     allPass ? '✔ PASS — Loop is IS compatible' : '✘ FAIL — One or more entity parameters do not comply']
+  ];
+
+  const el = document.getElementById('is_result');
+  if (el) {
+    el.className = allPass ? 'result show' : 'result error show';
+  }
+  /* Use raw innerHTML to highlight pass/fail colors */
+  if (el) {
+    el.innerHTML = rows.map(r => {
+      const isHeader = r[0].startsWith('───');
+      const labelStyle = isHeader ? 'color:var(--amber);text-shadow:var(--glow-amber)' : '';
+      const valStyle   = r[1].includes('PASS') ? 'color:var(--green-bright);text-shadow:var(--glow-sm)' :
+                         r[1].includes('FAIL') ? 'color:var(--red);text-shadow:var(--glow-red)' : '';
+      return `<div class="res-row"><span class="res-label" style="${labelStyle}">${escapeHtml(r[0])}</span><span class="res-val" style="${valStyle}">${escapeHtml(r[1])}</span></div>`;
+    }).join('');
+  }
+};
+
 /* ============================================================
    INIT
    ============================================================ */

@@ -82,6 +82,16 @@
       <button class="nav-btn" data-target="sec-bess">BESS Peak-Shave</button>
       <button class="nav-btn" data-target="sec-tap">Tap-Changer Calc</button>
     </div>
+    <div class="sidebar-section">
+      <div class="sidebar-section-title">Hazardous / Safety</div>
+      <button class="nav-btn" data-target="sec-haz">Hazardous Area Lookup</button>
+      <button class="nav-btn" data-target="sec-isloop">IS Loop Verifier</button>
+    </div>
+    <div class="sidebar-section">
+      <div class="sidebar-section-title">NEC Specialized</div>
+      <button class="nav-btn" data-target="sec-lighting-opt">Lighting VD Optimizer</button>
+      <button class="nav-btn" data-target="sec-bldg-load">Building Load Calc</button>
+    </div>
   </nav>
 
   <!-- ── MAIN CONTENT ── -->
@@ -94,6 +104,14 @@
       <div class="section-header">
         <h2>⚡ Ohm's Law</h2>
         <p>Enter any two values to solve for the third. Power is also calculated.</p>
+        <details class="section-info">
+          <summary>ℹ More Info — Ohm's Law</summary>
+          <div class="section-info-body">
+            <strong>Ohm's Law</strong> relates voltage (V), current (I), and resistance (R) in any DC or resistive AC circuit. Enter any two known values and the calculator solves for the unknown plus power.<br><br>
+            <strong>Key relationships:</strong><ul><li>V = I × R — Voltage equals current times resistance</li><li>I = V / R — Current equals voltage divided by resistance</li><li>R = V / I — Resistance equals voltage divided by current</li><li>P = V × I = I² × R = V² / R — Power in three equivalent forms</li></ul>
+            <strong>Units:</strong> V = Volts, I = Amperes, R = Ohms (Ω), P = Watts (W)
+          </div>
+        </details>
       </div>
       <div class="card-grid">
         <div class="card">
@@ -152,6 +170,14 @@
       <div class="section-header">
         <h2>🔋 DC Power Formulas</h2>
         <p>Solve for power using any valid pair of electrical quantities.</p>
+        <details class="section-info">
+          <summary>ℹ More Info — DC Power</summary>
+          <div class="section-info-body">
+            <strong>DC Power</strong> is the rate of energy transfer in a direct current circuit. Choose the formula that matches your known quantities:<br><br>
+            <strong>Formulas:</strong><ul><li>P = V × I — when voltage and current are known</li><li>P = I² × R — when current and resistance are known</li><li>P = V² / R — when voltage and resistance are known</li></ul>
+            <strong>Tip:</strong> 1 kW = 1,000 W. For high-power systems, results are shown in both W and kW. All three formulas are mathematically equivalent via Ohm's Law.
+          </div>
+        </details>
       </div>
       <div class="card-grid">
         <div class="card">
@@ -220,6 +246,14 @@
       <div class="section-header">
         <h2>🌀 AC Power Formulas</h2>
         <p>Single-phase and three-phase apparent, real, and reactive power calculations.</p>
+        <details class="section-info">
+          <summary>ℹ More Info — AC Power</summary>
+          <div class="section-info-body">
+            <strong>AC Power</strong> has three components due to the phase difference between voltage and current:<br><br>
+            <ul><li><strong>Apparent Power (kVA):</strong> Total power drawn from the source — S = V × I / 1000 (1Ø) or √3 × V × I / 1000 (3Ø)</li><li><strong>True/Real Power (kW):</strong> Actual work-producing power — P = S × PF</li><li><strong>Reactive Power (kVAR):</strong> Power stored/returned by inductors and capacitors — Q = √(S² − P²)</li><li><strong>Power Factor (PF):</strong> Ratio of real to apparent power — PF = cos(θ) = kW / kVA</li></ul>
+            <strong>Three-phase note:</strong> Use line-to-line voltage and line current. √3 ≈ 1.732.
+          </div>
+        </details>
       </div>
 
       <div class="tab-group">
@@ -319,6 +353,14 @@
       <div class="section-header">
         <h2>〰 Reactance &amp; Impedance</h2>
         <p>Calculate inductive/capacitive reactance and series impedance.</p>
+        <details class="section-info">
+          <summary>ℹ More Info — Reactance &amp; Impedance</summary>
+          <div class="section-info-body">
+            <strong>Reactance</strong> is the opposition to AC current flow caused by inductors and capacitors:<br><br>
+            <ul><li><strong>Inductive Reactance (XL):</strong> XL = 2π × f × L — increases with frequency</li><li><strong>Capacitive Reactance (XC):</strong> XC = 1 / (2π × f × C) — decreases with frequency</li><li><strong>Impedance (Z):</strong> Z = √(R² + (XL − XC)²) — total opposition to AC current</li><li><strong>Phase Angle (θ):</strong> θ = arctan((XL − XC) / R) — positive = inductive, negative = capacitive</li></ul>
+            <strong>At 60 Hz:</strong> ω = 377 rad/s. Enter capacitance in Farads (e.g., 100 µF = 0.0001 F).
+          </div>
+        </details>
       </div>
       <div class="card-grid">
 
@@ -395,6 +437,14 @@
       <div class="section-header">
         <h2>🔔 Resonance</h2>
         <p>Series and parallel LC circuit resonant frequency and Q factor.</p>
+        <details class="section-info">
+          <summary>ℹ More Info — Resonance</summary>
+          <div class="section-info-body">
+            <strong>Resonance</strong> occurs when inductive and capacitive reactances are equal (XL = XC), causing them to cancel. The circuit then behaves as purely resistive.<br><br>
+            <ul><li><strong>Resonant Frequency:</strong> f₀ = 1 / (2π√LC) — depends only on L and C values</li><li><strong>Q Factor:</strong> Q = XL / R — measures sharpness of the resonance peak. High Q = narrow bandwidth</li><li><strong>Bandwidth:</strong> BW = f₀ / Q — frequency range over which the circuit responds</li></ul>
+            <strong>Applications:</strong> Tuned filters, RF circuits, power factor correction capacitor banks, and harmonic resonance analysis in distribution systems.
+          </div>
+        </details>
       </div>
       <div class="card-grid">
 
@@ -457,6 +507,15 @@
       <div class="section-header">
         <h2>📐 Power Factor Correction</h2>
         <p>Size capacitor banks to improve power factor and reduce apparent current.</p>
+        <details class="section-info">
+          <summary>ℹ More Info — Power Factor Correction</summary>
+          <div class="section-info-body">
+            <strong>Power Factor Correction (PFC)</strong> adds capacitors to counteract inductive reactive power, bringing PF closer to unity. This reduces apparent current and lowers demand charges.<br><br>
+            <strong>Formula:</strong> kVAR = kW × (tan θ₁ − tan θ₂), where θ = arccos(PF)<br><br>
+            <ul><li>Enter the load's true power in kW, existing PF (e.g., 75%), and target PF (e.g., 95%)</li><li>Result is the capacitor bank size (kVAR) needed to reach the target PF</li><li>Utility penalties typically apply when PF drops below 0.85–0.90</li></ul>
+            <strong>Caution:</strong> Over-correction (PF &gt; 1.0 leading) can cause voltage rise and equipment damage. Target PF of 0.95–0.98 lagging is typical.
+          </div>
+        </details>
       </div>
       <div class="card-grid">
 
@@ -508,6 +567,14 @@
       <div class="section-header">
         <h2>🔗 Series / Parallel Circuits</h2>
         <p>Add components and calculate total resistance, capacitance, or inductance.</p>
+        <details class="section-info">
+          <summary>ℹ More Info — Series / Parallel Circuits</summary>
+          <div class="section-info-body">
+            <strong>Series vs. Parallel</strong> configurations change how component values combine:<br><br>
+            <ul><li><strong>Resistors Series:</strong> RT = R₁ + R₂ + … (total increases)</li><li><strong>Resistors Parallel:</strong> 1/RT = 1/R₁ + 1/R₂ + … (total decreases, always less than smallest)</li><li><strong>Capacitors Series:</strong> 1/CT = 1/C₁ + 1/C₂ + … (total decreases)</li><li><strong>Capacitors Parallel:</strong> CT = C₁ + C₂ + … (total increases)</li><li><strong>Inductors Series:</strong> LT = L₁ + L₂ + … (total increases, opposite of capacitors)</li><li><strong>Inductors Parallel:</strong> 1/LT = 1/L₁ + 1/L₂ + … (total decreases)</li></ul>
+            Use the + Add button to add more components. Remove with the × button.
+          </div>
+        </details>
       </div>
 
       <div class="tab-group">
@@ -623,6 +690,15 @@
       <div class="section-header">
         <h2>📉 Voltage Drop</h2>
         <p>NEC recommends ≤3% voltage drop on branch circuits; ≤5% total (feeder + branch).</p>
+        <details class="section-info">
+          <summary>ℹ More Info — Voltage Drop</summary>
+          <div class="section-info-body">
+            <strong>Voltage Drop</strong> occurs across conductor resistance in long runs. Excessive VD causes equipment malfunction, motor overheating, and NEC compliance issues.<br><br>
+            <strong>Formula:</strong> VD = (M × K × I × L) / CM, where M = 2 (single-phase) or √3 (three-phase), K = 12.9 (Cu) or 21.2 (Al), L = one-way feet, CM = circular mils<br><br>
+            <ul><li><strong>NEC Recommendation:</strong> ≤3% on branch circuits; ≤5% total (feeder + branch) — NEC 210.19(A) Informational Note</li><li><strong>Calculate VD%:</strong> Select conductor size and enter run parameters to check compliance</li><li><strong>Min Wire Size:</strong> Enter max allowed VD% and the tool finds the minimum conductor size</li></ul>
+            <strong>Tip:</strong> For long runs, consider going up 1–2 wire sizes to reduce VD even if ampacity allows smaller conductors.
+          </div>
+        </details>
       </div>
 
       <div class="tab-group">
@@ -782,6 +858,15 @@
       <div class="section-header">
         <h2>⚙ Motor Calculations</h2>
         <p>Calculate motor HP or full-load amperes (FLA) for single- and three-phase motors.</p>
+        <details class="section-info">
+          <summary>ℹ More Info — Motor Calculations</summary>
+          <div class="section-info-body">
+            <strong>Motor Calculations</strong> convert between horsepower (HP), voltage, current, efficiency, and power factor.<br><br>
+            <ul><li><strong>HP from FLA:</strong> Calculates shaft output horsepower given measured current — useful for verifying actual motor loading</li><li><strong>FLA from HP:</strong> Calculates expected nameplate current from rated HP — used for conductor and OCPD sizing</li><li><strong>NEC Branch Circuit:</strong> Size conductors at FLA × 1.25 per NEC 430.22</li></ul>
+            <strong>Typical values:</strong> Efficiency 88–95% (NEMA Premium), Power Factor 0.80–0.92 lagging.<br>
+            <strong>Note:</strong> Always verify against NEC Tables 430.248/430.250 for conductor sizing — do not use calculated FLA alone.
+          </div>
+        </details>
       </div>
       <div class="card-grid">
 
@@ -842,6 +927,15 @@
       <div class="section-header">
         <h2>🔄 Transformer Calculations</h2>
         <p>Calculate transformer currents, kVA rating, and turns ratio.</p>
+        <details class="section-info">
+          <summary>ℹ More Info — Transformer Calculations</summary>
+          <div class="section-info-body">
+            <strong>Transformer Calculations</strong> use turns ratio and kVA ratings to find primary/secondary currents.<br><br>
+            <ul><li><strong>Turns Ratio:</strong> a = Vp / Vs = Np / Ns = Is / Ip — voltage and current are inversely proportional</li><li><strong>Primary Current:</strong> Ip = kVA×1000 / Vp (1Ø) or kVA×1000 / (√3×Vp) (3Ø)</li><li><strong>kVA from V &amp; I:</strong> S = V×I/1000 (1Ø) or √3×V×I/1000 (3Ø)</li></ul>
+            <strong>Typical %Z:</strong> Dry-type ≤15 kVA: 2–4%; 15–500 kVA: 4–6%; Liquid-filled: 5–7%.<br>
+            <strong>NEC 450:</strong> Transformers must have overcurrent protection on the primary side per NEC 450.3.
+          </div>
+        </details>
       </div>
       <div class="card-grid">
 
@@ -914,6 +1008,14 @@
       <div class="section-header">
         <h2>🔵 Conduit Fill Calculator</h2>
         <p>NEC Chapter 9 — maximum allowable fill percentages for raceways.</p>
+        <details class="section-info">
+          <summary>ℹ More Info — Conduit Fill</summary>
+          <div class="section-info-body">
+            <strong>Conduit Fill</strong> limits how many conductors can be installed in a raceway to prevent overheating and allow future pulls.<br><br>
+            <strong>NEC Chapter 9, Table 1 limits:</strong><ul><li>1 conductor → 53% maximum fill</li><li>2 conductors → 31% maximum fill</li><li>3 or more conductors → 40% maximum fill</li></ul>
+            This calculator uses <strong>EMT conduit areas</strong> and <strong>THHN/THWN-2 conductor areas</strong> from NEC Annex C. For mixed sizes, sum the individual conductor areas manually and compare to the conduit's allowed fill area.
+          </div>
+        </details>
       </div>
       <div class="card-grid">
 
@@ -1003,6 +1105,15 @@
       <div class="section-header">
         <h2>⚡ Short Circuit — Available Fault Current</h2>
         <p>Simplified transformer-only calculation. For full arc flash studies, use IEEE 1584.</p>
+        <details class="section-info">
+          <summary>ℹ More Info — Short Circuit</summary>
+          <div class="section-info-body">
+            <strong>Available Fault Current</strong> is the maximum short-circuit current that can flow at a given point in the electrical system. All equipment must be rated to safely interrupt this current.<br><br>
+            <strong>Simplified formula:</strong> I_SC = (kVA × 1000) / (√3 × V × %Z/100)<br><br>
+            <ul><li>Assumes infinite bus primary (unlimited source capacity) — conservative/worst-case</li><li>Does not account for conductor impedance between transformer and fault point</li><li>Asymmetrical multiplier of ~1.25 applied (actual value depends on X/R ratio)</li><li><strong>NEC 110.9/110.10:</strong> All equipment must be rated ≥ available fault current</li></ul>
+            <strong>For arc flash analysis:</strong> Use IEEE 1584-2018 with a full Short Circuit Study including all cable and bus impedances.
+          </div>
+        </details>
       </div>
       <div class="card-grid">
 
@@ -1055,6 +1166,13 @@
       <div class="section-header">
         <h2>📋 Conductor Reference Table</h2>
         <p>NEC Table 310.16 — Copper &amp; Aluminum ampacity at 75°C, ≤3 current-carrying conductors in raceway or cable.</p>
+        <details class="section-info">
+          <summary>ℹ More Info — Conductor Reference</summary>
+          <div class="section-info-body">
+            <strong>NEC Table 310.16</strong> provides ampacity for conductors installed in a raceway, cable, or earth with ≤3 current-carrying conductors at 30°C ambient.<br><br>
+            <strong>Important derating rules:</strong><ul><li><strong>More than 3 conductors:</strong> Apply NEC 310.15(C)(1) adjustment factors (e.g., 4–6 conductors = 80% of listed ampacity)</li><li><strong>Ambient temperature:</strong> Apply NEC Table 310.15(B)(2) correction factors for temperatures other than 30°C</li><li><strong>Continuous loads:</strong> Conductor must be sized at 125% of continuous load per NEC 210.19</li><li><strong>Terminal ratings:</strong> Most equipment is rated 75°C; do not use 90°C column for final ampacity (only for derating math)</li></ul>
+          </div>
+        </details>
       </div>
       <div class="card-grid wide">
         <div class="card">
@@ -1126,6 +1244,14 @@
       <div class="section-header">
         <h2>⚙ Motor FLA Reference Tables</h2>
         <p>NEC Table 430.248 (single-phase) and NEC Table 430.250 (three-phase, squirrel-cage).</p>
+        <details class="section-info">
+          <summary>ℹ More Info — Motor FLA Tables</summary>
+          <div class="section-info-body">
+            <strong>NEC Motor FLA Tables</strong> provide Full-Load Ampere values used for conductor and OCPD sizing — not necessarily the nameplate current.<br><br>
+            <ul><li><strong>NEC 430.248:</strong> Single-phase AC motors</li><li><strong>NEC 430.250:</strong> Three-phase AC induction motors (squirrel-cage and wound-rotor)</li><li><strong>Conductor sizing:</strong> Size at 125% of NEC table FLA per NEC 430.22</li><li><strong>OCPD sizing:</strong> Use NEC Table 430.52 multipliers (inverse-time breaker: 250% of FLA typical)</li><li><strong>Overload protection:</strong> Set at ≤115–125% of nameplate FLA per NEC 430.52</li></ul>
+            <strong>Note:</strong> For motors rated at voltages other than listed, use the closest listed voltage that is ≥ actual voltage.
+          </div>
+        </details>
       </div>
 
       <div class="tab-group">
@@ -1216,6 +1342,13 @@
       <div class="section-header">
         <h2>🔵 Conduit Fill Reference Tables</h2>
         <p>EMT internal dimensions and maximum conductor counts from NEC Annex C, Table C.1.</p>
+        <details class="section-info">
+          <summary>ℹ More Info — Conduit Fill Tables</summary>
+          <div class="section-info-body">
+            <strong>NEC Annex C, Table C.1</strong> gives maximum conductor counts for THHN/THWN-2 wire in EMT conduit at the 40% fill limit (3+ conductors).<br><br>
+            <ul><li>Values are for <strong>same-size conductors only</strong>. For mixed sizes, use the Conduit Fill Calculator</li><li>EMT (Electrical Metallic Tubing) is the most common raceway in commercial/industrial facilities</li><li>Other conduit types (RMC, IMC, PVC) have different internal diameters — use the appropriate NEC Annex C table</li><li><strong>Other insulation types</strong> (XHHW, THW, RHH) have different cross-sectional areas — check NEC Table 5</li></ul>
+          </div>
+        </details>
       </div>
       <div class="card-grid wide">
 
@@ -1293,6 +1426,14 @@
       <div class="section-header">
         <h2>🔁 Unit Conversions</h2>
         <p>Common electrical unit conversions for field and engineering use.</p>
+        <details class="section-info">
+          <summary>ℹ More Info — Unit Conversions</summary>
+          <div class="section-info-body">
+            Quickly convert between electrical and related engineering units. Select compatible unit categories (e.g., power → power).<br><br>
+            <strong>Supported categories:</strong><ul><li><strong>Power:</strong> W, kW, MW, HP, BTU/h</li><li><strong>Apparent/Reactive:</strong> VA, kVA, MVA, VAR, kVAR</li><li><strong>Voltage:</strong> V, kV, mV &nbsp;|&nbsp; <strong>Current:</strong> A, mA, kA</li><li><strong>Resistance:</strong> Ω, kΩ, MΩ &nbsp;|&nbsp; <strong>Capacitance:</strong> F, mF, µF, nF, pF</li><li><strong>Inductance:</strong> H, mH, µH &nbsp;|&nbsp; <strong>Frequency:</strong> Hz, kHz, MHz</li><li><strong>Length:</strong> ft, m, in</li></ul>
+            <strong>Note:</strong> Cross-category conversions (e.g., W → A) require additional parameters not available here — use the Ohm's Law or Power calculators for those.
+          </div>
+        </details>
       </div>
       <div class="card-grid">
 
@@ -1455,6 +1596,15 @@
       <div class="section-header">
         <h2>🔵 Circular Mils (CM)</h2>
         <p>Convert between circular mils and wire diameter in inches.</p>
+        <details class="section-info">
+          <summary>ℹ More Info — Circular Mils</summary>
+          <div class="section-info-body">
+            <strong>Circular Mils (CM)</strong> is the standard unit for conductor cross-sectional area used in NEC voltage drop calculations. It simplifies calculations by eliminating π.<br><br>
+            <strong>Formulas:</strong><ul><li>CM = (d × 1000)² where d is diameter in inches</li><li>d (in) = √CM / 1000</li></ul>
+            <strong>Why CM?</strong> For a circle with diameter d mils (thousandths of an inch), the area in circular mils = d². This makes wire area comparisons and VD formulas much simpler than using π/4 × d².<br><br>
+            <strong>Key values:</strong> 14 AWG = 4,110 CM | 4/0 AWG = 211,600 CM | 500 kcmil = 500,000 CM
+          </div>
+        </details>
       </div>
       <div class="card-grid">
 
@@ -1520,6 +1670,15 @@
       <div class="section-header">
         <h2>🔋 UPS Sizing Calculator</h2>
         <p>Size an uninterruptible power supply: load kVA, battery Ah, and recommended UPS tier.</p>
+        <details class="section-info">
+          <summary>ℹ More Info — UPS Sizing</summary>
+          <div class="section-info-body">
+            <strong>UPS Sizing</strong> determines the minimum UPS kVA rating and battery capacity for a given load and runtime requirement.<br><br>
+            <ul><li><strong>Load kVA:</strong> kVA = kW / PF — apparent power drawn from the UPS</li><li><strong>Design kVA:</strong> Load kVA × 1.25 — adds 25% headroom for future growth and non-linear load derating</li><li><strong>Battery Ah:</strong> Ah = (Load W / η) × (Runtime_min / 60) / V_DC — amp-hours required at the DC bus voltage</li></ul>
+            <strong>Types:</strong> Double-conversion (online) offers full isolation; Line-interactive suits smaller loads. For life-safety (NFPA 111), verify Level 1 (≥10 sec) or Level 2 requirements.<br>
+            <strong>Li-ion batteries</strong> offer ~2× energy density vs VRLA but higher upfront cost.
+          </div>
+        </details>
       </div>
       <div class="card-grid">
 
@@ -1579,6 +1738,14 @@
       <div class="section-header">
         <h2>&#128268; Generator Sizing</h2>
         <p>Size emergency/standby generators per IEEE 446 / NFPA 110 load inventory method.</p>
+        <details class="section-info">
+          <summary>ℹ More Info — Generator Sizing</summary>
+          <div class="section-info-body">
+            <strong>Generator Sizing</strong> uses the load inventory method to total all connected loads with demand factors, then applies a safety margin.<br><br>
+            <ul><li><strong>Design kW:</strong> Σ(kW × qty × DF%) for each load category</li><li><strong>Design kVA:</strong> Design kW / PF — size the generator to this kVA rating</li><li><strong>Safety margin:</strong> IEEE 446 recommends ≥25% headroom for motor starting transients and future growth</li><li><strong>Motor starting:</strong> Locked-rotor current is 6–8× FLA; the generator must supply this without excessive voltage dip (&lt;15%)</li></ul>
+            <strong>NFPA 110 Level 1:</strong> Transfer in ≤10 seconds; minimum 96-hour fuel supply. Used for life-safety loads (exit lighting, fire pumps, hospital critical branches).
+          </div>
+        </details>
       </div>
       <div class="card-grid">
 
@@ -1656,6 +1823,13 @@
       <div class="section-header">
         <h2>&#9889; Hybrid Generator Calculator</h2>
         <p>Compare conventional vs battery-hybrid genset: fuel savings, CO&#8322; reduction, and payback period.</p>
+        <details class="section-info">
+          <summary>ℹ More Info — Hybrid Generator</summary>
+          <div class="section-info-body">
+            <strong>Hybrid Generator</strong> systems combine a diesel engine with a battery energy storage system (BESS) to reduce fuel consumption, emissions, and engine wear.<br><br>
+            <ul><li><strong>How it works:</strong> The battery absorbs load transients and supplies power at low-demand periods, allowing the engine to run at higher, more efficient loading</li><li><strong>Best use case:</strong> Generators operating at &lt;30% average load — this is where fuel efficiency is worst for conventional sets</li><li><strong>Fuel savings:</strong> Typically 15–40% depending on load profile and battery sizing</li><li><strong>CO₂ reduction:</strong> Calculated using EPA factor of 22.4 lbs CO₂/gallon of diesel</li><li><strong>Simple payback:</strong> Battery system cost / annual fuel savings in dollars</li></ul>
+          </div>
+        </details>
       </div>
       <div class="card-grid">
 
@@ -1724,6 +1898,14 @@
       <div class="section-header">
         <h2>&#9889; NEC Circuit Calculator</h2>
         <p>Full NEC-compliant circuit sizing: conductor, OCPD, voltage drop, conduit fill, and EGC. NEC 310, 430, 440, 424, 240.4, 250.122.</p>
+        <details class="section-info">
+          <summary>ℹ More Info — NEC Circuit Calculator</summary>
+          <div class="section-info-body">
+            <strong>NEC Circuit Calculator</strong> performs comprehensive circuit design per the National Electrical Code for a single circuit.<br><br>
+            <strong>What it calculates:</strong><ul><li><strong>Design Current:</strong> Applies NEC multiplier (×1.25 for motors/lighting, ×1.0 for others)</li><li><strong>Conductor Size:</strong> Minimum AWG/kcmil from NEC 310.15(B)(16) 75°C column, derated for ambient temp and conductor count</li><li><strong>OCPD:</strong> Minimum and maximum breaker/fuse ratings per NEC 240.4 and 430.52</li><li><strong>Voltage Drop:</strong> Calculated at design current for the given run length</li><li><strong>Conduit:</strong> Minimum EMT trade size for the conductors at 40% fill</li><li><strong>EGC:</strong> Equipment grounding conductor size per NEC 250.122</li></ul>
+            Enter FLA directly or enter kW/kVA and PF to calculate FLA automatically.
+          </div>
+        </details>
       </div>
       <div class="card-grid">
 
@@ -1947,6 +2129,14 @@
       <div class="section-header">
         <h2>&#9889; LSI Breaker Settings Visualizer</h2>
         <p>Enter Long-time, Short-time, and Instantaneous pickup/delay settings to visualize a simplified TCC curve on a log-log scale.</p>
+        <details class="section-info">
+          <summary>ℹ More Info — LSI Breaker Settings</summary>
+          <div class="section-info-body">
+            <strong>LSI (Long-Short-Instantaneous)</strong> refers to the three protection regions of an electronic trip circuit breaker. Each region handles a different fault current level:<br><br>
+            <ul><li><strong>Long-time (L):</strong> Overload protection — trips slowly at currents above the pickup (e.g., 1.05–1.2×). Delay mimics motor starting/inrush tolerance.</li><li><strong>Short-time (S):</strong> High overcurrent — trips faster at moderate fault levels. A time delay allows upstream coordination.</li><li><strong>Instantaneous (I):</strong> Bolted fault protection — trips with no intentional delay at very high current (e.g., 8–15× rated). No delay for severe faults.</li></ul>
+            <strong>Time-Current Curve (TCC):</strong> The log-log plot shows trip time vs. fault current. Proper coordination ensures the nearest upstream device trips first, minimizing outage scope.
+          </div>
+        </details>
       </div>
       <div class="card-grid">
 
@@ -2007,6 +2197,14 @@
       <div class="section-header">
         <h2>&#128267; BESS Peak-Shave Optimizer</h2>
         <p>Use linear programming to select the highest-priority loads that can be served by available battery + solar capacity.</p>
+        <details class="section-info">
+          <summary>ℹ More Info — BESS Peak-Shave</summary>
+          <div class="section-info-body">
+            <strong>Battery Energy Storage System (BESS) Peak-Shaving</strong> uses available battery and solar power to serve the most critical loads during a grid outage or demand-charge event.<br><br>
+            <ul><li><strong>Objective:</strong> Maximize total priority score of loads served without exceeding available capacity</li><li><strong>Method:</strong> Integer linear programming (ILP) via the javascript-lp-solver library — each load is either fully included or excluded (binary decision)</li><li><strong>Priority 10:</strong> Must-serve loads (life-safety, critical process) — priority 1: low-importance loads</li><li><strong>Typical use:</strong> Emergency power planning, microgrid operations, demand charge avoidance</li></ul>
+            Enter available battery kW and solar kW, then assign each load a kW value and priority 1–10.
+          </div>
+        </details>
       </div>
       <div class="card-grid">
 
@@ -2077,6 +2275,14 @@
       <div class="section-header">
         <h2>&#128268; Transformer Tap-Changer Calculator</h2>
         <p>For 23 kV to 480 V transformers. Calculate the recommended tap setting to bring secondary voltage closer to 480 V nominal.</p>
+        <details class="section-info">
+          <summary>ℹ More Info — Tap-Changer Calculator</summary>
+          <div class="section-info-body">
+            <strong>De-energized Tap Changers (DETC)</strong> adjust the transformer turns ratio to compensate for primary voltage variations and maintain correct secondary voltage.<br><br>
+            <ul><li><strong>Tap positions:</strong> Typically ±2.5% and ±5% on the primary winding — a total of 5 tap positions</li><li><strong>Rule:</strong> If secondary voltage is LOW → use a lower (more negative) tap % to raise it. If HIGH → use a more positive tap.</li><li><strong>Procedure:</strong> Measure actual secondary voltage under load, enter it along with the current tap position, and the tool recommends the tap closest to 480 V nominal</li></ul>
+            <strong>Important:</strong> DETC must be changed de-energized. Consult the transformer nameplate and manufacturer instructions. Verify with a qualified electrician.
+          </div>
+        </details>
       </div>
       <div class="card-grid">
 
@@ -2125,6 +2331,391 @@
             <div class="note">
               &#9432; Actual tap positions vary by transformer manufacturer. Always verify with nameplate data. Common de-energized tap changer (DETC) steps are ±2.5% and ±5%.
             </div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ════════════════════════════════════════
+         HAZARDOUS AREA MATERIAL LOOKUP (NEC 500)
+         ════════════════════════════════════════ -->
+    <section id="sec-haz" class="section">
+      <div class="section-header">
+        <h2>&#9888; Hazardous Area Material Lookup (NEC 500)</h2>
+        <p>Select a common launch pad / industrial substance to retrieve NEC 500 Class, Division, Group, and T-Code classification.</p>
+        <details class="section-info">
+          <summary>ℹ More Info — NEC 500 Hazardous Area Classification</summary>
+          <div class="section-info-body">
+            <strong>NEC Article 500</strong> classifies hazardous (classified) locations by the type of flammable material present and the likelihood of an ignitable concentration forming:<br><br>
+            <ul>
+              <li><strong>Class I:</strong> Flammable gases or vapors (e.g., hydrogen, RP-1, methane)</li>
+              <li><strong>Class II:</strong> Combustible dusts (e.g., aluminum dust, grain dust)</li>
+              <li><strong>Class III:</strong> Ignitable fibers/flyings (e.g., cotton lint)</li>
+              <li><strong>Division 1:</strong> Ignitable concentrations exist under normal operating conditions</li>
+              <li><strong>Division 2:</strong> Ignitable concentrations exist only under abnormal conditions (e.g., container failure)</li>
+              <li><strong>Group A–G:</strong> Identifies the specific gas or dust family for selecting listed equipment</li>
+              <li><strong>T-Code (T1–T6):</strong> Maximum surface temperature of listed equipment — must be below auto-ignition temperature of the substance</li>
+            </ul>
+            <strong>Note:</strong> This tool provides typical classifications. Always verify with the current NEC edition, SDS/safety data sheets, and a licensed professional for final design.
+          </div>
+        </details>
+      </div>
+      <div class="card-grid">
+
+        <div class="card">
+          <div class="card-title">Substance Lookup</div>
+          <div class="card-body">
+            <div class="formula-box">
+              NEC 500 &#8212; Class / Division / Group / T-Code for common launch pad substances
+            </div>
+            <div class="input-group single">
+              <div>
+                <label>Select Substance</label>
+                <select id="haz_substance">
+                  <option value="">-- Select a substance --</option>
+                  <option value="hydrogen">Hydrogen (H&#8322;)</option>
+                  <option value="rp1">RP-1 Kerosene (Rocket Propellant-1)</option>
+                  <option value="methane">Methane (CH&#8324;) / LNG</option>
+                  <option value="ammonia">Ammonia (NH&#8323;)</option>
+                  <option value="lox_venting">LOX Venting / Oxygen-Enriched Atmosphere</option>
+                  <option value="nitrogen">Nitrogen (N&#8322;) / Inert Purge Gas</option>
+                </select>
+              </div>
+            </div>
+            <button class="btn btn-accent" onclick="lookupHazArea()">&#9654; Lookup Classification</button>
+            <div id="haz_result" class="result"></div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">NEC 500 Classification Reference</div>
+          <div class="card-body">
+            <div class="formula-box">
+              <strong>Groups (Class I — Gases/Vapors):</strong><br>
+              A: Acetylene<br>
+              B: Hydrogen &amp; gases with &gt;30% H&#8322;<br>
+              C: Ethylene, propylene oxide, cyclopropane<br>
+              D: Propane, methane, butane, gasoline, RP-1<br><br>
+              <strong>T-Code Max Surface Temp:</strong><br>
+              T1 = 450&deg;C &nbsp;|&nbsp; T2 = 300&deg;C &nbsp;|&nbsp; T3 = 200&deg;C<br>
+              T4 = 135&deg;C &nbsp;|&nbsp; T5 = 100&deg;C &nbsp;|&nbsp; T6 = 85&deg;C<br><br>
+              <strong>Division 1:</strong> Hazard present during normal ops<br>
+              <strong>Division 2:</strong> Hazard only if equipment fails
+            </div>
+            <div class="note">&#9432; NEC 505 (Zone 0/1/2) is an alternative classification method based on IEC standards. Some facilities use both systems. Always check AHJ requirements.</div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ════════════════════════════════════════
+         LIGHTING LOAD & VOLTAGE DROP OPTIMIZER
+         ════════════════════════════════════════ -->
+    <section id="sec-lighting-opt" class="section">
+      <div class="section-header">
+        <h2>&#128161; Lighting Load &amp; Voltage Drop Optimizer</h2>
+        <p>Use linear programming to find the minimum-cost wire size that meets a voltage drop constraint for a lighting circuit.</p>
+        <details class="section-info">
+          <summary>ℹ More Info — Lighting VD Optimizer</summary>
+          <div class="section-info-body">
+            <strong>This tool</strong> applies linear programming (LP) to select the most cost-effective conductor size for a lighting branch circuit while keeping voltage drop at or below the target (typically 3%).<br><br>
+            <strong>How it works:</strong><ul>
+              <li><strong>Total Load:</strong> Luminaire count × watts/fixture gives total connected load in watts</li>
+              <li><strong>Current:</strong> I = Total Watts / Supply Voltage (120 V assumed single-phase)</li>
+              <li><strong>Objective:</strong> Minimize relative wire cost (smaller wire = lower cost)</li>
+              <li><strong>Constraint:</strong> VD% = (2 × K × I × L) / (CM × V) × 100 ≤ target VD%</li>
+              <li><strong>LP Solver:</strong> javascript-lp-solver (loaded from CDN) evaluates all standard AWG sizes and returns the smallest passing size</li>
+            </ul>
+            <strong>NEC guidance:</strong> NEC 210.19 recommends ≤3% VD on branch circuits. Use 120 V for typical lighting; 277 V for fluorescent/LED in commercial.
+          </div>
+        </details>
+      </div>
+      <div class="card-grid">
+
+        <div class="card">
+          <div class="card-title">Lighting Circuit Parameters</div>
+          <div class="card-body">
+            <div class="formula-box">
+              I = (Fixtures &times; W/fixture) / V<sub>supply</sub> &nbsp;|&nbsp; VD% = (2KIL) / (CM &times; V) &times; 100<br>
+              LP: minimize cost index subject to VD% &le; target
+            </div>
+            <div class="input-group">
+              <div>
+                <label>Total Luminaire Count</label>
+                <input type="number" id="lo_count" placeholder="e.g. 20" step="1" min="1">
+              </div>
+              <div>
+                <label>Watts per Fixture (W)</label>
+                <input type="number" id="lo_watts" placeholder="e.g. 50" step="any" min="1">
+              </div>
+            </div>
+            <div class="input-group">
+              <div>
+                <label>Total Run Length (ft)</label>
+                <input type="number" id="lo_length" placeholder="e.g. 200" step="any" min="1">
+              </div>
+              <div>
+                <label>Target VD% (max)</label>
+                <input type="number" id="lo_vd" placeholder="e.g. 3" value="3" step="any" min="0.5" max="10">
+              </div>
+            </div>
+            <div class="input-group">
+              <div>
+                <label>Supply Voltage (V)</label>
+                <select id="lo_voltage">
+                  <option value="120">120 V (1&#8709;)</option>
+                  <option value="277">277 V (1&#8709; commercial)</option>
+                  <option value="208">208 V</option>
+                  <option value="240">240 V</option>
+                </select>
+              </div>
+              <div>
+                <label>Conductor Material</label>
+                <select id="lo_material">
+                  <option value="CU">Copper (K=12.9)</option>
+                  <option value="AL">Aluminum (K=21.2)</option>
+                </select>
+              </div>
+            </div>
+            <button class="btn btn-accent" onclick="calcLightingOptimizer()">&#9654; Optimize Wire Size</button>
+            <div id="lo_result" class="result"></div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">Optimization Reference</div>
+          <div class="card-body">
+            <div class="formula-box">
+              <strong>Voltage Drop (single-phase):</strong><br>
+              VD = (2 &times; K &times; I &times; L) / CM<br>
+              VD% = VD / V<sub>supply</sub> &times; 100<br><br>
+              <strong>K constants:</strong><br>
+              Copper: K = 12.9 &nbsp;|&nbsp; Aluminum: K = 21.2<br><br>
+              <strong>Relative cost index (smaller = cheaper):</strong><br>
+              14 AWG = 1.0 &nbsp;|&nbsp; 12 = 1.5 &nbsp;|&nbsp; 10 = 2.5<br>
+              8 = 4.0 &nbsp;|&nbsp; 6 = 6.0 &nbsp;|&nbsp; 4 = 9.5 &nbsp;|&nbsp; 2 = 14.5<br>
+              1 = 18.0 &nbsp;|&nbsp; 1/0 = 24 &nbsp;|&nbsp; 2/0 = 30<br><br>
+              <strong>NEC minimum:</strong> 14 AWG Cu for 15A branch circuits
+            </div>
+            <div class="note">&#9432; The LP solver selects the minimum-cost wire size that satisfies the VD constraint. If no standard size passes, it recommends the largest available size and flags the exceedance.</div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ════════════════════════════════════════
+         BUILDING SERVICE LOAD CALCULATOR (NEC 220)
+         ════════════════════════════════════════ -->
+    <section id="sec-bldg-load" class="section">
+      <div class="section-header">
+        <h2>&#127970; Building Service Load Calculator (NEC Art. 220)</h2>
+        <p>Calculate general lighting load and receptacle demand load per NEC Article 220 for service and feeder sizing.</p>
+        <details class="section-info">
+          <summary>ℹ More Info — NEC 220 Building Load</summary>
+          <div class="section-info-body">
+            <strong>NEC Article 220</strong> provides the standard method for calculating branch-circuit, feeder, and service loads in buildings.<br><br>
+            <strong>General Lighting Load (NEC 220.12):</strong><ul>
+              <li>Industrial: 1.0 VA per sq ft (NEC Table 220.12)</li>
+              <li>Office: 3.5 VA per sq ft (NEC Table 220.12)</li>
+              <li>Continuous lighting: apply 125% multiplier for OCPD sizing (NEC 210.20)</li>
+            </ul>
+            <strong>Receptacle Load (NEC 220.14(I)):</strong><ul>
+              <li>Each outlet = 180 VA per NEC 220.14(I)</li>
+              <li>First 10 kVA of receptacle load: 100% demand factor</li>
+              <li>Remainder above 10 kVA: 50% demand factor (NEC Table 220.44)</li>
+            </ul>
+            <strong>Result:</strong> Total calculated load is used to size service entrance conductors, main breaker, and feeders.
+          </div>
+        </details>
+      </div>
+      <div class="card-grid">
+
+        <div class="card">
+          <div class="card-title">Facility Parameters</div>
+          <div class="card-body">
+            <div class="formula-box">
+              Lighting VA = sq ft &times; VA/sq ft<br>
+              Receptacle VA = outlets &times; 180 VA<br>
+              Demand: first 10 kVA @ 100%, remainder @ 50%
+            </div>
+            <div class="input-group">
+              <div>
+                <label>Facility Square Footage</label>
+                <input type="number" id="bl_sqft" placeholder="e.g. 5000" step="any" min="1">
+              </div>
+              <div>
+                <label>Receptacle (Outlet) Count</label>
+                <input type="number" id="bl_outlets" placeholder="e.g. 80" step="1" min="0">
+              </div>
+            </div>
+            <div class="input-group single">
+              <div>
+                <label>Occupancy Type</label>
+                <select id="bl_occupancy">
+                  <option value="industrial">Industrial (1.0 VA/sq ft)</option>
+                  <option value="office">Office / Commercial (3.5 VA/sq ft)</option>
+                  <option value="warehouse">Warehouse (0.25 VA/sq ft)</option>
+                  <option value="retail">Retail Store (3.0 VA/sq ft)</option>
+                  <option value="school">School (3.0 VA/sq ft)</option>
+                  <option value="hospital">Hospital (2.0 VA/sq ft)</option>
+                </select>
+              </div>
+            </div>
+            <div class="input-group">
+              <div>
+                <label>Service Voltage (V, L-L)</label>
+                <select id="bl_voltage">
+                  <option value="208">208 V (120/208Y)</option>
+                  <option value="480" selected>480 V (277/480Y)</option>
+                  <option value="240">240 V (1&#8709; or 3&#8709; delta)</option>
+                </select>
+              </div>
+              <div>
+                <label>Phases</label>
+                <select id="bl_phases">
+                  <option value="3" selected>3-Phase</option>
+                  <option value="1">1-Phase</option>
+                </select>
+              </div>
+            </div>
+            <button class="btn btn-accent" onclick="calcBuildingLoad()">&#9654; Calculate Load</button>
+            <div id="bl_result" class="result"></div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">NEC 220 Reference</div>
+          <div class="card-body">
+            <div class="formula-box">
+              <strong>NEC Table 220.12 — Lighting Loads (VA/sq ft):</strong><br>
+              Industrial:    1.0 &nbsp;|&nbsp; Warehouse: 0.25<br>
+              Office/Banks:  3.5 &nbsp;|&nbsp; Retail:    3.0<br>
+              School:        3.0 &nbsp;|&nbsp; Hospital:  2.0<br>
+              Residential:   3.0<br><br>
+              <strong>NEC 220.14(I) — Receptacles:</strong><br>
+              180 VA per outlet (duplex counts as one)<br><br>
+              <strong>NEC Table 220.44 — Receptacle Demand:</strong><br>
+              First 10 kVA: 100%<br>
+              Over 10 kVA: 50%<br><br>
+              <strong>Service Amps (3&#8709;):</strong><br>
+              I = Total VA / (1.732 &times; V<sub>L-L</sub>)
+            </div>
+            <div class="note">&#9432; This calculation covers general lighting and receptacle loads only. Add HVAC, motor, and special loads separately per NEC 220.50–220.60 before sizing the service.</div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ════════════════════════════════════════
+         INTRINSICALLY SAFE LOOP VERIFIER
+         ════════════════════════════════════════ -->
+    <section id="sec-isloop" class="section">
+      <div class="section-header">
+        <h2>&#128275; Intrinsically Safe Loop Verifier</h2>
+        <p>Verify entity parameter compatibility between a Zener barrier and a field device for use in classified (hazardous) areas.</p>
+        <details class="section-info">
+          <summary>ℹ More Info — Intrinsically Safe Loops</summary>
+          <div class="section-info-body">
+            <strong>Intrinsic Safety (IS)</strong> limits electrical energy in a circuit to levels too low to ignite a hazardous atmosphere, even under fault conditions. Governed by <strong>ANSI/ISA-60079-11</strong> and <strong>NEC Article 504</strong>.<br><br>
+            <strong>Entity Parameters:</strong><ul>
+              <li><strong>Barrier Voc:</strong> Maximum open-circuit voltage the barrier can deliver to the field (V)</li>
+              <li><strong>Barrier Isc:</strong> Maximum short-circuit current the barrier can deliver (mA)</li>
+              <li><strong>Barrier Ca:</strong> Maximum allowable capacitance the barrier can drive (µF)</li>
+              <li><strong>Barrier La:</strong> Maximum allowable inductance the barrier can drive (mH)</li>
+              <li><strong>Device Vmax:</strong> Maximum voltage the field device can withstand (V)</li>
+              <li><strong>Device Imax:</strong> Maximum current the field device can withstand (mA)</li>
+              <li><strong>Device Ci:</strong> Internal capacitance of the field device (µF)</li>
+              <li><strong>Device Li:</strong> Internal inductance of the field device (mH)</li>
+            </ul>
+            <strong>Pass criteria (entity concept):</strong> Voc ≤ Vmax, Isc ≤ Imax, Ca ≥ Ci, La ≥ Li<br>
+            <strong>Note:</strong> Always verify with the manufacturer's control drawings and a certified IS assessor.
+          </div>
+        </details>
+      </div>
+      <div class="card-grid">
+
+        <div class="card">
+          <div class="card-title">Barrier Parameters (Safe Area Side)</div>
+          <div class="card-body">
+            <div class="formula-box">
+              Barrier output parameters &#8212; what the barrier can deliver to the field
+            </div>
+            <div class="input-group">
+              <div>
+                <label>Voc — Open-Circuit Voltage (V)</label>
+                <input type="number" id="is_voc" placeholder="e.g. 28" step="any" min="0">
+              </div>
+              <div>
+                <label>Isc — Short-Circuit Current (mA)</label>
+                <input type="number" id="is_isc" placeholder="e.g. 93" step="any" min="0">
+              </div>
+            </div>
+            <div class="input-group">
+              <div>
+                <label>Ca — Max Allowed Capacitance (µF)</label>
+                <input type="number" id="is_ca" placeholder="e.g. 0.14" step="any" min="0">
+              </div>
+              <div>
+                <label>La — Max Allowed Inductance (mH)</label>
+                <input type="number" id="is_la" placeholder="e.g. 3.7" step="any" min="0">
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">Field Device Parameters (Hazardous Area Side)</div>
+          <div class="card-body">
+            <div class="formula-box">
+              Field device entity parameters &#8212; what the device requires and contains
+            </div>
+            <div class="input-group">
+              <div>
+                <label>Vmax — Max Input Voltage (V)</label>
+                <input type="number" id="is_vmax" placeholder="e.g. 30" step="any" min="0">
+              </div>
+              <div>
+                <label>Imax — Max Input Current (mA)</label>
+                <input type="number" id="is_imax" placeholder="e.g. 100" step="any" min="0">
+              </div>
+            </div>
+            <div class="input-group">
+              <div>
+                <label>Ci — Internal Capacitance (µF)</label>
+                <input type="number" id="is_ci" placeholder="e.g. 0.005" step="any" min="0">
+              </div>
+              <div>
+                <label>Li — Internal Inductance (mH)</label>
+                <input type="number" id="is_li" placeholder="e.g. 0.01" step="any" min="0">
+              </div>
+            </div>
+            <button class="btn btn-accent" style="margin-top:8px" onclick="verifyISLoop()">&#9654; Verify IS Loop</button>
+            <div id="is_result" class="result"></div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">IS Entity Concept Reference</div>
+          <div class="card-body">
+            <div class="formula-box">
+              <strong>PASS conditions (all must be true):</strong><br>
+              Voc &le; Vmax &nbsp;&nbsp; (voltage compatibility)<br>
+              Isc &le; Imax &nbsp;&nbsp; (current compatibility)<br>
+              Ca &ge; Ci &nbsp;&nbsp;&nbsp;&nbsp; (capacitance: barrier can absorb device C)<br>
+              La &ge; Li &nbsp;&nbsp;&nbsp;&nbsp; (inductance: barrier can absorb device L)<br><br>
+              <strong>Cable parameters:</strong><br>
+              Add cable C and L to field device C/L<br>
+              Cc (pF/ft) + Ci &le; Ca<br>
+              Lc (µH/ft) + Li &le; La<br><br>
+              <strong>Standards:</strong><br>
+              ANSI/ISA-60079-11 &nbsp;|&nbsp; NEC Art. 504<br>
+              IEC 60079-25 (IS systems)
+            </div>
+            <div class="note">&#9432; Cable capacitance and inductance must be included in the verification. Typical IS cable: 30–60 pF/ft (C), 0.2–0.5 µH/ft (L). Consult the barrier and device control drawings.</div>
           </div>
         </div>
 
