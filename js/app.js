@@ -1679,9 +1679,6 @@ window.calcTapChanger = function () {
   showResult('tap_result', rows);
 };
 
-  showResult('tap_result', rows);
-};
-
 /* ============================================================
    HAZARDOUS AREA MATERIAL LOOKUP (NEC 500)
    ============================================================ */
