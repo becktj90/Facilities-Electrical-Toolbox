@@ -642,6 +642,729 @@ window.cmModeChange = function () {
 };
 
 /* ============================================================
+   15. UPS SIZING CALCULATOR
+   ============================================================ */
+window.calcUPS = function () {
+  const loadKW = val('ups_kw');
+  const pf     = val('ups_pf') / 100;
+  const runtimeMin = val('ups_runtime');
+  const eff    = val('ups_eff') / 100;
+  const dcV    = val('ups_dcv');
+
+  if (!isPos(loadKW, pf, runtimeMin, eff, dcV))
+    return showError('ups_result', 'Enter all values greater than zero.');
+  if (pf > 1 || eff > 1)
+    return showError('ups_result', 'Power factor and efficiency must be 1–100%.');
+
+  const loadKVA   = loadKW / pf;
+  const designKVA = loadKVA * 1.25;
+  const runtimeH  = runtimeMin / 60;
+  const battWh    = (loadKW * 1000 / eff) * runtimeH;
+  const battAh    = battWh / dcV;
+
+  const upsSizes = [0.5, 1, 1.5, 2, 3, 5, 6, 7.5, 10, 15, 20, 25, 30, 40, 50, 60, 75,
+                    100, 125, 150, 200, 250, 300, 400, 500];
+  const recSize = upsSizes.find(s => s >= designKVA) || Math.ceil(designKVA / 50) * 50;
+
+  showResult('ups_result', [
+    ['Load kVA',                        fmt(loadKVA, 2) + ' kVA'],
+    ['Design Load (x1.25 headroom)',     fmt(designKVA, 2) + ' kVA'],
+    ['Battery Energy Required',          fmt(battWh / 1000, 3) + ' kWh'],
+    ['Required Battery Ah @ ' + dcV + ' VDC', fmt(battAh, 1) + ' Ah'],
+    ['Recommended UPS Size',             recSize + ' kVA (next standard tier)']
+  ]);
+};
+
+/* ============================================================
+   16. GENERATOR SIZING (IEEE 446 / NFPA 110)
+   ============================================================ */
+window.calcGenerator = function () {
+  const pf     = val('gen_pf') / 100;
+  const margin = val('gen_margin') / 100;
+
+  if (!isPos(pf)) return showError('gen_result', 'Enter power factor (> 0%).');
+
+  const motorKW = val('gen_motor_kw');
+  const motorQty = val('gen_motor_qty');
+  const motorDF  = val('gen_motor_df') / 100;
+  const lightKW  = val('gen_light_kw');
+  const lightDF  = val('gen_light_df') / 100;
+  const hvacKW   = val('gen_hvac_kw');
+  const hvacDF   = val('gen_hvac_df') / 100;
+  const otherKW  = val('gen_other_kw');
+
+  const motorLoad = (isPos(motorKW) && isPos(motorQty) && isFinite(motorDF))
+    ? motorKW * motorQty * motorDF : 0;
+  const lightLoad = (isPos(lightKW) && isFinite(lightDF)) ? lightKW * lightDF : 0;
+  const hvacLoad  = (isPos(hvacKW)  && isFinite(hvacDF))  ? hvacKW  * hvacDF  : 0;
+  const otherLoad = isPos(otherKW) ? otherKW : 0;
+
+  const totalKW  = motorLoad + lightLoad + hvacLoad + otherLoad;
+  if (totalKW <= 0) return showError('gen_result', 'Enter at least one load value.');
+
+  const totalKVA  = totalKW / pf;
+  const safetyMult = isFinite(margin) && margin >= 0 ? (1 + margin) : 1.1;
+  const designKW  = totalKW * safetyMult;
+  const designKVA = totalKVA * safetyMult;
+
+  const genSizes = [20, 25, 30, 40, 50, 60, 75, 100, 125, 150, 175, 200,
+                    250, 300, 350, 400, 500, 600, 750, 1000];
+  const recSize = genSizes.find(s => s >= designKW) || Math.ceil(designKW / 100) * 100;
+
+  showResult('gen_result', [
+    ['Motor Loads',             fmt(motorLoad, 1) + ' kW'],
+    ['Lighting / Receptacle',   fmt(lightLoad, 1) + ' kW'],
+    ['HVAC Loads',              fmt(hvacLoad,  1) + ' kW'],
+    ['Other Critical Loads',    fmt(otherLoad, 1) + ' kW'],
+    ['Total Connected Load',    fmt(totalKW, 1) + ' kW / ' + fmt(totalKVA, 1) + ' kVA'],
+    ['Design Load (x' + fmt(safetyMult, 2) + ')', fmt(designKW, 1) + ' kW / ' + fmt(designKVA, 1) + ' kVA'],
+    ['Recommended Generator',   recSize + ' kW (next standard size)']
+  ]);
+};
+
+/* ============================================================
+   17. HYBRID GENERATOR CALCULATOR
+   ============================================================ */
+window.calcHybridGen = function () {
+  const genKW       = val('hyb_gen_kw');
+  const avgLoadPct  = val('hyb_avg_load') / 100;
+  const hoursDay    = val('hyb_hours_day');
+  const daysYear    = val('hyb_days_year');
+  const fuelCost    = val('hyb_fuel_cost');
+  const fuelRate    = val('hyb_fuel_rate');   // gal/hr at full load
+  const hybridGain  = val('hyb_gain') / 100;
+  const battCost    = val('hyb_batt_cost');
+
+  if (!isPos(genKW, avgLoadPct, hoursDay, daysYear, fuelCost, fuelRate, hybridGain))
+    return showError('hyb_result', 'Enter all required values (generator kW, load %, hours, days, fuel cost, fuel rate, gain %).');
+
+  const annualHours      = hoursDay * daysYear;
+  const avgFuelRate      = fuelRate * avgLoadPct;     // gal/hr at average load
+  const convFuel         = avgFuelRate * annualHours;  // gal/yr conventional
+  const hybridFuel       = convFuel * (1 - hybridGain);
+  const savingsGal       = convFuel - hybridFuel;
+  const savingsDollar    = savingsGal * fuelCost;
+  const co2Lbs           = savingsGal * 22.4;         // EPA: 22.4 lbs CO2/gal diesel
+  const avgKW            = genKW * avgLoadPct;
+
+  const rows = [
+    ['Generator Rated Output',    fmt(genKW, 0) + ' kW'],
+    ['Average Load',              fmt(avgKW, 1) + ' kW (' + fmt(avgLoadPct * 100, 0) + '% of rated)'],
+    ['Annual Operating Hours',    fmt(annualHours, 0) + ' hrs/yr'],
+    ['Conventional Annual Fuel',  fmt(convFuel, 0) + ' gal/yr'],
+    ['Hybrid Annual Fuel',        fmt(hybridFuel, 0) + ' gal/yr'],
+    ['Annual Fuel Savings',       fmt(savingsGal, 0) + ' gal ($' + fmt(savingsDollar, 0) + '/yr)'],
+    ['CO\u2082 Reduction',        fmt(co2Lbs, 0) + ' lbs/yr (~' + fmt(co2Lbs / 2204.6, 2) + ' metric tons/yr)']
+  ];
+  if (isPos(battCost) && savingsDollar > 0) {
+    rows.push(['Battery System Cost',  '$' + fmt(battCost, 0)]);
+    rows.push(['Simple Payback Period', fmt(battCost / savingsDollar, 1) + ' years']);
+  }
+  showResult('hyb_result', rows);
+};
+
+/* ============================================================
+   18. NEC CIRCUIT CALCULATOR
+   ============================================================ */
+
+/* NEC 310.15(B)(16) — 75°C column
+   [label, Cu ampacity, Al ampacity (null = not listed), circular mils, THHN area in²] */
+const NEC_CONDUCTORS = [
+  { label: '14 AWG', cu: 15,  al: null, cm: 4110,    area: 0.0097 },
+  { label: '12 AWG', cu: 20,  al: 15,   cm: 6530,    area: 0.0133 },
+  { label: '10 AWG', cu: 30,  al: 25,   cm: 10380,   area: 0.0211 },
+  { label: '8 AWG',  cu: 50,  al: 40,   cm: 16510,   area: 0.0366 },
+  { label: '6 AWG',  cu: 65,  al: 50,   cm: 26240,   area: 0.0507 },
+  { label: '4 AWG',  cu: 85,  al: 65,   cm: 41740,   area: 0.0824 },
+  { label: '3 AWG',  cu: 100, al: 75,   cm: 52620,   area: 0.0973 },
+  { label: '2 AWG',  cu: 115, al: 90,   cm: 66360,   area: 0.1158 },
+  { label: '1 AWG',  cu: 130, al: 100,  cm: 83690,   area: 0.1562 },
+  { label: '1/0',    cu: 150, al: 120,  cm: 105600,  area: 0.1855 },
+  { label: '2/0',    cu: 175, al: 135,  cm: 133100,  area: 0.2223 },
+  { label: '3/0',    cu: 200, al: 155,  cm: 167800,  area: 0.2660 },
+  { label: '4/0',    cu: 230, al: 180,  cm: 211600,  area: 0.3237 },
+  { label: '250 kcmil', cu: 255, al: 205, cm: 250000, area: 0.3970 },
+  { label: '300 kcmil', cu: 285, al: 230, cm: 300000, area: 0.4608 },
+  { label: '350 kcmil', cu: 310, al: 250, cm: 350000, area: 0.5281 },
+  { label: '400 kcmil', cu: 335, al: 270, cm: 400000, area: 0.5958 },
+  { label: '500 kcmil', cu: 380, al: 310, cm: 500000, area: 0.7073 },
+  { label: '600 kcmil', cu: 420, al: 340, cm: 600000, area: 0.8676 },
+  { label: '700 kcmil', cu: 460, al: 375, cm: 700000, area: 0.9887 },
+  { label: '750 kcmil', cu: 475, al: 385, cm: 750000, area: 1.0496 },
+  { label: '800 kcmil', cu: 490, al: 395, cm: 800000, area: 1.1085 },
+  { label: '1000 kcmil', cu: 545, al: 445, cm: 1000000, area: 1.3478 }
+];
+
+/* NEC 240.4(D) maximum OCPD for small conductors */
+const NEC_SMALL_WIRE_MAX = { '14 AWG': 15, '12 AWG': 20, '10 AWG': 30 };
+
+/* Standard OCPD ratings (A) per NEC 240.6(A) */
+const STD_OCPD = [15, 20, 25, 30, 35, 40, 45, 50, 60, 70, 80, 90, 100, 110, 125,
+                  150, 175, 200, 225, 250, 300, 350, 400, 450, 500, 600, 700, 800,
+                  1000, 1200];
+
+/* EMT conduit — 40%-fill allowable area (in²) per NEC Ch.9 Table 4 */
+const EMT_CONDUIT = [
+  { size: '1/2"',   area: 0.122 },
+  { size: '3/4"',   area: 0.213 },
+  { size: '1"',     area: 0.346 },
+  { size: '1-1/4"', area: 0.598 },
+  { size: '1-1/2"', area: 0.814 },
+  { size: '2"',     area: 1.342 },
+  { size: '2-1/2"', area: 2.343 },
+  { size: '3"',     area: 3.538 },
+  { size: '3-1/2"', area: 4.618 },
+  { size: '4"',     area: 5.901 }
+];
+
+/* NEC 250.122 — EGC sizing based on OCPD rating */
+const EGC_TABLE = [
+  { maxOCPD: 15,   cu: '14 AWG', al: '12 AWG' },
+  { maxOCPD: 20,   cu: '12 AWG', al: '10 AWG' },
+  { maxOCPD: 60,   cu: '10 AWG', al: '8 AWG'  },
+  { maxOCPD: 100,  cu: '8 AWG',  al: '6 AWG'  },
+  { maxOCPD: 200,  cu: '6 AWG',  al: '4 AWG'  },
+  { maxOCPD: 300,  cu: '4 AWG',  al: '2 AWG'  },
+  { maxOCPD: 400,  cu: '3 AWG',  al: '1 AWG'  },
+  { maxOCPD: 500,  cu: '2 AWG',  al: '1/0'    },
+  { maxOCPD: 600,  cu: '1 AWG',  al: '2/0'    },
+  { maxOCPD: 800,  cu: '1/0',    al: '3/0'    },
+  { maxOCPD: 1000, cu: '2/0',    al: '4/0'    },
+  { maxOCPD: 1200, cu: '3/0',    al: '250 kcmil' }
+];
+
+/* NEC 310.15(B)(2)(a) temperature correction factors */
+function necTempFactor(ambientC, insulRating) {
+  // 90°C-rated insulation (THHN, XHHW-2, etc.)
+  const f90 = [[25,1.04],[30,1.00],[35,0.96],[40,0.91],[45,0.87],[50,0.82],[55,0.76],[60,0.71]];
+  // 75°C-rated insulation
+  const f75 = [[25,1.05],[30,1.00],[35,0.94],[40,0.88],[45,0.82],[50,0.75],[55,0.67],[60,0.58]];
+  const tbl = insulRating >= 90 ? f90 : f75;
+  for (const [temp, factor] of tbl) if (ambientC <= temp) return factor;
+  return 0; // above 60°C — not rated
+}
+
+/* NEC multipliers for conductor sizing */
+const NEC_COND_MULT = {
+  'motor': 1.25, 'motor-multi': 1.25, 'lighting-general': 1.25,
+  'lighting-hospital': 1.25, 'hvac': 1.25,
+  'heat': 1.0, 'welder': 1.0, 'general': 1.0
+};
+
+/* NEC multipliers for OCPD sizing (separate from conductor mult) */
+const NEC_OCPD_MULT = {
+  'motor': 2.50,          // NEC 430.52 inverse-time breaker (250% max)
+  'motor-multi': 2.50,
+  'lighting-general': 1.25,
+  'lighting-hospital': 1.25,
+  'hvac': 2.25,           // NEC 440.22 (225% max for hermetic motor)
+  'heat': 1.25,
+  'welder': 2.00,         // NEC 630.12 (200% of rated input)
+  'general': 1.25
+};
+
+function necNECRef(loadType) {
+  return { motor: '430.22', 'motor-multi': '430.24', 'lighting-general': '210.20(A)',
+           'lighting-hospital': '210.20(A)', hvac: '440.32', heat: '424.3(B)',
+           welder: '630.11', general: '210.20(A)' }[loadType] || '210.20(A)';
+}
+
+function necNextStdOCPD(minAmps) {
+  return STD_OCPD.find(s => s >= minAmps) || Math.ceil(minAmps);
+}
+
+window.necKwChange = function () {
+  const kw    = val('nec_kw');
+  const pf    = val('nec_pf') / 100;
+  const v     = parseFloat(document.getElementById('nec_voltage').value);
+  const ph    = parseInt(document.getElementById('nec_phases').value);
+  if (!isPos(kw, pf, v)) return;
+  const fla = ph === 3 ? kw * 1000 / (Math.sqrt(3) * v * pf)
+                        : kw * 1000 / (v * pf);
+  const el = document.getElementById('nec_fla');
+  if (el) el.value = fmt(fla, 2);
+};
+
+window.necMaterialChange = function () {
+  const isal = document.getElementById('nec_material').value === 'al';
+  const note = document.getElementById('nec_al_note');
+  if (note) note.style.display = isal ? '' : 'none';
+};
+
+window.calcNEC = function () {
+  const loadType = document.getElementById('nec_load_type').value;
+  const voltage  = parseFloat(document.getElementById('nec_voltage').value);
+  const phases   = parseInt(document.getElementById('nec_phases').value);
+  const pf       = val('nec_pf') / 100;
+  const dist     = val('nec_dist');
+  const ambientC = val('nec_temp');
+  const material = document.getElementById('nec_material').value;   // 'cu' | 'al'
+  const insulR   = parseInt(document.getElementById('nec_insulation').value);
+  const cccDF    = parseFloat(document.getElementById('nec_ccc').value);
+
+  // Resolve FLA from field or compute from kW
+  let fla = val('nec_fla');
+  if (!isFinite(fla)) {
+    const kw = val('nec_kw');
+    if (!isPos(kw)) return showError('nec_result', 'Enter FLA in amps, or load kW/kVA.');
+    if (!isPos(pf))  return showError('nec_result', 'Enter power factor.');
+    fla = phases === 3 ? kw * 1000 / (Math.sqrt(3) * voltage * pf)
+                       : kw * 1000 / (voltage * pf);
+  }
+  if (!isPos(fla))      return showError('nec_result', 'FLA must be greater than zero.');
+  if (!isPos(voltage))  return showError('nec_result', 'Select a valid system voltage.');
+  if (!isPos(dist))     return showError('nec_result', 'Enter one-way distance in feet.');
+  if (!isFinite(ambientC)) return showError('nec_result', 'Enter ambient temperature in \u00b0C.');
+
+  // Step 1 — design current
+  const condMult   = NEC_COND_MULT[loadType] || 1.0;
+  const designI    = fla * condMult;
+
+  // Step 2 — temperature correction
+  const tempFactor = necTempFactor(ambientC, insulR);
+  if (tempFactor <= 0)
+    return showError('nec_result', 'Ambient temperature exceeds conductor rating. Select higher-rated insulation or reduce ambient exposure.');
+
+  // Step 3 — combined derating
+  const totalDerating = tempFactor * cccDF;
+
+  // Step 4 — find smallest conductor meeting derated ampacity >= designI
+  const conductor = NEC_CONDUCTORS.find(c => {
+    const baseAmp = material === 'cu' ? c.cu : c.al;
+    return baseAmp !== null && (baseAmp * totalDerating) >= designI;
+  });
+  if (!conductor)
+    return showError('nec_result', 'Load exceeds 1000 kcmil capacity. Consider parallel conductors.');
+
+  const baseAmp     = material === 'cu' ? conductor.cu : conductor.al;
+  const deratedAmp  = baseAmp * totalDerating;
+
+  // Step 5 — voltage drop
+  // K = 12.9 Ω·CM/ft (Cu @ 75°C), 21.2 (Al @ 75°C)
+  // 1-phase: VD = 2×K×I×L / CM; 3-phase: VD = 1.732×K×I×L / CM
+  const K          = material === 'cu' ? 12.9 : 21.2;
+  const phaseFactor = phases === 3 ? Math.sqrt(3) : 2.0;
+  const vdVolts    = phaseFactor * K * fla * dist / conductor.cm;
+  const vdPct      = (vdVolts / voltage) * 100;
+  const vdFlag     = vdPct > 5 ? ' EXCEEDS 5% — CRITICAL' : (vdPct > 3 ? ' EXCEEDS 3% — WARNING' : ' OK');
+
+  // Step 6 — OCPD sizing
+  const ocpdMult   = NEC_OCPD_MULT[loadType] || 1.25;
+  const ocpdMin    = fla * ocpdMult;
+  const ocpdSize   = necNextStdOCPD(ocpdMin);
+
+  // Step 7 — max OCPD per NEC 240.4
+  const smallMax   = NEC_SMALL_WIRE_MAX[conductor.label];
+  const maxOCPD    = smallMax !== undefined ? smallMax : baseAmp; // larger conductors: limited to base ampacity
+
+  // Step 8 — conduit fill (phase conductors + 1 EGC at same size, conservative)
+  const condCount  = phases === 3 ? 4 : 3;  // 3 or 2 phase + 1 EGC
+  const fillNeeded = conductor.area * condCount;
+  const conduitEl  = EMT_CONDUIT.find(c => c.area >= fillNeeded);
+  const conduitStr = conduitEl ? conduitEl.size + ' EMT' : '> 4" EMT (consult engineer)';
+  const condType   = document.getElementById('nec_conduit_type').value.toUpperCase();
+
+  // Step 9 — EGC size per NEC 250.122
+  const egcEntry = EGC_TABLE.find(g => g.maxOCPD >= ocpdSize) || EGC_TABLE[EGC_TABLE.length - 1];
+  const egc      = material === 'cu' ? egcEntry.cu : egcEntry.al;
+
+  const ocpdNote = loadType.startsWith('motor') ? ' (NEC 430.52, up to 250% FLA)'
+                 : loadType === 'hvac'            ? ' (NEC 440.22, up to 225% FLA)'
+                 : '';
+
+  showResult('nec_result', [
+    ['Load FLA',                                     fmt(fla, 2) + ' A'],
+    ['NEC Conductor Mult (NEC ' + necNECRef(loadType) + ')', '\u00d7' + condMult + ' \u2192 Design I = ' + fmt(designI, 2) + ' A'],
+    ['Temp Correction @ ' + ambientC + '\u00b0C',    '\u00d7' + fmt(tempFactor, 3) + ' (NEC 310.15(B)(2)(a), ' + insulR + '\u00b0C insul)'],
+    ['Conduit Fill Derating',                        '\u00d7' + cccDF.toFixed(2) + ' (NEC 310.15(B)(3)(a))'],
+    ['Total Derating Factor',                        '\u00d7' + fmt(totalDerating, 3)],
+    ['Selected Conductor',                           conductor.label + ' ' + (material === 'cu' ? 'Cu' : 'Al') + ' THHN'],
+    ['Base Ampacity (NEC 310.15(B)(16) 75\u00b0C)',  baseAmp + ' A'],
+    ['Derated Ampacity',                             fmt(deratedAmp, 1) + ' A (must be \u2265 ' + fmt(designI, 1) + ' A)'],
+    ['Voltage Drop',                                 fmt(vdPct, 2) + '% (' + fmt(vdVolts, 2) + ' V)' + vdFlag],
+    ['Conduit Size (40% fill, ' + condType + ' ref)', conduitStr + ' (' + condCount + ' cond. incl. EGC)'],
+    ['OCPD Size (NEC 240.6 std. rating)',             ocpdSize + ' A' + ocpdNote],
+    ['Max OCPD Allowed (NEC 240.4)',                  maxOCPD + ' A'],
+    ['Equipment Ground (NEC 250.122)',                egc + (material === 'cu' ? ' Cu' : ' Al') + ' min']
+  ]);
+};
+
+/* ============================================================
+   19. ROCKET RIDER — ARCADE GAME
+   ============================================================ */
+(function () {
+  'use strict';
+
+  const SCORE_LABELS = [
+    { min: 0,   label: 'WARM UP'           },
+    { min: 3,   label: '14 AWG'            },
+    { min: 5,   label: '12 AWG'            },
+    { min: 8,   label: '10 AWG'            },
+    { min: 12,  label: '8 AWG'             },
+    { min: 17,  label: '6 AWG'             },
+    { min: 23,  label: '4 AWG'             },
+    { min: 30,  label: '2 AWG'             },
+    { min: 38,  label: '1/0'               },
+    { min: 47,  label: '2/0'               },
+    { min: 57,  label: '3/0'               },
+    { min: 68,  label: '4/0'               },
+    { min: 80,  label: '250 kcmil'         },
+    { min: 93,  label: '350 kcmil'         },
+    { min: 107, label: '500 kcmil'         },
+    { min: 122, label: '750 kcmil'         },
+    { min: 138, label: '1000 kcmil \u2605 LEGEND \u2605' }
+  ];
+
+  function scoreLabel(n) {
+    let lbl = SCORE_LABELS[0].label;
+    for (const s of SCORE_LABELS) if (n >= s.min) lbl = s.label;
+    return lbl;
+  }
+
+  const CW = 600, CH = 350;
+  const GRAVITY = 0.32;
+  const THRUST  = -6.5;
+  const OBS_W   = 32;
+  const GAP_H   = 130;
+
+  let canvas, ctx;
+  let state;             // 'READY' | 'PLAYING' | 'GAMEOVER'
+  let rocket, obstacles, particles, stars;
+  let score, hiScore, frame, speedMult;
+
+  function init() {
+    canvas = document.getElementById('arcadeCanvas');
+    if (!canvas) return;
+    ctx = canvas.getContext('2d');
+
+    hiScore = parseInt(localStorage.getItem('rocketRiderHi') || '0', 10);
+    updateHiDisplay();
+    buildStars();
+    resetGame();
+
+    canvas.addEventListener('click',      handleInput);
+    canvas.addEventListener('touchstart', handleInput, { passive: true });
+    document.addEventListener('keydown', e => {
+      if (e.code === 'Space' && isSectionActive()) { e.preventDefault(); handleInput(); }
+    });
+
+    requestAnimationFrame(loop);
+  }
+
+  function isSectionActive() {
+    const s = document.getElementById('sec-arcade');
+    return s && s.classList.contains('active');
+  }
+
+  function handleInput() {
+    if      (state === 'READY')    { state = 'PLAYING'; }
+    else if (state === 'PLAYING')  { rocket.vy = THRUST; }
+    else if (state === 'GAMEOVER') { resetGame(); state = 'READY'; }
+  }
+
+  function buildStars() {
+    stars = [];
+    for (let i = 0; i < 70; i++) {
+      stars.push({ x: Math.random() * CW, y: Math.random() * CH,
+                   r: Math.random() * 1.4 + 0.4, spd: Math.random() * 0.35 + 0.08,
+                   bright: Math.random() });
+    }
+  }
+
+  function resetGame() {
+    rocket    = { x: 90, y: CH / 2, vy: 0, w: 28, h: 14 };
+    obstacles = [];
+    particles = [];
+    score     = 0;
+    frame     = 0;
+    speedMult = 1;
+    state     = state === 'GAMEOVER' ? 'GAMEOVER' : 'READY';
+  }
+
+  function spawnObs() {
+    const gapY = Math.random() * (CH - GAP_H - 80) + 40;
+    obstacles.push({ x: CW + 4, topH: gapY, botY: gapY + GAP_H, passed: false });
+  }
+
+  function loop() {
+    requestAnimationFrame(loop);
+    update();
+    draw();
+  }
+
+  function update() {
+    if (state !== 'PLAYING') { frame++; return; }
+    frame++;
+    speedMult = 1 + score * 0.018;
+
+    // Physics
+    rocket.vy += GRAVITY;
+    rocket.y  += rocket.vy;
+
+    // Exhaust particles
+    if (frame % 2 === 0) {
+      for (let i = 0; i < 2; i++) {
+        particles.push({
+          x: rocket.x - rocket.w / 2 - 2,
+          y: rocket.y + (Math.random() - 0.5) * 6,
+          vx: -(Math.random() * 2.5 + 0.5),
+          vy: (Math.random() - 0.5) * 1.5,
+          life: 1.0,
+          r: Math.random() * 3 + 1
+        });
+      }
+    }
+    particles = particles.filter(p => {
+      p.x += p.vx; p.y += p.vy; p.life -= 0.07;
+      return p.life > 0;
+    });
+
+    // Obstacles
+    const spawnEvery = Math.max(55, Math.round(110 / speedMult));
+    if (frame % spawnEvery === 0) spawnObs();
+
+    const spd = 2.8 * speedMult;
+    for (const o of obstacles) {
+      o.x -= spd;
+      if (!o.passed && o.x + OBS_W < rocket.x) { o.passed = true; score++; }
+    }
+    obstacles = obstacles.filter(o => o.x + OBS_W > -5);
+
+    // Scroll stars
+    for (const s of stars) { s.x -= s.spd * speedMult; if (s.x < 0) s.x = CW; }
+
+    // Boundary collision
+    if (rocket.y - rocket.h / 2 < 0 || rocket.y + rocket.h / 2 > CH) { endGame(); return; }
+
+    // Obstacle collision (shrunk hitbox for fairness)
+    const hx = rocket.x - rocket.w / 2 + 4, hy = rocket.y - rocket.h / 2 + 3;
+    const hw = rocket.w - 8,                  hh = rocket.h - 6;
+    for (const o of obstacles) {
+      if (hx + hw > o.x + 2 && hx < o.x + OBS_W - 2) {
+        if (hy < o.topH || hy + hh > o.botY) { endGame(); return; }
+      }
+    }
+  }
+
+  function endGame() {
+    state = 'GAMEOVER';
+    if (score > hiScore) {
+      hiScore = score;
+      localStorage.setItem('rocketRiderHi', hiScore);
+      updateHiDisplay();
+    }
+  }
+
+  function updateHiDisplay() {
+    const el = document.getElementById('arcade-hi-score');
+    if (!el) return;
+    el.textContent = hiScore > 0
+      ? scoreLabel(hiScore) + '  (score: ' + hiScore + ')'
+      : '---';
+  }
+
+  /* ── Draw ── */
+  function draw() {
+    // Background
+    ctx.fillStyle = '#020602';
+    ctx.fillRect(0, 0, CW, CH);
+
+    // Stars
+    for (const s of stars) {
+      ctx.fillStyle = 'rgba(51,255,51,' + (0.25 + s.bright * 0.5) + ')';
+      ctx.beginPath();
+      ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    // Exhaust particles (amber glow)
+    for (const p of particles) {
+      const a = p.life * 0.85;
+      ctx.fillStyle = 'rgba(255,179,0,' + a + ')';
+      ctx.shadowColor = '#ffb300'; ctx.shadowBlur = 6;
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    ctx.shadowBlur = 0;
+
+    // Obstacles
+    for (const o of obstacles) drawObs(o);
+
+    // Rocket (always drawn in PLAYING; blink in READY/GAMEOVER)
+    const showRocket = state === 'PLAYING' || (Math.floor(Date.now() / 500) % 2 === 0);
+    if (showRocket) drawRocket(rocket.x, rocket.y, rocket.vy);
+
+    // Overlays
+    if      (state === 'READY')    drawReady();
+    else if (state === 'PLAYING')  drawHUD();
+    else if (state === 'GAMEOVER') drawGameOver();
+  }
+
+  function drawObs(o) {
+    ctx.save();
+    // Panel body
+    ctx.fillStyle   = '#0b150b';
+    ctx.strokeStyle = '#22cc22';
+    ctx.lineWidth   = 2;
+    ctx.shadowColor = '#33ff33'; ctx.shadowBlur = 6;
+
+    ctx.fillRect(o.x, 0, OBS_W, o.topH);
+    ctx.strokeRect(o.x, 0, OBS_W, o.topH);
+    ctx.fillRect(o.x, o.botY, OBS_W, CH - o.botY);
+    ctx.strokeRect(o.x, o.botY, OBS_W, CH - o.botY);
+
+    // Hazard bolt icons
+    ctx.shadowBlur = 12;
+    ctx.fillStyle  = '#ffb300';
+    ctx.font       = '14px sans-serif';
+    ctx.textAlign  = 'center';
+    if (o.topH > 22)          ctx.fillText('\u26a1', o.x + OBS_W / 2, o.topH - 6);
+    if (CH - o.botY > 22)     ctx.fillText('\u26a1', o.x + OBS_W / 2, o.botY + 18);
+
+    // Gap indicator lines
+    ctx.shadowBlur  = 0;
+    ctx.strokeStyle = 'rgba(255,179,0,0.25)';
+    ctx.lineWidth   = 1;
+    ctx.setLineDash([4, 4]);
+    ctx.beginPath();
+    ctx.moveTo(o.x, o.topH);
+    ctx.lineTo(o.x + OBS_W, o.topH);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(o.x, o.botY);
+    ctx.lineTo(o.x + OBS_W, o.botY);
+    ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.restore();
+  }
+
+  function drawRocket(cx, cy, vy) {
+    ctx.save();
+    ctx.translate(cx, cy);
+    const tilt = Math.max(-0.45, Math.min(0.45, (vy || 0) * 0.035));
+    ctx.rotate(tilt);
+
+    ctx.shadowColor = '#33ff33'; ctx.shadowBlur = 14;
+
+    // Fuselage
+    ctx.fillStyle = '#22cc22';
+    ctx.beginPath();
+    ctx.moveTo(15, 0);     // nose
+    ctx.lineTo(-5, -7);    // top edge
+    ctx.lineTo(-10, -5);
+    ctx.lineTo(-10, 5);
+    ctx.lineTo(-5, 7);     // bottom edge
+    ctx.closePath();
+    ctx.fill();
+
+    // Cockpit glow
+    ctx.shadowBlur  = 22;
+    ctx.fillStyle   = '#66ff66';
+    ctx.beginPath(); ctx.arc(3, 0, 4, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle   = '#020602';
+    ctx.beginPath(); ctx.arc(3, 0, 2.5, 0, Math.PI * 2); ctx.fill();
+
+    // Fins
+    ctx.shadowBlur = 4;
+    ctx.fillStyle  = '#175017';
+    // top fin
+    ctx.beginPath();
+    ctx.moveTo(-5, -5);
+    ctx.lineTo(-14, -16);
+    ctx.lineTo(-9,  -5);
+    ctx.closePath(); ctx.fill();
+    // bottom fin
+    ctx.beginPath();
+    ctx.moveTo(-5, 5);
+    ctx.lineTo(-14, 16);
+    ctx.lineTo(-9,  5);
+    ctx.closePath(); ctx.fill();
+
+    ctx.restore();
+  }
+
+  function drawHUD() {
+    const lbl = scoreLabel(score);
+    ctx.save();
+    ctx.shadowColor = '#ffb300'; ctx.shadowBlur = 8;
+    ctx.fillStyle   = '#ffb300';
+    ctx.font        = 'bold 13px "Share Tech Mono",monospace';
+    ctx.textAlign   = 'left';
+    ctx.fillText('Score: ' + score + '  \u2014  ' + lbl, 10, 22);
+    ctx.restore();
+  }
+
+  function drawReady() {
+    ctx.save();
+    ctx.fillStyle = 'rgba(0,0,0,0.52)';
+    ctx.fillRect(0, 0, CW, CH);
+
+    ctx.textAlign = 'center';
+    ctx.shadowColor = '#33ff33'; ctx.shadowBlur = 16;
+    ctx.fillStyle   = '#33ff33';
+    ctx.font = '28px "VT323",monospace';
+    ctx.fillText('ROCKET RIDER', CW / 2, CH / 2 - 32);
+
+    const blink = Math.floor(Date.now() / 550) % 2 === 0;
+    if (blink) {
+      ctx.shadowColor = '#ffb300'; ctx.shadowBlur = 10;
+      ctx.fillStyle   = '#ffb300';
+      ctx.font = '15px "Share Tech Mono",monospace';
+      ctx.fillText('PRESS SPACE or TAP TO START', CW / 2, CH / 2 + 8);
+    }
+
+    ctx.shadowColor = '#33ff33'; ctx.shadowBlur = 4;
+    ctx.fillStyle   = '#22cc22';
+    ctx.font = '12px "Share Tech Mono",monospace';
+    ctx.fillText('HI-SCORE: ' + (hiScore > 0 ? scoreLabel(hiScore) + ' (' + hiScore + ')' : '---'),
+                 CW / 2, CH / 2 + 36);
+    ctx.restore();
+  }
+
+  function drawGameOver() {
+    ctx.save();
+    ctx.fillStyle = 'rgba(0,0,0,0.65)';
+    ctx.fillRect(0, 0, CW, CH);
+
+    ctx.textAlign = 'center';
+    ctx.shadowColor = '#ff3300'; ctx.shadowBlur = 16;
+    ctx.fillStyle   = '#ff3300';
+    ctx.font = '32px "VT323",monospace';
+    ctx.fillText('GAME OVER', CW / 2, CH / 2 - 40);
+
+    ctx.shadowColor = '#33ff33'; ctx.shadowBlur = 8;
+    ctx.fillStyle   = '#33ff33';
+    ctx.font = '15px "Share Tech Mono",monospace';
+    ctx.fillText('Score: ' + score + '  \u2014  ' + scoreLabel(score), CW / 2, CH / 2 - 8);
+
+    if (score >= hiScore && score > 0) {
+      ctx.shadowColor = '#ffb300'; ctx.shadowBlur = 12;
+      ctx.fillStyle   = '#ffb300';
+      ctx.fillText('\u2605 NEW HIGH SCORE! \u2605', CW / 2, CH / 2 + 20);
+    }
+
+    const blink = Math.floor(Date.now() / 550) % 2 === 0;
+    if (blink) {
+      ctx.shadowColor = '#22cc22'; ctx.shadowBlur = 4;
+      ctx.fillStyle   = '#22cc22';
+      ctx.font = '12px "Share Tech Mono",monospace';
+      ctx.fillText('CLICK / SPACE TO PLAY AGAIN', CW / 2, CH / 2 + 50);
+    }
+    ctx.restore();
+  }
+
+  /* Global reset button handler */
+  window.arcadeReset = function () {
+    hiScore = 0;
+    localStorage.removeItem('rocketRiderHi');
+    updateHiDisplay();
+  };
+
+  document.addEventListener('DOMContentLoaded', init);
+}());
+
+/* ============================================================
    INIT
    ============================================================ */
 document.addEventListener('DOMContentLoaded', () => {

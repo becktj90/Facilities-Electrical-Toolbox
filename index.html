@@ -55,15 +55,26 @@
       <button class="nav-btn" data-target="sec-sc">Short Circuit</button>
     </div>
     <div class="sidebar-section">
+      <div class="sidebar-section-title">Power Systems</div>
+      <button class="nav-btn" data-target="sec-ups">UPS Sizing</button>
+      <button class="nav-btn" data-target="sec-gen">Generator Sizing</button>
+      <button class="nav-btn" data-target="sec-hybrid">Hybrid Generator</button>
+    </div>
+    <div class="sidebar-section">
       <div class="sidebar-section-title">Reference Tables</div>
       <button class="nav-btn" data-target="sec-wire-ref">Conductor Reference</button>
       <button class="nav-btn" data-target="sec-motor-ref">Motor FLA Tables</button>
       <button class="nav-btn" data-target="sec-conduit-ref">Conduit Fill Tables</button>
     </div>
     <div class="sidebar-section">
+      <div class="sidebar-section-title">NEC Calculations</div>
+      <button class="nav-btn" data-target="sec-nec">NEC Circuit Calc</button>
+    </div>
+    <div class="sidebar-section">
       <div class="sidebar-section-title">Tools</div>
       <button class="nav-btn" data-target="sec-convert">Unit Conversions</button>
       <button class="nav-btn" data-target="sec-cm">Circular Mils</button>
+      <button class="nav-btn" data-target="sec-arcade">🚀 Rocket Arcade</button>
     </div>
   </nav>
 
@@ -1489,6 +1500,432 @@
               10 AWG = 10,380 CM<br>
               4/0 AWG = 211,600 CM<br>
               500 kcmil = 500,000 CM
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ════════════════════════════════════════
+         UPS SIZING
+         ════════════════════════════════════════ -->
+    <section id="sec-ups" class="section">
+      <div class="section-header">
+        <h2>🔋 UPS Sizing Calculator</h2>
+        <p>Size an uninterruptible power supply: load kVA, battery Ah, and recommended UPS tier.</p>
+      </div>
+      <div class="card-grid">
+
+        <div class="card">
+          <div class="card-title">UPS Parameters</div>
+          <div class="card-body">
+            <div class="formula-box">
+              Load kVA = Load kW / PF<br>
+              Design kVA = Load kVA &times; 1.25 (25% headroom)<br>
+              Battery Ah = (Load W / &eta;) &times; (Runtime min / 60) / V<sub>DC</sub>
+            </div>
+            <div class="input-group">
+              <div><label>Total Load (kW)</label><input type="number" id="ups_kw" placeholder="e.g. 10" step="any" min="0"></div>
+              <div><label>Power Factor (%)</label><input type="number" id="ups_pf" placeholder="e.g. 90" value="90" step="any" min="1" max="100"></div>
+            </div>
+            <div class="input-group">
+              <div><label>Desired Runtime (min)</label><input type="number" id="ups_runtime" placeholder="e.g. 15" value="15" step="any" min="0"></div>
+              <div><label>UPS Efficiency (%)</label><input type="number" id="ups_eff" placeholder="e.g. 95" value="95" step="any" min="1" max="100"></div>
+            </div>
+            <div class="input-group single">
+              <div><label>DC Bus Voltage (VDC)</label><input type="number" id="ups_dcv" placeholder="e.g. 480" value="480" step="any" min="1"></div>
+            </div>
+            <button class="btn btn-accent" onclick="calcUPS()">&#9654; Calculate UPS</button>
+            <div id="ups_result" class="result"></div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">UPS Sizing Reference</div>
+          <div class="card-body">
+            <div class="formula-box">
+              <strong>Standard UPS kVA Tiers:</strong><br>
+              500VA, 1kVA, 2kVA, 3kVA, 5kVA, 7.5kVA<br>
+              10kVA, 15kVA, 20kVA, 25kVA, 30kVA, 40kVA<br>
+              50kVA, 60kVA, 75kVA, 100kVA, 125kVA, 150kVA<br>
+              200kVA, 250kVA, 300kVA, 400kVA, 500kVA+<br><br>
+              <strong>Design Rules:</strong><br>
+              &bull; Add 25% capacity headroom for growth<br>
+              &bull; Battery: (Load &times; Runtime) / (V<sub>DC</sub> &times; &eta;)<br>
+              &bull; Common DC bus: 48V, 120V, 240V, 480V<br>
+              &bull; Double-conversion: 92&#8211;97% efficiency<br>
+              &bull; Li-ion: ~2&times; energy density vs VRLA<br><br>
+              <strong>NFPA 111:</strong><br>
+              Level 1 = 10-sec min | Level 2 = 0-sec min
+            </div>
+            <div class="note">&#9432; Add 25% capacity headroom for growth. Verify input kVA rating for non-linear loads (derating may be needed for harmonic content).</div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ════════════════════════════════════════
+         GENERATOR SIZING
+         ════════════════════════════════════════ -->
+    <section id="sec-gen" class="section">
+      <div class="section-header">
+        <h2>&#128268; Generator Sizing</h2>
+        <p>Size emergency/standby generators per IEEE 446 / NFPA 110 load inventory method.</p>
+      </div>
+      <div class="card-grid">
+
+        <div class="card">
+          <div class="card-title">Load Inventory</div>
+          <div class="card-body">
+            <div class="formula-box">
+              Total kW = &Sigma;(Load kW &times; Qty &times; Demand Factor)<br>
+              Total kVA = Total kW / PF<br>
+              Design kVA = Total kVA &times; (1 + Safety Margin)
+            </div>
+
+            <div style="margin-bottom:6px;font-family:var(--font-mono);font-size:0.78rem;color:var(--green-mid)">&#9658; Motor Loads</div>
+            <div class="input-group triple">
+              <div><label>Motor kW (per unit)</label><input type="number" id="gen_motor_kw" placeholder="kW" step="any" min="0"></div>
+              <div><label>Quantity</label><input type="number" id="gen_motor_qty" placeholder="units" value="1" step="1" min="1"></div>
+              <div><label>Demand Factor (%)</label><input type="number" id="gen_motor_df" placeholder="e.g. 80" value="80" step="any" min="0" max="100"></div>
+            </div>
+
+            <div style="margin-bottom:6px;font-family:var(--font-mono);font-size:0.78rem;color:var(--green-mid)">&#9658; Lighting / Receptacle Loads</div>
+            <div class="input-group">
+              <div><label>Lighting kW</label><input type="number" id="gen_light_kw" placeholder="kW" step="any" min="0"></div>
+              <div><label>Demand Factor (%)</label><input type="number" id="gen_light_df" placeholder="e.g. 100" value="100" step="any" min="0" max="100"></div>
+            </div>
+
+            <div style="margin-bottom:6px;font-family:var(--font-mono);font-size:0.78rem;color:var(--green-mid)">&#9658; HVAC Loads</div>
+            <div class="input-group">
+              <div><label>HVAC kW</label><input type="number" id="gen_hvac_kw" placeholder="kW" step="any" min="0"></div>
+              <div><label>Demand Factor (%)</label><input type="number" id="gen_hvac_df" placeholder="e.g. 70" value="70" step="any" min="0" max="100"></div>
+            </div>
+
+            <div style="margin-bottom:6px;font-family:var(--font-mono);font-size:0.78rem;color:var(--green-mid)">&#9658; Other Critical Loads</div>
+            <div class="input-group triple">
+              <div><label>Other kW</label><input type="number" id="gen_other_kw" placeholder="kW" step="any" min="0"></div>
+              <div><label>Power Factor (%)</label><input type="number" id="gen_pf" placeholder="e.g. 85" value="85" step="any" min="1" max="100"></div>
+              <div><label>Safety Margin (%)</label><input type="number" id="gen_margin" placeholder="e.g. 25" value="25" step="any" min="0"></div>
+            </div>
+
+            <button class="btn btn-accent" onclick="calcGenerator()">&#9654; Size Generator</button>
+            <div id="gen_result" class="result"></div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">Generator Sizing Reference</div>
+          <div class="card-body">
+            <div class="formula-box">
+              <strong>Standard Sizes (kW):</strong><br>
+              20, 25, 30, 40, 50, 60, 75, 100, 125<br>
+              150, 175, 200, 250, 300, 350, 400<br>
+              500, 600, 750, 1000, 1250, 1500+<br><br>
+              <strong>Typical Demand Factors:</strong><br>
+              Motors: 50&#8211;80% (not all run simultaneously)<br>
+              HVAC: 60&#8211;80% (climate/season dependent)<br>
+              Lighting: 100% (on in emergency)<br>
+              Critical loads: 100% (full capacity)<br><br>
+              <strong>IEEE 446 Rules:</strong><br>
+              Min 25% safety margin<br>
+              Motor starting kVA = 6&#8211;8&times; FLA<br>
+              Diesel: 0.07&#8211;0.09 gal/hr/kW full load<br><br>
+              <strong>NFPA 110 Level 1:</strong><br>
+              Transfer in 10 sec | Run 96+ hrs on fuel
+            </div>
+            <div class="note">&#9432; Motor starting (locked-rotor) current can be 6&#8211;8&times; FLA. Verify the generator can handle the largest motor start without excessive voltage dip (&lt;15%).</div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ════════════════════════════════════════
+         HYBRID GENERATOR
+         ════════════════════════════════════════ -->
+    <section id="sec-hybrid" class="section">
+      <div class="section-header">
+        <h2>&#9889; Hybrid Generator Calculator</h2>
+        <p>Compare conventional vs battery-hybrid genset: fuel savings, CO&#8322; reduction, and payback period.</p>
+      </div>
+      <div class="card-grid">
+
+        <div class="card">
+          <div class="card-title">Operational Parameters</div>
+          <div class="card-body">
+            <div class="formula-box">
+              Fuel<sub>conv</sub> = Rate &times; Load% &times; Hrs/Day &times; Days/Yr<br>
+              Fuel<sub>hybrid</sub> = Fuel<sub>conv</sub> &times; (1 &minus; HybridGain)<br>
+              Payback = Battery Cost / Annual Fuel Savings ($)
+            </div>
+            <div class="input-group">
+              <div><label>Generator Rated kW</label><input type="number" id="hyb_gen_kw" placeholder="kW" step="any" min="0"></div>
+              <div><label>Average Load (% of rated)</label><input type="number" id="hyb_avg_load" placeholder="e.g. 50" value="50" step="any" min="1" max="100"></div>
+            </div>
+            <div class="input-group">
+              <div><label>Hours/Day Operation</label><input type="number" id="hyb_hours_day" placeholder="hrs" value="8" step="any" min="0" max="24"></div>
+              <div><label>Days/Year</label><input type="number" id="hyb_days_year" placeholder="days" value="250" step="any" min="0" max="365"></div>
+            </div>
+            <div class="input-group">
+              <div><label>Diesel Cost ($/gallon)</label><input type="number" id="hyb_fuel_cost" placeholder="e.g. 4.50" value="4.50" step="any" min="0"></div>
+              <div><label>Fuel Rate (gal/hr @ full load)</label><input type="number" id="hyb_fuel_rate" placeholder="e.g. 7.5" step="any" min="0"></div>
+            </div>
+            <div class="input-group">
+              <div><label>Battery Storage (kWh)</label><input type="number" id="hyb_batt_kwh" placeholder="kWh" step="any" min="0"></div>
+              <div><label>Hybrid Efficiency Gain (%)</label><input type="number" id="hyb_gain" placeholder="e.g. 30" value="30" step="any" min="0" max="100"></div>
+            </div>
+            <div class="input-group single">
+              <div><label>Battery System Cost ($ &#8212; optional, for payback)</label><input type="number" id="hyb_batt_cost" placeholder="e.g. 50000" step="any" min="0"></div>
+            </div>
+            <button class="btn btn-accent" onclick="calcHybridGen()">&#9654; Calculate Savings</button>
+            <div id="hyb_result" class="result"></div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">Hybrid Genset Reference</div>
+          <div class="card-body">
+            <div class="formula-box">
+              <strong>Typical Fuel Consumption (diesel):</strong><br>
+              50 kW: ~3.5 gal/hr full load<br>
+              100 kW: ~7.0 gal/hr full load<br>
+              200 kW: ~14 gal/hr full load<br>
+              500 kW: ~35 gal/hr full load<br><br>
+              <strong>CO&#8322; Emissions (EPA):</strong><br>
+              Diesel: ~22.4 lbs CO&#8322;/gallon<br>
+              = 10.15 kg CO&#8322;/gallon<br><br>
+              <strong>Hybrid Efficiency Gains:</strong><br>
+              Load leveling: 15&#8211;25% fuel savings<br>
+              Peak shaving: 20&#8211;35% fuel savings<br>
+              Stop/start cycles: 25&#8211;40% savings<br><br>
+              <strong>Battery Sizing Rule:</strong><br>
+              Storage &ge; 15&#8211;30 min of average load
+            </div>
+            <div class="note">&#9432; Hybrid gains are greatest at low average loads. Diesel generators run inefficiently below 30% rated load &#8212; batteries absorb/supply transient demand.</div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ════════════════════════════════════════
+         NEC CIRCUIT CALCULATOR
+         ════════════════════════════════════════ -->
+    <section id="sec-nec" class="section">
+      <div class="section-header">
+        <h2>&#9889; NEC Circuit Calculator</h2>
+        <p>Full NEC-compliant circuit sizing: conductor, OCPD, voltage drop, conduit fill, and EGC. NEC 310, 430, 440, 424, 240.4, 250.122.</p>
+      </div>
+      <div class="card-grid">
+
+        <div class="card" style="grid-column:1/-1">
+          <div class="card-title">Circuit Parameters</div>
+          <div class="card-body">
+            <div class="formula-box">
+              Design I = FLA &times; NEC Multiplier &nbsp;|&nbsp; Conductor: NEC 310.15(B)(16) 75&deg;C col per NEC 110.14(C)<br>
+              VD% = (K &times; I &times; L &times; Phase<sub>factor</sub>) / (CM &times; V) &times; 100 &nbsp;&mdash;&nbsp; K = 12.9 Cu | 21.2 Al<br>
+              Conduit: 40% fill, NEC Ch.9 Table 1 &nbsp;|&nbsp; OCPD: NEC 240.4 &amp; 430.52 &nbsp;|&nbsp; EGC: NEC 250.122
+            </div>
+
+            <div class="input-group triple">
+              <div>
+                <label>Load Type</label>
+                <select id="nec_load_type">
+                  <option value="general" selected>General Load (&times;1.0)</option>
+                  <option value="motor">Single Motor (&times;1.25, NEC 430.22)</option>
+                  <option value="motor-multi">Multi-Motor (&times;1.25, NEC 430.24)</option>
+                  <option value="lighting-general">Lighting &#8211; General (&times;1.25, NEC 210.20)</option>
+                  <option value="lighting-hospital">Lighting &#8211; Hospital/Assembly (&times;1.25)</option>
+                  <option value="hvac">HVAC Compressor (&times;1.25, NEC 440.32)</option>
+                  <option value="heat">Electric Heat (&times;1.0, NEC 424.3(B))</option>
+                  <option value="welder">Welder (&times;1.0 nameplate, NEC 630.11)</option>
+                </select>
+              </div>
+              <div>
+                <label>System Voltage (V)</label>
+                <select id="nec_voltage">
+                  <option value="120">120 V</option>
+                  <option value="208">208 V</option>
+                  <option value="240">240 V</option>
+                  <option value="277">277 V</option>
+                  <option value="480" selected>480 V</option>
+                  <option value="600">600 V</option>
+                </select>
+              </div>
+              <div>
+                <label>Phases</label>
+                <select id="nec_phases">
+                  <option value="1">1-Phase</option>
+                  <option value="3" selected>3-Phase</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="input-group triple">
+              <div>
+                <label>Load Current FLA (A)</label>
+                <input type="number" id="nec_fla" placeholder="Amps FLA" step="any" min="0">
+              </div>
+              <div>
+                <label>&#8212; or &#8212; Load kW / kVA</label>
+                <input type="number" id="nec_kw" placeholder="kW or kVA" step="any" min="0" oninput="necKwChange()">
+              </div>
+              <div>
+                <label>Power Factor (%)</label>
+                <input type="number" id="nec_pf" placeholder="e.g. 85" value="85" step="any" min="1" max="100">
+              </div>
+            </div>
+
+            <div class="input-group triple">
+              <div>
+                <label>Distance One-Way (ft)</label>
+                <input type="number" id="nec_dist" placeholder="feet" value="100" step="any" min="0">
+              </div>
+              <div>
+                <label>Ambient Temperature (&deg;C)</label>
+                <input type="number" id="nec_temp" placeholder="&deg;C" value="30" step="any">
+              </div>
+              <div>
+                <label>Conductor Material</label>
+                <select id="nec_material" onchange="necMaterialChange()">
+                  <option value="cu">Copper</option>
+                  <option value="al">Aluminum</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="input-group triple">
+              <div>
+                <label>Insulation / Rating</label>
+                <select id="nec_insulation">
+                  <option value="90">THHN / THWN-2 (90&deg;C)</option>
+                  <option value="90">XHHW-2 (90&deg;C)</option>
+                  <option value="90">THW-2 / USE-2 (90&deg;C)</option>
+                </select>
+              </div>
+              <div>
+                <label>Conduit Type</label>
+                <select id="nec_conduit_type">
+                  <option value="emt">EMT</option>
+                  <option value="imc">IMC</option>
+                  <option value="rmc">RMC</option>
+                  <option value="pvc40">PVC Sch. 40</option>
+                  <option value="pvc80">PVC Sch. 80</option>
+                </select>
+              </div>
+              <div>
+                <label>Current-Carrying Conductors (CCC)</label>
+                <select id="nec_ccc">
+                  <option value="1.00">3 CCC (&times;1.00)</option>
+                  <option value="0.80">4&#8211;6 CCC (&times;0.80)</option>
+                  <option value="0.70">7&#8211;9 CCC (&times;0.70)</option>
+                  <option value="0.50">10&#8211;20 CCC (&times;0.50)</option>
+                  <option value="0.45">21&#8211;30 CCC (&times;0.45)</option>
+                  <option value="0.40">31&#8211;40 CCC (&times;0.40)</option>
+                  <option value="0.35">41+ CCC (&times;0.35)</option>
+                </select>
+              </div>
+            </div>
+
+            <div id="nec_al_note" class="note" style="display:none">&#9888; Aluminum conductors: minimum 12 AWG per NEC 310.14(A). Not suitable for most branch circuits at 120/240V. Verify termination compatibility (anti-oxidant compound required).</div>
+            <button class="btn btn-accent" onclick="calcNEC()" style="margin-top:6px">&#9654; Calculate Circuit</button>
+            <div id="nec_result" class="result"></div>
+          </div>
+        </div>
+
+        <div class="card" style="grid-column:1/-1">
+          <div class="card-title">NEC 310.15(B)(16) &#8212; Ampacity Reference (75&deg;C Column, Copper &amp; Aluminum)</div>
+          <div class="card-body">
+            <div class="note">&#9432; 75&deg;C column used per NEC 110.14(C). Conductors in conduit in free air, not more than 3 CCC, 30&deg;C ambient. Apply temperature correction (NEC 310.15(B)(2)(a)) and conduit fill derating (NEC 310.15(B)(3)(a)) as needed.</div>
+            <div class="ref-table-wrap" style="margin-top:10px">
+              <table class="ref-table">
+                <thead>
+                  <tr>
+                    <th>Size</th>
+                    <th>Cu 75&deg;C (A)</th>
+                    <th>Al 75&deg;C (A)</th>
+                    <th>THHN Area (in&sup2;)</th>
+                    <th>Circular Mils</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr><td>14 AWG</td><td>15</td><td>&#8212;</td><td>0.0097</td><td>4,110</td></tr>
+                  <tr><td>12 AWG</td><td>20</td><td>15</td><td>0.0133</td><td>6,530</td></tr>
+                  <tr><td>10 AWG</td><td>30</td><td>25</td><td>0.0211</td><td>10,380</td></tr>
+                  <tr><td>8 AWG</td><td>50</td><td>40</td><td>0.0366</td><td>16,510</td></tr>
+                  <tr><td>6 AWG</td><td>65</td><td>50</td><td>0.0507</td><td>26,240</td></tr>
+                  <tr><td>4 AWG</td><td>85</td><td>65</td><td>0.0824</td><td>41,740</td></tr>
+                  <tr><td>3 AWG</td><td>100</td><td>75</td><td>0.0973</td><td>52,620</td></tr>
+                  <tr><td>2 AWG</td><td>115</td><td>90</td><td>0.1158</td><td>66,360</td></tr>
+                  <tr><td>1 AWG</td><td>130</td><td>100</td><td>0.1562</td><td>83,690</td></tr>
+                  <tr><td>1/0 AWG</td><td>150</td><td>120</td><td>0.1855</td><td>105,600</td></tr>
+                  <tr><td>2/0 AWG</td><td>175</td><td>135</td><td>0.2223</td><td>133,100</td></tr>
+                  <tr><td>3/0 AWG</td><td>200</td><td>155</td><td>0.2660</td><td>167,800</td></tr>
+                  <tr><td>4/0 AWG</td><td>230</td><td>180</td><td>0.3237</td><td>211,600</td></tr>
+                  <tr><td>250 kcmil</td><td>255</td><td>205</td><td>0.3970</td><td>250,000</td></tr>
+                  <tr><td>300 kcmil</td><td>285</td><td>230</td><td>0.4608</td><td>300,000</td></tr>
+                  <tr><td>350 kcmil</td><td>310</td><td>250</td><td>0.5281</td><td>350,000</td></tr>
+                  <tr><td>400 kcmil</td><td>335</td><td>270</td><td>0.5958</td><td>400,000</td></tr>
+                  <tr><td>500 kcmil</td><td>380</td><td>310</td><td>0.7073</td><td>500,000</td></tr>
+                  <tr><td>600 kcmil</td><td>420</td><td>340</td><td>0.8676</td><td>600,000</td></tr>
+                  <tr><td>700 kcmil</td><td>460</td><td>375</td><td>0.9887</td><td>700,000</td></tr>
+                  <tr><td>750 kcmil</td><td>475</td><td>385</td><td>1.0496</td><td>750,000</td></tr>
+                  <tr><td>800 kcmil</td><td>490</td><td>395</td><td>1.1085</td><td>800,000</td></tr>
+                  <tr><td>1000 kcmil</td><td>545</td><td>445</td><td>1.3478</td><td>1,000,000</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ════════════════════════════════════════
+         ROCKET ARCADE
+         ════════════════════════════════════════ -->
+    <section id="sec-arcade" class="section">
+      <div class="section-header">
+        <h2>&#128640; Rocket Rider &#8212; Arcade</h2>
+        <p>Navigate the rocket through high-voltage barriers. SPACE / TAP to thrust.</p>
+      </div>
+      <div class="card-grid">
+
+        <div class="card" style="grid-column:1/-1">
+          <div class="card-title">&#128640; Rocket Rider</div>
+          <div class="card-body" style="text-align:center">
+            <canvas id="arcadeCanvas" width="600" height="350" style="display:block;margin:0 auto;border:2px solid var(--green);box-shadow:var(--glow-md);cursor:pointer;max-width:100%"></canvas>
+            <div style="margin-top:8px;font-family:var(--font-mono);font-size:0.78rem;color:var(--green-mid)">
+              SPACE / CLICK / TAP to thrust &nbsp;|&nbsp; Navigate through the voltage barriers
+            </div>
+            <div class="note" style="text-align:left">
+              &#9432; Score advances through NEC conductor sizes. How far can you go before hitting a barrier?
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">High Score</div>
+          <div class="card-body">
+            <div id="arcade-hi-score" style="font-family:var(--font-mono);font-size:1.5rem;color:var(--amber);text-shadow:var(--glow-amber)">---</div>
+            <button class="btn btn-sm" onclick="arcadeReset()" style="margin-top:8px">RESET HIGH SCORE</button>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">How to Play</div>
+          <div class="card-body">
+            <div class="formula-box">
+              SPACE / CLICK / TAP = Thrust up<br>
+              Avoid the voltage barriers<br>
+              Each gap passed = +1 score<br>
+              Score shown in wire gauge<br>
+              Speed increases over time<br><br>
+              14 AWG &#8594; 12 AWG &#8594; 10 AWG...<br>
+              ...1000 kcmil = LEGEND STATUS
             </div>
           </div>
         </div>

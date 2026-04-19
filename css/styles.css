@@ -37,8 +37,8 @@
   --green:          #33ff33;
   --green-bright:   #66ff66;
   --green-mid:      #22cc22;
-  --green-dim:      #1a991a;
-  --green-dark:     #0d4d0d;
+  --green-dim:      #22cc22;
+  --green-dark:     #175017;
   --green-darker:   #081a08;
 
   /* Amber accent */
@@ -241,7 +241,7 @@ header .subtitle {
   font-weight: 400;
   text-transform: uppercase;
   letter-spacing: 0.14em;
-  color: var(--green-dark);
+  color: var(--green-mid);
   padding: 6px 12px 3px;
   border-bottom: 1px solid var(--green-dark);
   margin-bottom: 2px;
@@ -261,7 +261,7 @@ header .subtitle {
   font-family: var(--font-main);
   font-size: 1rem;
   letter-spacing: 0.04em;
-  color: var(--green-dim);
+  color: var(--green-mid);
   transition: background 0.08s, color 0.08s, border-color 0.08s,
               text-shadow 0.08s;
   line-height: 1.2;
@@ -325,7 +325,7 @@ header .subtitle {
 }
 .section-header p {
   font-family: var(--font-mono);
-  color: var(--green-dim);
+  color: var(--green-mid);
   font-size: 0.82rem;
   margin-top: 4px;
   letter-spacing: 0.02em;
@@ -416,7 +416,7 @@ label {
   font-family: var(--font-mono);
   font-size: 0.75rem;
   font-weight: 400;
-  color: var(--green-dim);
+  color: var(--green-mid);
   display: block;
   margin-bottom: 3px;
   letter-spacing: 0.04em;
@@ -514,7 +514,7 @@ select option {
 }
 .result .res-row:last-child { border-bottom: none; }
 .result .res-label {
-  color: var(--green-dim);
+  color: var(--green-mid);
   font-size: 0.78rem;
   letter-spacing: 0.03em;
 }
@@ -610,7 +610,7 @@ select option {
   font-size: 0.95rem;
   letter-spacing: 0.05em;
   text-transform: uppercase;
-  color: var(--green-dim);
+  color: var(--green-mid);
   transition: background 0.1s, color 0.1s;
   margin-right: -1px;
 }
@@ -631,7 +631,7 @@ select option {
 .note {
   font-family: var(--font-mono);
   font-size: 0.75rem;
-  color: var(--green-dim);
+  color: var(--green-mid);
   background: #000;
   border: 1px dashed var(--green-dark);
   border-radius: 0;
