@@ -1,6 +1,6 @@
 /**
  * Facilities Electrical Toolbox — Calculator Logic
- * Based on Ugly's Electrical References formulas and NEC tables
+ * Tools for Facilities Electrical Engineering
  */
 
 'use strict';
@@ -1363,6 +1363,321 @@ window.calcNEC = function () {
 
   document.addEventListener('DOMContentLoaded', init);
 }());
+
+/* ============================================================
+   LSI BREAKER SETTINGS VISUALIZER
+   ============================================================ */
+window.drawLsiTcc = function () {
+  const ltPickup   = val('lsi_lt_pickup');
+  const ltDelay    = val('lsi_lt_delay');
+  const stPickup   = val('lsi_st_pickup');
+  const stDelay    = val('lsi_st_delay');
+  const instPickup = val('lsi_inst_pickup');
+
+  if (!isPos(ltPickup, ltDelay, stPickup, stDelay, instPickup))
+    return showError('lsi_result', 'Enter all five positive values.');
+  if (stPickup <= ltPickup)
+    return showError('lsi_result', 'Short-time pickup must be greater than long-time pickup.');
+  if (instPickup <= stPickup)
+    return showError('lsi_result', 'Instantaneous pickup must be greater than short-time pickup.');
+
+  const canvas = document.getElementById('lsiCanvas');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  const W = canvas.width, H = canvas.height;
+  const PAD = { top: 30, right: 30, bottom: 50, left: 65 };
+  const plotW = W - PAD.left - PAD.right;
+  const plotH = H - PAD.top  - PAD.bottom;
+
+  /* log scale helpers */
+  const Imin = Math.pow(10, Math.floor(Math.log10(ltPickup * 0.5)));
+  const Imax = Math.pow(10, Math.ceil(Math.log10(instPickup * 3)));
+  const Tmin = 0.01, Tmax = 100;
+
+  function xOf(I) {
+    return PAD.left + (Math.log10(I) - Math.log10(Imin)) /
+           (Math.log10(Imax) - Math.log10(Imin)) * plotW;
+  }
+  function yOf(T) {
+    return PAD.top + (1 - (Math.log10(T) - Math.log10(Tmin)) /
+           (Math.log10(Tmax) - Math.log10(Tmin))) * plotH;
+  }
+
+  /* clear */
+  ctx.clearRect(0, 0, W, H);
+  ctx.fillStyle = '#0d1a0d';
+  ctx.fillRect(0, 0, W, H);
+
+  /* grid */
+  ctx.strokeStyle = '#1a3a1a';
+  ctx.lineWidth = 1;
+  const iDecades = [];
+  for (let d = Math.log10(Imin); d <= Math.log10(Imax); d++) {
+    for (let m = 1; m < 10; m++) {
+      const I = Math.pow(10, d) * m;
+      if (I < Imin || I > Imax) continue;
+      ctx.beginPath();
+      ctx.moveTo(xOf(I), PAD.top);
+      ctx.lineTo(xOf(I), PAD.top + plotH);
+      ctx.stroke();
+    }
+  }
+  for (let d = Math.log10(Tmin); d <= Math.log10(Tmax); d++) {
+    for (let m = 1; m < 10; m++) {
+      const T = Math.pow(10, d) * m;
+      if (T < Tmin || T > Tmax) continue;
+      ctx.beginPath();
+      ctx.moveTo(PAD.left, yOf(T));
+      ctx.lineTo(PAD.left + plotW, yOf(T));
+      ctx.stroke();
+    }
+  }
+
+  /* axes */
+  ctx.strokeStyle = '#33cc33';
+  ctx.lineWidth = 1.5;
+  ctx.strokeRect(PAD.left, PAD.top, plotW, plotH);
+
+  /* axis labels */
+  ctx.fillStyle = '#33cc33';
+  ctx.font = '11px "Share Tech Mono",monospace';
+  ctx.textAlign = 'center';
+
+  /* X axis ticks and labels */
+  for (let d = Math.log10(Imin); d <= Math.log10(Imax); d++) {
+    const I = Math.pow(10, d);
+    if (I < Imin || I > Imax) continue;
+    const x = xOf(I);
+    ctx.beginPath();
+    ctx.moveTo(x, PAD.top + plotH);
+    ctx.lineTo(x, PAD.top + plotH + 5);
+    ctx.stroke();
+    ctx.fillText(I >= 1000 ? (I / 1000) + 'k' : String(I), x, PAD.top + plotH + 18);
+  }
+  ctx.fillText('Current (A)', PAD.left + plotW / 2, H - 5);
+
+  /* Y axis ticks and labels */
+  ctx.textAlign = 'right';
+  for (let d = Math.log10(Tmin); d <= Math.log10(Tmax); d++) {
+    const T = Math.pow(10, d);
+    if (T < Tmin || T > Tmax) continue;
+    const y = yOf(T);
+    ctx.beginPath();
+    ctx.moveTo(PAD.left, y);
+    ctx.lineTo(PAD.left - 5, y);
+    ctx.stroke();
+    ctx.fillText(T < 1 ? T.toFixed(2) : String(T), PAD.left - 7, y + 4);
+  }
+
+  ctx.save();
+  ctx.translate(14, PAD.top + plotH / 2);
+  ctx.rotate(-Math.PI / 2);
+  ctx.textAlign = 'center';
+  ctx.fillText('Time (s)', 0, 0);
+  ctx.restore();
+
+  /* ── TCC curve segments ── */
+  const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
+
+  /* 1. Long-time region: from ltPickup to stPickup, time drops from ltDelay
+        using a simplified I²t inverse characteristic */
+  ctx.beginPath();
+  ctx.strokeStyle = '#00ff88';
+  ctx.lineWidth = 2.5;
+  const ltSteps = 80;
+  for (let k = 0; k <= ltSteps; k++) {
+    const frac = k / ltSteps;
+    const I = ltPickup * Math.pow(stPickup / ltPickup, frac);
+    /* I²t: t = ltDelay × (ltPickup/I)² */
+    const T = clamp(ltDelay * Math.pow(ltPickup / I, 2), Tmin, Tmax);
+    if (I < Imin || I > Imax) continue;
+    if (k === 0) ctx.moveTo(xOf(I), yOf(T));
+    else ctx.lineTo(xOf(I), yOf(T));
+  }
+  ctx.stroke();
+
+  /* 2. Short-time region: flat band at stDelay from stPickup to instPickup */
+  ctx.beginPath();
+  ctx.strokeStyle = '#ffcc00';
+  ctx.lineWidth = 2.5;
+  const stT = clamp(stDelay, Tmin, Tmax);
+  ctx.moveTo(xOf(clamp(stPickup, Imin, Imax)), yOf(stT));
+  ctx.lineTo(xOf(clamp(instPickup, Imin, Imax)), yOf(stT));
+  ctx.stroke();
+
+  /* Vertical line connecting LT end to ST band */
+  ctx.beginPath();
+  ctx.strokeStyle = '#00ff88';
+  ctx.lineWidth = 1.5;
+  ctx.setLineDash([4, 3]);
+  const ltEndT = clamp(ltDelay * Math.pow(ltPickup / stPickup, 2), Tmin, Tmax);
+  ctx.moveTo(xOf(clamp(stPickup, Imin, Imax)), yOf(ltEndT));
+  ctx.lineTo(xOf(clamp(stPickup, Imin, Imax)), yOf(stT));
+  ctx.stroke();
+  ctx.setLineDash([]);
+
+  /* 3. Instantaneous: vertical drop at instPickup from stDelay down */
+  ctx.beginPath();
+  ctx.strokeStyle = '#ff4444';
+  ctx.lineWidth = 2.5;
+  ctx.moveTo(xOf(clamp(instPickup, Imin, Imax)), yOf(stT));
+  ctx.lineTo(xOf(clamp(instPickup, Imin, Imax)), yOf(Tmin));
+  ctx.stroke();
+
+  /* Region labels */
+  ctx.font = 'bold 12px "Share Tech Mono",monospace';
+  ctx.textAlign = 'left';
+
+  ctx.fillStyle = '#00ff88';
+  const ltMidI = ltPickup * Math.pow(stPickup / ltPickup, 0.3);
+  const ltMidT = clamp(ltDelay * Math.pow(ltPickup / ltMidI, 2), Tmin * 2, Tmax / 2);
+  if (ltMidI > Imin && ltMidI < Imax) {
+    ctx.fillText('L', xOf(ltMidI) + 4, yOf(ltMidT) - 4);
+  }
+
+  ctx.fillStyle = '#ffcc00';
+  const stMidI = Math.sqrt(stPickup * instPickup);
+  if (stMidI > Imin && stMidI < Imax) {
+    ctx.fillText('S', xOf(stMidI) + 4, yOf(stT) - 6);
+  }
+
+  ctx.fillStyle = '#ff4444';
+  if (instPickup > Imin && instPickup < Imax) {
+    ctx.fillText('I', xOf(instPickup) + 6, PAD.top + plotH * 0.8);
+  }
+
+  showResult('lsi_result', [
+    ['Long-time Pickup', fmt(ltPickup) + ' A'],
+    ['Long-time Delay (at pickup)', fmt(ltDelay) + ' s'],
+    ['Short-time Pickup', fmt(stPickup) + ' A'],
+    ['Short-time Delay', fmt(stDelay) + ' s'],
+    ['Instantaneous Pickup', fmt(instPickup) + ' A']
+  ]);
+};
+
+/* ============================================================
+   BESS PEAK-SHAVE OPTIMIZER (LP)
+   ============================================================ */
+window.calcBessPeakShave = function () {
+  const battery = val('bess_battery');
+  const solar   = val('bess_solar');
+  if (!isFinite(battery) || battery < 0) return showError('bess_result', 'Enter a valid battery capacity (kW ≥ 0).');
+  if (!isFinite(solar)   || solar   < 0) return showError('bess_result', 'Enter a valid solar forecast (kW ≥ 0).');
+  const available = battery + solar;
+
+  const loads = [];
+  for (let i = 1; i <= 5; i++) {
+    const nameEl = document.getElementById('bess_name_' + i);
+    const name   = nameEl ? nameEl.value.trim() || ('Load ' + i) : ('Load ' + i);
+    const kw     = val('bess_kw_'  + i);
+    const pri    = val('bess_pri_' + i);
+    if (!isFinite(kw) || kw < 0) return showError('bess_result', 'Load ' + i + ': enter a valid kW value (≥ 0).');
+    if (!isFinite(pri) || pri < 1 || pri > 10) return showError('bess_result', 'Load ' + i + ': priority must be 1–10.');
+    loads.push({ name, kw, pri });
+  }
+
+  /* Build LP model for the solver */
+  const variables = {};
+  const ints = {};
+  loads.forEach((ld, idx) => {
+    const key = 'x' + idx;
+    variables[key] = { score: ld.pri, capacity: ld.kw };
+    ints[key] = 1;
+  });
+
+  const model = {
+    optimize:    'score',
+    opType:      'max',
+    constraints: { capacity: { max: available } },
+    variables,
+    ints
+  };
+
+  let result;
+  try {
+    /* javascript-lp-solver exposes itself as window.solver */
+    if (typeof window.solver === 'undefined')
+      throw new Error('LP solver library not loaded. Check internet connection.');
+    result = window.solver.Solve(model);
+  } catch (e) {
+    return showError('bess_result', 'Solver error: ' + e.message);
+  }
+
+  if (!result || result.feasible === false)
+    return showError('bess_result', 'No feasible solution found. Check inputs.');
+
+  const selected = loads.filter((_, idx) => result['x' + idx] >= 0.5);
+  const totalKw  = selected.reduce((s, ld) => s + ld.kw, 0);
+  const totalPri = selected.reduce((s, ld) => s + ld.pri, 0);
+
+  const rows = [
+    ['Available Capacity', fmt(available) + ' kW (Battery ' + fmt(battery) + ' + Solar ' + fmt(solar) + ')'],
+    ['Total Load Served', fmt(totalKw) + ' kW'],
+    ['Total Priority Score', String(totalPri) + ' / ' + (loads.length * 10)],
+    ['Loads Selected', selected.length + ' of ' + loads.length]
+  ];
+  selected.forEach(ld => rows.push(['\u2714 ' + ld.name, fmt(ld.kw) + ' kW  |  Priority: ' + ld.pri]));
+  const notSelected = loads.filter(ld => !selected.includes(ld));
+  notSelected.forEach(ld => rows.push(['\u2718 ' + ld.name + ' (shed)', fmt(ld.kw) + ' kW  |  Priority: ' + ld.pri]));
+
+  showResult('bess_result', rows);
+};
+
+/* ============================================================
+   TRANSFORMER TAP-CHANGER CALCULATOR (23 kV / 480 V)
+   ============================================================ */
+window.calcTapChanger = function () {
+  const measuredV    = val('tap_measured_v');
+  const currentTapEl = document.getElementById('tap_current_setting');
+  if (!currentTapEl) return;
+  const currentTap   = parseFloat(currentTapEl.value);   /* % */
+
+  if (!isPos(measuredV))
+    return showError('tap_result', 'Enter a positive measured secondary voltage.');
+  if (!isFinite(currentTap))
+    return showError('tap_result', 'Select a valid current tap setting.');
+
+  const nominalPrimary   = 23000; /* V */
+  const nominalSecondary = 480;   /* V */
+  const nominalRatio     = nominalPrimary / nominalSecondary; /* 47.9167 */
+
+  /* Available tap positions in % */
+  const tapPositions = [-5, -2.5, 0, 2.5, 5];
+
+  /* Effective primary turns factor at current tap: primary winding adjusted by tap% */
+  /* V_sec = V_pri / (nominalRatio × (1 + tap/100)) */
+  /* Derive implied primary voltage from measured secondary and current tap */
+  const impliedPrimary = measuredV * nominalRatio * (1 + currentTap / 100);
+
+  /* For each tap position, compute expected secondary voltage */
+  const tapResults = tapPositions.map(tap => ({
+    tap,
+    expectedV: impliedPrimary / (nominalRatio * (1 + tap / 100)),
+    label: tap > 0 ? '+' + tap + '%' : (tap < 0 ? tap + '%' : '0% (Nominal)')
+  }));
+
+  /* Find tap closest to 480 V */
+  tapResults.forEach(t => { t.error = Math.abs(t.expectedV - nominalSecondary); });
+  const best = tapResults.reduce((a, b) => a.error < b.error ? a : b);
+
+  const rows = [
+    ['Measured Secondary Voltage', fmt(measuredV, 2) + ' V'],
+    ['Current Tap Setting', currentTap > 0 ? '+' + currentTap + '%' : currentTap + '%'],
+    ['Implied Primary Voltage', fmt(impliedPrimary, 2) + ' V'],
+    ['Nominal Ratio (23kV/480V)', fmt(nominalRatio, 4)],
+    ['', ''],
+    ['--- Expected Secondary by Tap ---', ''],
+    ...tapResults.map(t => [
+      t.tap === parseFloat(currentTapEl.value) ? t.label + ' (current)' : t.label,
+      fmt(t.expectedV, 2) + ' V  (error: ' + fmt(t.error, 2) + ' V)'
+    ]),
+    ['', ''],
+    ['Recommended Tap Setting', best.label],
+    ['Expected Secondary at Rec. Tap', fmt(best.expectedV, 2) + ' V']
+  ];
+
+  showResult('tap_result', rows);
+};
 
 /* ============================================================
    INIT
