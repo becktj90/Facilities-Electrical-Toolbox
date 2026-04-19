@@ -1,0 +1,1495 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Facilities Electrical Toolbox</title>
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+
+<!-- ── HEADER ── -->
+<header>
+  <span class="bolt">⚡</span>
+  <div>
+    <h1>Facilities Electrical Toolbox</h1>
+    <div class="subtitle">Formulas &amp; Calculators — Based on Ugly's Electrical References &amp; NEC</div>
+  </div>
+</header>
+
+<div class="layout">
+
+  <!-- ── SIDEBAR NAV ── -->
+  <nav class="sidebar">
+    <div class="sidebar-section">
+      <div class="sidebar-section-title">Fundamentals</div>
+      <button class="nav-btn" data-target="sec-ohm">Ohm's Law</button>
+      <button class="nav-btn" data-target="sec-power-dc">DC Power</button>
+      <button class="nav-btn" data-target="sec-power-ac">AC Power</button>
+    </div>
+    <div class="sidebar-section">
+      <div class="sidebar-section-title">AC Circuits</div>
+      <button class="nav-btn" data-target="sec-reactance">Reactance &amp; Impedance</button>
+      <button class="nav-btn" data-target="sec-resonance">Resonance</button>
+      <button class="nav-btn" data-target="sec-pfc">Power Factor Correction</button>
+    </div>
+    <div class="sidebar-section">
+      <div class="sidebar-section-title">Series / Parallel</div>
+      <button class="nav-btn" data-target="sec-sp">Resistance, C, L</button>
+    </div>
+    <div class="sidebar-section">
+      <div class="sidebar-section-title">Distribution</div>
+      <button class="nav-btn" data-target="sec-vdrop">Voltage Drop</button>
+      <button class="nav-btn" data-target="sec-motor">Motor Calculations</button>
+      <button class="nav-btn" data-target="sec-xfmr">Transformer</button>
+      <button class="nav-btn" data-target="sec-conduit">Conduit Fill</button>
+      <button class="nav-btn" data-target="sec-sc">Short Circuit</button>
+    </div>
+    <div class="sidebar-section">
+      <div class="sidebar-section-title">Reference Tables</div>
+      <button class="nav-btn" data-target="sec-wire-ref">Conductor Reference</button>
+      <button class="nav-btn" data-target="sec-motor-ref">Motor FLA Tables</button>
+      <button class="nav-btn" data-target="sec-conduit-ref">Conduit Fill Tables</button>
+    </div>
+    <div class="sidebar-section">
+      <div class="sidebar-section-title">Tools</div>
+      <button class="nav-btn" data-target="sec-convert">Unit Conversions</button>
+      <button class="nav-btn" data-target="sec-cm">Circular Mils</button>
+    </div>
+  </nav>
+
+  <!-- ── MAIN CONTENT ── -->
+  <main class="main">
+
+    <!-- ════════════════════════════════════════
+         OHM'S LAW
+         ════════════════════════════════════════ -->
+    <section id="sec-ohm" class="section">
+      <div class="section-header">
+        <h2>⚡ Ohm's Law</h2>
+        <p>Enter any two values to solve for the third. Power is also calculated.</p>
+      </div>
+      <div class="card-grid">
+        <div class="card">
+          <div class="card-title">Ohm's Law Calculator</div>
+          <div class="card-body">
+            <div class="formula-box">
+              V = I × R &nbsp;|&nbsp; I = V / R &nbsp;|&nbsp; R = V / I<br>
+              P = V × I = I² × R = V² / R
+            </div>
+            <div class="input-group">
+              <div>
+                <label>Voltage — V (volts)</label>
+                <input type="number" id="ohm_v" placeholder="Leave blank to solve" step="any" min="0">
+              </div>
+              <div>
+                <label>Current — I (amps)</label>
+                <input type="number" id="ohm_i" placeholder="Leave blank to solve" step="any" min="0">
+              </div>
+            </div>
+            <div class="input-group single">
+              <div>
+                <label>Resistance — R (ohms)</label>
+                <input type="number" id="ohm_r" placeholder="Leave blank to solve" step="any" min="0">
+              </div>
+            </div>
+            <button class="btn" onclick="calcOhmsLaw()">Calculate</button>
+            <div id="ohm_result" class="result"></div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">Ohm's Law — Quick Reference</div>
+          <div class="card-body">
+            <div class="formula-box">
+              <strong>Voltage:</strong>  V = I × R<br>
+              <strong>Current:</strong>  I = V / R<br>
+              <strong>Resistance:</strong> R = V / I<br><br>
+              <strong>Power — 3 forms:</strong><br>
+              P = V × I<br>
+              P = I² × R<br>
+              P = V² / R<br><br>
+              <strong>1 kW = 1000 W &nbsp;|&nbsp; 1 HP = 746 W</strong>
+            </div>
+            <div class="note">
+              ℹ Ugly's uses <em>E</em> for EMF/voltage and <em>I</em> for current. Both notations are standard.
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ════════════════════════════════════════
+         DC POWER
+         ════════════════════════════════════════ -->
+    <section id="sec-power-dc" class="section">
+      <div class="section-header">
+        <h2>🔋 DC Power Formulas</h2>
+        <p>Solve for power using any valid pair of electrical quantities.</p>
+      </div>
+      <div class="card-grid">
+        <div class="card">
+          <div class="card-title">DC Power Calculator</div>
+          <div class="card-body">
+            <div class="formula-box">
+              P = V × I &nbsp;|&nbsp; P = I² × R &nbsp;|&nbsp; P = V² / R
+            </div>
+            <div class="input-group single">
+              <div>
+                <label>Solve using</label>
+                <select id="dcpower_mode" onchange="dcPowerModeChange()">
+                  <option value="pvi">P = V × I  (enter V and I)</option>
+                  <option value="pi2r">P = I² × R  (enter I and R)</option>
+                  <option value="pv2r">P = V² / R  (enter V and R)</option>
+                </select>
+              </div>
+            </div>
+
+            <div id="dcp_form_pvi" class="dcpower-form">
+              <div class="input-group">
+                <div><label>Voltage — V (V)</label><input type="number" id="dcp_v" placeholder="Volts" step="any"></div>
+                <div><label>Current — I (A)</label><input type="number" id="dcp_i" placeholder="Amps" step="any"></div>
+              </div>
+            </div>
+            <div id="dcp_form_pi2r" class="dcpower-form" style="display:none">
+              <div class="input-group">
+                <div><label>Current — I (A)</label><input type="number" id="dcp_i2" placeholder="Amps" step="any"></div>
+                <div><label>Resistance — R (Ω)</label><input type="number" id="dcp_r2" placeholder="Ohms" step="any"></div>
+              </div>
+            </div>
+            <div id="dcp_form_pv2r" class="dcpower-form" style="display:none">
+              <div class="input-group">
+                <div><label>Voltage — V (V)</label><input type="number" id="dcp_v3" placeholder="Volts" step="any"></div>
+                <div><label>Resistance — R (Ω)</label><input type="number" id="dcp_r3" placeholder="Ohms" step="any"></div>
+              </div>
+            </div>
+
+            <button class="btn" onclick="calcDCPower()">Calculate</button>
+            <div id="dcp_result" class="result"></div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">Power Triangle Reference</div>
+          <div class="card-body">
+            <div class="formula-box">
+              <strong>Given V &amp; I:</strong>  P = V × I<br>
+              <strong>Given I &amp; R:</strong>  P = I² × R<br>
+              <strong>Given V &amp; R:</strong>  P = V² / R<br><br>
+              <strong>Derived quantities:</strong><br>
+              I = P / V &nbsp;|&nbsp; V = P / I<br>
+              R = V / I &nbsp;|&nbsp; R = V² / P<br>
+              R = P / I²<br><br>
+              1 kW = 1,000 W &nbsp;|&nbsp; 1 MW = 1,000 kW
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ════════════════════════════════════════
+         AC POWER
+         ════════════════════════════════════════ -->
+    <section id="sec-power-ac" class="section">
+      <div class="section-header">
+        <h2>🌀 AC Power Formulas</h2>
+        <p>Single-phase and three-phase apparent, real, and reactive power calculations.</p>
+      </div>
+
+      <div class="tab-group">
+        <div class="tabs">
+          <button class="tab-btn" data-tab="tab-ac1">Single-Phase</button>
+          <button class="tab-btn" data-tab="tab-ac3">Three-Phase</button>
+        </div>
+
+        <div id="tab-ac1" class="tab-pane">
+          <div class="card-grid">
+            <div class="card">
+              <div class="card-title">Single-Phase AC Power</div>
+              <div class="card-body">
+                <div class="formula-box">
+                  kVA = (V × I) / 1000<br>
+                  kW  = kVA × PF<br>
+                  kVAR = √(kVA² − kW²)<br>
+                  PF = cos(θ) = kW / kVA
+                </div>
+                <div class="input-group">
+                  <div><label>Voltage — V (V)</label><input type="number" id="ac1_v" placeholder="Volts" step="any" min="0"></div>
+                  <div><label>Current — I (A)</label><input type="number" id="ac1_i" placeholder="Amps" step="any" min="0"></div>
+                </div>
+                <div class="input-group single">
+                  <div><label>Power Factor — PF (%)</label><input type="number" id="ac1_pf" placeholder="e.g. 85" step="any" min="1" max="100"></div>
+                </div>
+                <button class="btn" onclick="calcAC1Phase()">Calculate</button>
+                <div id="ac1_result" class="result"></div>
+              </div>
+            </div>
+            <div class="card">
+              <div class="card-title">Single-Phase AC Reference</div>
+              <div class="card-body">
+                <div class="formula-box">
+                  <strong>Apparent Power:</strong>  S (kVA) = V × I / 1000<br>
+                  <strong>True Power:</strong>      P (kW)  = V × I × PF / 1000<br>
+                  <strong>Reactive Power:</strong>  Q (kVAR)= V × I × sin(θ) / 1000<br><br>
+                  <strong>Power Triangle:</strong><br>
+                  kVA² = kW² + kVAR²<br>
+                  PF = kW / kVA = cos(θ)<br><br>
+                  <strong>Typical PF values:</strong><br>
+                  Resistive loads: 1.0 (unity)<br>
+                  Induction motors: 0.80–0.90<br>
+                  Fluorescent lighting: 0.85–0.95
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div id="tab-ac3" class="tab-pane">
+          <div class="card-grid">
+            <div class="card">
+              <div class="card-title">Three-Phase AC Power</div>
+              <div class="card-body">
+                <div class="formula-box">
+                  kVA = (√3 × V_L × I_L) / 1000<br>
+                  kW  = kVA × PF<br>
+                  kVAR = √(kVA² − kW²)
+                </div>
+                <div class="input-group">
+                  <div><label>Line Voltage — V<sub>L</sub> (V)</label><input type="number" id="ac3_v" placeholder="Line-to-line volts" step="any" min="0"></div>
+                  <div><label>Line Current — I<sub>L</sub> (A)</label><input type="number" id="ac3_i" placeholder="Amps" step="any" min="0"></div>
+                </div>
+                <div class="input-group single">
+                  <div><label>Power Factor — PF (%)</label><input type="number" id="ac3_pf" placeholder="e.g. 85" step="any" min="1" max="100"></div>
+                </div>
+                <button class="btn" onclick="calcAC3Phase()">Calculate</button>
+                <div id="ac3_result" class="result"></div>
+              </div>
+            </div>
+            <div class="card">
+              <div class="card-title">Three-Phase AC Reference</div>
+              <div class="card-body">
+                <div class="formula-box">
+                  <strong>Common voltages (L-L):</strong><br>
+                  208V (120/208Y), 480V (277/480Y)<br>
+                  240V (Delta), 600V<br><br>
+                  <strong>Line vs. Phase:</strong><br>
+                  Wye:   V_L = √3 × V_Ø &nbsp;|&nbsp; I_L = I_Ø<br>
+                  Delta: V_L = V_Ø &nbsp;|&nbsp; I_L = √3 × I_Ø<br><br>
+                  <strong>√3 ≈ 1.732</strong><br><br>
+                  <strong>Balanced 3Ø power:</strong><br>
+                  P = √3 × V_L × I_L × PF
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div><!-- end tab-group -->
+    </section>
+
+    <!-- ════════════════════════════════════════
+         REACTANCE & IMPEDANCE
+         ════════════════════════════════════════ -->
+    <section id="sec-reactance" class="section">
+      <div class="section-header">
+        <h2>〰 Reactance &amp; Impedance</h2>
+        <p>Calculate inductive/capacitive reactance and series impedance.</p>
+      </div>
+      <div class="card-grid">
+
+        <div class="card">
+          <div class="card-title">Inductive Reactance (XL)</div>
+          <div class="card-body">
+            <div class="formula-box">XL = 2π × f × L</div>
+            <div class="input-group">
+              <div><label>Frequency — f (Hz)</label><input type="number" id="xl_f" placeholder="e.g. 60" step="any" min="0" value="60"></div>
+              <div><label>Inductance — L (H)</label><input type="number" id="xl_l" placeholder="Henries" step="any" min="0"></div>
+            </div>
+            <button class="btn" onclick="calcXL()">Calculate XL</button>
+            <div id="xl_result" class="result"></div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">Capacitive Reactance (XC)</div>
+          <div class="card-body">
+            <div class="formula-box">XC = 1 / (2π × f × C)</div>
+            <div class="input-group">
+              <div><label>Frequency — f (Hz)</label><input type="number" id="xc_f" placeholder="e.g. 60" step="any" min="0" value="60"></div>
+              <div><label>Capacitance — C (F)</label><input type="number" id="xc_c" placeholder="Farads (e.g. 100e-6)" step="any" min="0"></div>
+            </div>
+            <button class="btn" onclick="calcXC()">Calculate XC</button>
+            <div id="xc_result" class="result"></div>
+            <div class="note">ℹ For µF, divide by 1,000,000 (e.g. 100 µF = 0.0001 F)</div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">Series Impedance (Z)</div>
+          <div class="card-body">
+            <div class="formula-box">
+              Z = √(R² + (XL − XC)²)<br>
+              θ = arctan((XL − XC) / R)<br>
+              PF = cos(θ) = R / Z
+            </div>
+            <div class="input-group triple">
+              <div><label>Resistance — R (Ω)</label><input type="number" id="imp_r" placeholder="0 if none" step="any" min="0" value="0"></div>
+              <div><label>Inductive React. — XL (Ω)</label><input type="number" id="imp_xl" placeholder="0 if none" step="any" min="0" value="0"></div>
+              <div><label>Capacitive React. — XC (Ω)</label><input type="number" id="imp_xc" placeholder="0 if none" step="any" min="0" value="0"></div>
+            </div>
+            <button class="btn" onclick="calcImpedance()">Calculate Z</button>
+            <div id="imp_result" class="result"></div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">Reactance &amp; Impedance Reference</div>
+          <div class="card-body">
+            <div class="formula-box">
+              <strong>Inductive Reactance:</strong><br>
+              XL = 2πfL = ωL<br><br>
+              <strong>Capacitive Reactance:</strong><br>
+              XC = 1/(2πfC) = 1/(ωC)<br><br>
+              <strong>Series Impedance:</strong><br>
+              Z = √(R² + X²) &nbsp; where X = XL − XC<br><br>
+              <strong>Ohm's Law for AC:</strong><br>
+              V = I × Z &nbsp;|&nbsp; I = V / Z<br><br>
+              <strong>At 60 Hz: ω = 2π×60 ≈ 377 rad/s</strong><br>
+              XL = 377L &nbsp;|&nbsp; XC = 1/(377C)
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ════════════════════════════════════════
+         RESONANCE
+         ════════════════════════════════════════ -->
+    <section id="sec-resonance" class="section">
+      <div class="section-header">
+        <h2>🔔 Resonance</h2>
+        <p>Series and parallel LC circuit resonant frequency and Q factor.</p>
+      </div>
+      <div class="card-grid">
+
+        <div class="card">
+          <div class="card-title">Resonant Frequency</div>
+          <div class="card-body">
+            <div class="formula-box">f₀ = 1 / (2π√LC)</div>
+            <div class="input-group">
+              <div><label>Inductance — L (H)</label><input type="number" id="res_l" placeholder="Henries" step="any" min="0"></div>
+              <div><label>Capacitance — C (F)</label><input type="number" id="res_c" placeholder="Farads" step="any" min="0"></div>
+            </div>
+            <button class="btn" onclick="calcResonance()">Calculate f₀</button>
+            <div id="res_result" class="result"></div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">Q Factor &amp; Bandwidth</div>
+          <div class="card-body">
+            <div class="formula-box">
+              Q = XL / R = (1/R)×√(L/C)<br>
+              BW = f₀ / Q
+            </div>
+            <div class="input-group triple">
+              <div><label>Resistance — R (Ω)</label><input type="number" id="qf_r" placeholder="Ohms" step="any" min="0"></div>
+              <div><label>Inductance — L (H)</label><input type="number" id="qf_l" placeholder="Henries" step="any" min="0"></div>
+              <div><label>Capacitance — C (F)</label><input type="number" id="qf_c" placeholder="Farads" step="any" min="0"></div>
+            </div>
+            <button class="btn" onclick="calcQFactor()">Calculate Q</button>
+            <div id="qf_result" class="result"></div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">Resonance Reference</div>
+          <div class="card-body">
+            <div class="formula-box">
+              <strong>At resonance:</strong><br>
+              XL = XC (reactances cancel)<br>
+              Z = R (minimum impedance — series)<br>
+              Z = L/(RC) (maximum impedance — parallel)<br><br>
+              <strong>Resonant frequency:</strong><br>
+              f₀ = 1 / (2π√LC)<br><br>
+              <strong>Q Factor (series circuit):</strong><br>
+              Q = XL/R = (1/R)√(L/C)<br>
+              High Q → narrow bandwidth, sharp tuning<br><br>
+              <strong>Bandwidth:</strong><br>
+              BW = f₀/Q = R/(2πL)
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ════════════════════════════════════════
+         POWER FACTOR CORRECTION
+         ════════════════════════════════════════ -->
+    <section id="sec-pfc" class="section">
+      <div class="section-header">
+        <h2>📐 Power Factor Correction</h2>
+        <p>Size capacitor banks to improve power factor and reduce apparent current.</p>
+      </div>
+      <div class="card-grid">
+
+        <div class="card">
+          <div class="card-title">Capacitor Bank Sizing</div>
+          <div class="card-body">
+            <div class="formula-box">
+              kVAR = kW × (tan θ₁ − tan θ₂)<br>
+              θ₁ = cos⁻¹(PF₁) &nbsp;|&nbsp; θ₂ = cos⁻¹(PF₂)
+            </div>
+            <div class="input-group single">
+              <div><label>True Load Power — kW</label><input type="number" id="pfc_kw" placeholder="e.g. 100" step="any" min="0"></div>
+            </div>
+            <div class="input-group">
+              <div><label>Existing Power Factor — PF₁ (%)</label><input type="number" id="pfc_pf1" placeholder="e.g. 75" step="any" min="1" max="99"></div>
+              <div><label>Target Power Factor — PF₂ (%)</label><input type="number" id="pfc_pf2" placeholder="e.g. 95" step="any" min="1" max="100"></div>
+            </div>
+            <button class="btn" onclick="calcPFC()">Calculate kVAR</button>
+            <div id="pfc_result" class="result"></div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">Power Factor Reference</div>
+          <div class="card-body">
+            <div class="formula-box">
+              <strong>Power Factor:</strong><br>
+              PF = cos θ = P (kW) / S (kVA)<br><br>
+              <strong>Power Triangle:</strong><br>
+              kVA² = kW² + kVAR²<br><br>
+              <strong>Benefits of high PF:</strong><br>
+              • Lower apparent current (smaller conductors)<br>
+              • Reduced utility demand charges<br>
+              • Improved voltage regulation<br><br>
+              <strong>Utility target:</strong> PF ≥ 0.90–0.95<br><br>
+              <strong>Capacitor bank formula:</strong><br>
+              kVAR = kW × (tan θ₁ − tan θ₂)
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ════════════════════════════════════════
+         SERIES / PARALLEL CIRCUITS
+         ════════════════════════════════════════ -->
+    <section id="sec-sp" class="section">
+      <div class="section-header">
+        <h2>🔗 Series / Parallel Circuits</h2>
+        <p>Add components and calculate total resistance, capacitance, or inductance.</p>
+      </div>
+
+      <div class="tab-group">
+        <div class="tabs">
+          <button class="tab-btn" data-tab="tab-sp-r">Resistance</button>
+          <button class="tab-btn" data-tab="tab-sp-c">Capacitance</button>
+          <button class="tab-btn" data-tab="tab-sp-l">Inductance</button>
+        </div>
+
+        <!-- RESISTANCE -->
+        <div id="tab-sp-r" class="tab-pane">
+          <div class="card-grid">
+            <div class="card">
+              <div class="card-title">Series Resistors</div>
+              <div class="card-body">
+                <div class="formula-box">RT = R₁ + R₂ + … + Rn</div>
+                <div id="sr_inputs" class="dynamic-inputs">
+                  <div class="dynamic-row"><label style="min-width:40px;margin:0">#1</label><input type="number" id="sr_1" placeholder="Ω" step="any"><button class="btn-remove" onclick="this.parentElement.remove()">×</button></div>
+                  <div class="dynamic-row"><label style="min-width:40px;margin:0">#2</label><input type="number" id="sr_2" placeholder="Ω" step="any"><button class="btn-remove" onclick="this.parentElement.remove()">×</button></div>
+                </div>
+                <button class="btn btn-sm" onclick="addDynRow('sr_inputs','sr','Ω')">+ Add Resistor</button>
+                <button class="btn" style="margin-left:8px" onclick="calcSeriesR()">Calculate RT</button>
+                <div id="sp_result_sr" class="result"></div>
+              </div>
+            </div>
+            <div class="card">
+              <div class="card-title">Parallel Resistors</div>
+              <div class="card-body">
+                <div class="formula-box">1/RT = 1/R₁ + 1/R₂ + … + 1/Rn<br>Two resistors: RT = (R₁×R₂)/(R₁+R₂)</div>
+                <div id="pr_inputs" class="dynamic-inputs">
+                  <div class="dynamic-row"><label style="min-width:40px;margin:0">#1</label><input type="number" id="pr_1" placeholder="Ω" step="any"><button class="btn-remove" onclick="this.parentElement.remove()">×</button></div>
+                  <div class="dynamic-row"><label style="min-width:40px;margin:0">#2</label><input type="number" id="pr_2" placeholder="Ω" step="any"><button class="btn-remove" onclick="this.parentElement.remove()">×</button></div>
+                </div>
+                <button class="btn btn-sm" onclick="addDynRow('pr_inputs','pr','Ω')">+ Add Resistor</button>
+                <button class="btn" style="margin-left:8px" onclick="calcParallelR()">Calculate RT</button>
+                <div id="sp_result_pr" class="result"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- CAPACITANCE -->
+        <div id="tab-sp-c" class="tab-pane">
+          <div class="card-grid">
+            <div class="card">
+              <div class="card-title">Series Capacitors</div>
+              <div class="card-body">
+                <div class="formula-box">1/CT = 1/C₁ + 1/C₂ + … + 1/Cn</div>
+                <div id="sc_inputs" class="dynamic-inputs">
+                  <div class="dynamic-row"><label style="min-width:40px;margin:0">#1</label><input type="number" id="sc_1" placeholder="F" step="any"><button class="btn-remove" onclick="this.parentElement.remove()">×</button></div>
+                  <div class="dynamic-row"><label style="min-width:40px;margin:0">#2</label><input type="number" id="sc_2" placeholder="F" step="any"><button class="btn-remove" onclick="this.parentElement.remove()">×</button></div>
+                </div>
+                <button class="btn btn-sm" onclick="addDynRow('sc_inputs','sc','F')">+ Add Capacitor</button>
+                <button class="btn" style="margin-left:8px" onclick="calcSeriesC()">Calculate CT</button>
+                <div id="sp_result_sc" class="result"></div>
+              </div>
+            </div>
+            <div class="card">
+              <div class="card-title">Parallel Capacitors</div>
+              <div class="card-body">
+                <div class="formula-box">CT = C₁ + C₂ + … + Cn</div>
+                <div id="pc_inputs" class="dynamic-inputs">
+                  <div class="dynamic-row"><label style="min-width:40px;margin:0">#1</label><input type="number" id="pc_1" placeholder="F" step="any"><button class="btn-remove" onclick="this.parentElement.remove()">×</button></div>
+                  <div class="dynamic-row"><label style="min-width:40px;margin:0">#2</label><input type="number" id="pc_2" placeholder="F" step="any"><button class="btn-remove" onclick="this.parentElement.remove()">×</button></div>
+                </div>
+                <button class="btn btn-sm" onclick="addDynRow('pc_inputs','pc','F')">+ Add Capacitor</button>
+                <button class="btn" style="margin-left:8px" onclick="calcParallelC()">Calculate CT</button>
+                <div id="sp_result_pc" class="result"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- INDUCTANCE -->
+        <div id="tab-sp-l" class="tab-pane">
+          <div class="card-grid">
+            <div class="card">
+              <div class="card-title">Series Inductors</div>
+              <div class="card-body">
+                <div class="formula-box">LT = L₁ + L₂ + … + Ln</div>
+                <div id="sl_inputs" class="dynamic-inputs">
+                  <div class="dynamic-row"><label style="min-width:40px;margin:0">#1</label><input type="number" id="sl_1" placeholder="H" step="any"><button class="btn-remove" onclick="this.parentElement.remove()">×</button></div>
+                  <div class="dynamic-row"><label style="min-width:40px;margin:0">#2</label><input type="number" id="sl_2" placeholder="H" step="any"><button class="btn-remove" onclick="this.parentElement.remove()">×</button></div>
+                </div>
+                <button class="btn btn-sm" onclick="addDynRow('sl_inputs','sl','H')">+ Add Inductor</button>
+                <button class="btn" style="margin-left:8px" onclick="calcSeriesL()">Calculate LT</button>
+                <div id="sp_result_sl" class="result"></div>
+              </div>
+            </div>
+            <div class="card">
+              <div class="card-title">Parallel Inductors</div>
+              <div class="card-body">
+                <div class="formula-box">1/LT = 1/L₁ + 1/L₂ + … + 1/Ln</div>
+                <div id="pl_inputs" class="dynamic-inputs">
+                  <div class="dynamic-row"><label style="min-width:40px;margin:0">#1</label><input type="number" id="pl_1" placeholder="H" step="any"><button class="btn-remove" onclick="this.parentElement.remove()">×</button></div>
+                  <div class="dynamic-row"><label style="min-width:40px;margin:0">#2</label><input type="number" id="pl_2" placeholder="H" step="any"><button class="btn-remove" onclick="this.parentElement.remove()">×</button></div>
+                </div>
+                <button class="btn btn-sm" onclick="addDynRow('pl_inputs','pl','H')">+ Add Inductor</button>
+                <button class="btn" style="margin-left:8px" onclick="calcParallelL()">Calculate LT</button>
+                <div id="sp_result_pl" class="result"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div><!-- end tab-group -->
+    </section>
+
+    <!-- ════════════════════════════════════════
+         VOLTAGE DROP
+         ════════════════════════════════════════ -->
+    <section id="sec-vdrop" class="section">
+      <div class="section-header">
+        <h2>📉 Voltage Drop</h2>
+        <p>NEC recommends ≤3% voltage drop on branch circuits; ≤5% total (feeder + branch).</p>
+      </div>
+
+      <div class="tab-group">
+        <div class="tabs">
+          <button class="tab-btn" data-tab="tab-vd-calc">Calculate VD%</button>
+          <button class="tab-btn" data-tab="tab-vd-min">Min Wire Size</button>
+        </div>
+
+        <!-- CALCULATE VD -->
+        <div id="tab-vd-calc" class="tab-pane">
+          <div class="card-grid">
+
+            <div class="card">
+              <div class="card-title">Single-Phase Voltage Drop</div>
+              <div class="card-body">
+                <div class="formula-box">VD = (2 × K × I × L) / CM<br>VD% = (VD / V_supply) × 100<br>K = 12.9 (Cu) | 21.2 (Al)</div>
+                <div class="input-group">
+                  <div><label>Supply Voltage (V)</label><input type="number" id="vd_vs_1p" placeholder="e.g. 120" step="any" min="0"></div>
+                  <div><label>Current — I (A)</label><input type="number" id="vd_i_1p" placeholder="Amps" step="any" min="0"></div>
+                </div>
+                <div class="input-group">
+                  <div><label>One-Way Length — L (ft)</label><input type="number" id="vd_l_1p" placeholder="Feet" step="any" min="0"></div>
+                  <div>
+                    <label>Conductor Material</label>
+                    <select id="vd_mat_1p"><option value="CU">Copper (K=12.9)</option><option value="AL">Aluminum (K=21.2)</option></select>
+                  </div>
+                </div>
+                <div class="input-group single">
+                  <div>
+                    <label>Conductor Size (AWG / kcmil)</label>
+                    <select id="vd_awg_1p">
+                      <option value="14">14 AWG (4,110 CM)</option>
+                      <option value="12">12 AWG (6,530 CM)</option>
+                      <option value="10">10 AWG (10,380 CM)</option>
+                      <option value="8">8 AWG (16,510 CM)</option>
+                      <option value="6">6 AWG (26,240 CM)</option>
+                      <option value="4">4 AWG (41,740 CM)</option>
+                      <option value="3">3 AWG (52,620 CM)</option>
+                      <option value="2">2 AWG (66,360 CM)</option>
+                      <option value="1">1 AWG (83,690 CM)</option>
+                      <option value="1/0">1/0 AWG (105,600 CM)</option>
+                      <option value="2/0">2/0 AWG (133,100 CM)</option>
+                      <option value="3/0">3/0 AWG (167,800 CM)</option>
+                      <option value="4/0">4/0 AWG (211,600 CM)</option>
+                      <option value="250">250 kcmil</option>
+                      <option value="300">300 kcmil</option>
+                      <option value="350">350 kcmil</option>
+                      <option value="400">400 kcmil</option>
+                      <option value="500">500 kcmil</option>
+                    </select>
+                  </div>
+                </div>
+                <button class="btn" onclick="calcVDrop('1p')">Calculate</button>
+                <div id="vd_result_1p" class="result"></div>
+              </div>
+            </div>
+
+            <div class="card">
+              <div class="card-title">Three-Phase Voltage Drop</div>
+              <div class="card-body">
+                <div class="formula-box">VD = (√3 × K × I × L) / CM<br>VD% = (VD / V_supply) × 100</div>
+                <div class="input-group">
+                  <div><label>Supply Voltage — L-L (V)</label><input type="number" id="vd_vs_3p" placeholder="e.g. 480" step="any" min="0"></div>
+                  <div><label>Current — I (A)</label><input type="number" id="vd_i_3p" placeholder="Amps" step="any" min="0"></div>
+                </div>
+                <div class="input-group">
+                  <div><label>One-Way Length — L (ft)</label><input type="number" id="vd_l_3p" placeholder="Feet" step="any" min="0"></div>
+                  <div>
+                    <label>Conductor Material</label>
+                    <select id="vd_mat_3p"><option value="CU">Copper (K=12.9)</option><option value="AL">Aluminum (K=21.2)</option></select>
+                  </div>
+                </div>
+                <div class="input-group single">
+                  <div>
+                    <label>Conductor Size (AWG / kcmil)</label>
+                    <select id="vd_awg_3p">
+                      <option value="14">14 AWG</option><option value="12">12 AWG</option>
+                      <option value="10">10 AWG</option><option value="8">8 AWG</option>
+                      <option value="6">6 AWG</option><option value="4">4 AWG</option>
+                      <option value="3">3 AWG</option><option value="2">2 AWG</option>
+                      <option value="1">1 AWG</option><option value="1/0">1/0 AWG</option>
+                      <option value="2/0">2/0 AWG</option><option value="3/0">3/0 AWG</option>
+                      <option value="4/0">4/0 AWG</option><option value="250">250 kcmil</option>
+                      <option value="300">300 kcmil</option><option value="350">350 kcmil</option>
+                      <option value="400">400 kcmil</option><option value="500">500 kcmil</option>
+                    </select>
+                  </div>
+                </div>
+                <button class="btn" onclick="calcVDrop('3p')">Calculate</button>
+                <div id="vd_result_3p" class="result"></div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- MIN WIRE SIZE -->
+        <div id="tab-vd-min" class="tab-pane">
+          <div class="card-grid">
+
+            <div class="card">
+              <div class="card-title">Min Wire — Single-Phase</div>
+              <div class="card-body">
+                <div class="formula-box">CM_min = (2 × K × I × L) / VD_max</div>
+                <div class="input-group">
+                  <div><label>Supply Voltage (V)</label><input type="number" id="vdm_vs_1p" placeholder="e.g. 120" step="any"></div>
+                  <div><label>Max VD% Allowed</label><input type="number" id="vdm_pct_1p" placeholder="e.g. 3" step="any" value="3"></div>
+                </div>
+                <div class="input-group">
+                  <div><label>Current — I (A)</label><input type="number" id="vdm_i_1p" placeholder="Amps" step="any"></div>
+                  <div><label>One-Way Length — L (ft)</label><input type="number" id="vdm_l_1p" placeholder="Feet" step="any"></div>
+                </div>
+                <div class="input-group single">
+                  <div>
+                    <label>Conductor Material</label>
+                    <select id="vdm_mat_1p"><option value="CU">Copper</option><option value="AL">Aluminum</option></select>
+                  </div>
+                </div>
+                <button class="btn" onclick="calcMinWire('1p')">Find Min Wire</button>
+                <div id="vdm_result_1p" class="result"></div>
+              </div>
+            </div>
+
+            <div class="card">
+              <div class="card-title">Min Wire — Three-Phase</div>
+              <div class="card-body">
+                <div class="formula-box">CM_min = (√3 × K × I × L) / VD_max</div>
+                <div class="input-group">
+                  <div><label>Supply Voltage L-L (V)</label><input type="number" id="vdm_vs_3p" placeholder="e.g. 480" step="any"></div>
+                  <div><label>Max VD% Allowed</label><input type="number" id="vdm_pct_3p" placeholder="e.g. 3" step="any" value="3"></div>
+                </div>
+                <div class="input-group">
+                  <div><label>Current — I (A)</label><input type="number" id="vdm_i_3p" placeholder="Amps" step="any"></div>
+                  <div><label>One-Way Length — L (ft)</label><input type="number" id="vdm_l_3p" placeholder="Feet" step="any"></div>
+                </div>
+                <div class="input-group single">
+                  <div>
+                    <label>Conductor Material</label>
+                    <select id="vdm_mat_3p"><option value="CU">Copper</option><option value="AL">Aluminum</option></select>
+                  </div>
+                </div>
+                <button class="btn" onclick="calcMinWire('3p')">Find Min Wire</button>
+                <div id="vdm_result_3p" class="result"></div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+      </div><!-- end tab-group -->
+    </section>
+
+    <!-- ════════════════════════════════════════
+         MOTOR CALCULATIONS
+         ════════════════════════════════════════ -->
+    <section id="sec-motor" class="section">
+      <div class="section-header">
+        <h2>⚙ Motor Calculations</h2>
+        <p>Calculate motor HP or full-load amperes (FLA) for single- and three-phase motors.</p>
+      </div>
+      <div class="card-grid">
+
+        <div class="card">
+          <div class="card-title">Calculate Horsepower from FLA</div>
+          <div class="card-body">
+            <div class="formula-box">
+              HP = (V × I × Eff × PF) / 746  &nbsp; [1Ø]<br>
+              HP = (V × I × √3 × Eff × PF) / 746  &nbsp; [3Ø]
+            </div>
+            <div class="input-group">
+              <div><label>Phase</label><select id="mhp_phase"><option value="1">Single-Phase</option><option value="3">Three-Phase</option></select></div>
+              <div><label>Voltage — V (V)</label><input type="number" id="mhp_v" placeholder="e.g. 480" step="any" min="0"></div>
+            </div>
+            <div class="input-group">
+              <div><label>Current — I (A)</label><input type="number" id="mhp_i" placeholder="Amps" step="any" min="0"></div>
+              <div><label>Efficiency — Eff (%)</label><input type="number" id="mhp_eff" placeholder="e.g. 90" step="any" min="0" max="100" value="90"></div>
+            </div>
+            <div class="input-group single">
+              <div><label>Power Factor — PF (%)</label><input type="number" id="mhp_pf" placeholder="e.g. 85" step="any" min="0" max="100" value="85"></div>
+            </div>
+            <button class="btn" onclick="calcMotorHP()">Calculate HP</button>
+            <div id="mhp_result" class="result"></div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">Calculate FLA from Horsepower</div>
+          <div class="card-body">
+            <div class="formula-box">
+              I = (HP × 746) / (V × Eff × PF)  &nbsp; [1Ø]<br>
+              I = (HP × 746) / (V × √3 × Eff × PF)  &nbsp; [3Ø]<br>
+              NEC Branch Circuit = FLA × 1.25
+            </div>
+            <div class="input-group">
+              <div><label>Phase</label><select id="mfla_phase"><option value="1">Single-Phase</option><option value="3">Three-Phase</option></select></div>
+              <div><label>Motor HP</label><input type="number" id="mfla_hp" placeholder="e.g. 25" step="any" min="0"></div>
+            </div>
+            <div class="input-group">
+              <div><label>Voltage — V (V)</label><input type="number" id="mfla_v" placeholder="e.g. 480" step="any" min="0"></div>
+              <div><label>Efficiency — Eff (%)</label><input type="number" id="mfla_eff" placeholder="e.g. 90" step="any" min="0" max="100" value="90"></div>
+            </div>
+            <div class="input-group single">
+              <div><label>Power Factor — PF (%)</label><input type="number" id="mfla_pf" placeholder="e.g. 85" step="any" min="0" max="100" value="85"></div>
+            </div>
+            <button class="btn" onclick="calcMotorFLA()">Calculate FLA</button>
+            <div id="mfla_result" class="result"></div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ════════════════════════════════════════
+         TRANSFORMER
+         ════════════════════════════════════════ -->
+    <section id="sec-xfmr" class="section">
+      <div class="section-header">
+        <h2>🔄 Transformer Calculations</h2>
+        <p>Calculate transformer currents, kVA rating, and turns ratio.</p>
+      </div>
+      <div class="card-grid">
+
+        <div class="card">
+          <div class="card-title">Current &amp; Turns Ratio from kVA</div>
+          <div class="card-body">
+            <div class="formula-box">
+              1Ø: Ip = kVA×1000 / Vp &nbsp;|&nbsp; Is = kVA×1000 / Vs<br>
+              3Ø: Ip = kVA×1000 / (√3×Vp) &nbsp;|&nbsp; Is = kVA×1000 / (√3×Vs)<br>
+              Turns Ratio = Vp / Vs = Np / Ns = Is / Ip
+            </div>
+            <div class="input-group">
+              <div><label>Phase</label><select id="xfmr_phase"><option value="1">Single-Phase</option><option value="3">Three-Phase</option></select></div>
+              <div><label>Rating — kVA</label><input type="number" id="xfmr_kva" placeholder="e.g. 75" step="any" min="0"></div>
+            </div>
+            <div class="input-group">
+              <div><label>Primary Voltage — Vp (V)</label><input type="number" id="xfmr_vp" placeholder="e.g. 480" step="any" min="0"></div>
+              <div><label>Secondary Voltage — Vs (V)</label><input type="number" id="xfmr_vs" placeholder="e.g. 208" step="any" min="0"></div>
+            </div>
+            <button class="btn" onclick="calcXfmr()">Calculate</button>
+            <div id="xfmr_result" class="result"></div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">kVA from Voltage &amp; Current</div>
+          <div class="card-body">
+            <div class="formula-box">
+              1Ø: kVA = V × I / 1000<br>
+              3Ø: kVA = √3 × V × I / 1000
+            </div>
+            <div class="input-group">
+              <div><label>Phase</label><select id="xfmrkva_phase"><option value="1">Single-Phase</option><option value="3">Three-Phase</option></select></div>
+              <div><label>Voltage (V)</label><input type="number" id="xfmrkva_v" placeholder="Volts" step="any" min="0"></div>
+            </div>
+            <div class="input-group single">
+              <div><label>Current — I (A)</label><input type="number" id="xfmrkva_i" placeholder="Amps" step="any" min="0"></div>
+            </div>
+            <button class="btn" onclick="calcXfmrKVA()">Calculate kVA</button>
+            <div id="xfmrkva_result" class="result"></div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">Transformer Reference</div>
+          <div class="card-body">
+            <div class="formula-box">
+              <strong>Turns Ratio (a):</strong><br>
+              a = Np/Ns = Vp/Vs = Is/Ip<br><br>
+              <strong>Conservation of energy:</strong><br>
+              Vp × Ip ≈ Vs × Is  (ideal transformer)<br><br>
+              <strong>3Ø winding configurations:</strong><br>
+              Wye (Y):   V_phase = V_line / √3<br>
+              Delta (Δ): V_phase = V_line<br><br>
+              <strong>% Impedance (typical):</strong><br>
+              Dry-type ≤ 15 kVA: 2–4%<br>
+              Dry-type &gt; 15 kVA: 4–6%<br>
+              Liquid-filled: 5–7%
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ════════════════════════════════════════
+         CONDUIT FILL
+         ════════════════════════════════════════ -->
+    <section id="sec-conduit" class="section">
+      <div class="section-header">
+        <h2>🔵 Conduit Fill Calculator</h2>
+        <p>NEC Chapter 9 — maximum allowable fill percentages for raceways.</p>
+      </div>
+      <div class="card-grid">
+
+        <div class="card">
+          <div class="card-title">Conduit Fill — THHN/THWN-2 in EMT</div>
+          <div class="card-body">
+            <div class="formula-box">
+              Fill% = (Total Wire Area / Conduit Area) × 100<br>
+              Max Fill: 1 wire=53% | 2 wires=31% | 3+=40%
+            </div>
+            <div class="input-group">
+              <div>
+                <label>EMT Trade Size</label>
+                <select id="cf_conduit">
+                  <option value="1/2">1/2" (0.304 sq in)</option>
+                  <option value="3/4">3/4" (0.533 sq in)</option>
+                  <option value="1">1" (0.864 sq in)</option>
+                  <option value="1-1/4">1-1/4" (1.496 sq in)</option>
+                  <option value="1-1/2">1-1/2" (2.036 sq in)</option>
+                  <option value="2">2" (3.356 sq in)</option>
+                  <option value="2-1/2">2-1/2" (4.788 sq in)</option>
+                  <option value="3">3" (7.393 sq in)</option>
+                  <option value="3-1/2">3-1/2" (9.893 sq in)</option>
+                  <option value="4">4" (12.72 sq in)</option>
+                </select>
+              </div>
+              <div>
+                <label>Conductor Size (AWG/kcmil)</label>
+                <select id="cf_awg">
+                  <option value="14">14 AWG (0.0097 sq in)</option>
+                  <option value="12">12 AWG (0.0133 sq in)</option>
+                  <option value="10">10 AWG (0.0211 sq in)</option>
+                  <option value="8">8 AWG (0.0366 sq in)</option>
+                  <option value="6">6 AWG (0.0507 sq in)</option>
+                  <option value="4">4 AWG (0.0824 sq in)</option>
+                  <option value="3">3 AWG (0.0973 sq in)</option>
+                  <option value="2">2 AWG (0.1158 sq in)</option>
+                  <option value="1">1 AWG (0.1562 sq in)</option>
+                  <option value="1/0">1/0 AWG (0.1855 sq in)</option>
+                  <option value="2/0">2/0 AWG (0.2223 sq in)</option>
+                  <option value="3/0">3/0 AWG (0.2679 sq in)</option>
+                  <option value="4/0">4/0 AWG (0.3237 sq in)</option>
+                  <option value="250">250 kcmil (0.3970 sq in)</option>
+                  <option value="300">300 kcmil (0.4608 sq in)</option>
+                  <option value="350">350 kcmil (0.5242 sq in)</option>
+                  <option value="400">400 kcmil (0.5863 sq in)</option>
+                  <option value="500">500 kcmil (0.7073 sq in)</option>
+                </select>
+              </div>
+            </div>
+            <div class="input-group single">
+              <div>
+                <label>Number of Conductors</label>
+                <input type="number" id="cf_qty" placeholder="e.g. 3" min="1" step="1" value="3">
+              </div>
+            </div>
+            <button class="btn" onclick="calcConduitFill()">Check Fill</button>
+            <div id="cf_result" class="result"></div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">NEC Fill % Reference</div>
+          <div class="card-body">
+            <div class="formula-box">
+              <strong>NEC Chapter 9, Table 1:</strong><br>
+              1 conductor  → max 53% fill<br>
+              2 conductors → max 31% fill<br>
+              3+ conductors → max 40% fill<br><br>
+              <strong>Always check:</strong><br>
+              • All conductors same type &amp; size<br>
+              • Different sizes: sum individual areas<br>
+              • Use NEC Table 5 for conductor areas<br>
+              • Use NEC Table 4 for conduit areas
+            </div>
+            <div class="note">ℹ This calculator uses EMT conduit areas and THHN/THWN-2 conductor areas from NEC Annex C.</div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ════════════════════════════════════════
+         SHORT CIRCUIT
+         ════════════════════════════════════════ -->
+    <section id="sec-sc" class="section">
+      <div class="section-header">
+        <h2>⚡ Short Circuit — Available Fault Current</h2>
+        <p>Simplified transformer-only calculation. For full arc flash studies, use IEEE 1584.</p>
+      </div>
+      <div class="card-grid">
+
+        <div class="card">
+          <div class="card-title">Available Fault Current (Three-Phase)</div>
+          <div class="card-body">
+            <div class="formula-box">
+              I_base = kVA × 1000 / (√3 × V_sec)<br>
+              I_SC   = I_base / Z_pu &nbsp;&nbsp; (Z_pu = %Z / 100)<br>
+              I_asym ≈ I_SC × 1.25  (simplified multiplier)
+            </div>
+            <div class="input-group">
+              <div><label>Transformer Rating (kVA)</label><input type="number" id="sc_kva" placeholder="e.g. 500" step="any" min="0"></div>
+              <div><label>Secondary Voltage — L-L (V)</label><input type="number" id="sc_vs" placeholder="e.g. 480" step="any" min="0"></div>
+            </div>
+            <div class="input-group single">
+              <div><label>Transformer Impedance — %Z</label><input type="number" id="sc_z" placeholder="e.g. 5.75" step="any" min="0"></div>
+            </div>
+            <button class="btn" onclick="calcSC()">Calculate</button>
+            <div id="sc_result" class="result"></div>
+            <div class="note">⚠ This is a simplified calculation assuming infinite bus primary and no conductor impedance. Always perform a full short circuit study for equipment selection.</div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">Short Circuit Reference</div>
+          <div class="card-body">
+            <div class="formula-box">
+              <strong>Available Fault Current:</strong><br>
+              I_SC = (kVA × 1000) / (√3 × V × %Z/100)<br><br>
+              <strong>Typical transformer %Z:</strong><br>
+              ≤ 15 kVA dry-type: 2–4%<br>
+              15–500 kVA dry-type: 4–6%<br>
+              Liquid-filled: 5.75% (common)<br><br>
+              <strong>Asymmetrical factor:</strong><br>
+              Multiply by 1.25–1.732 (X/R ratio dependent)<br><br>
+              <strong>NEC 110.9 / 110.10:</strong><br>
+              Equipment must be rated for the available fault current.
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ════════════════════════════════════════
+         CONDUCTOR REFERENCE TABLE
+         ════════════════════════════════════════ -->
+    <section id="sec-wire-ref" class="section">
+      <div class="section-header">
+        <h2>📋 Conductor Reference Table</h2>
+        <p>NEC Table 310.16 — Copper &amp; Aluminum ampacity at 75°C, ≤3 current-carrying conductors in raceway or cable.</p>
+      </div>
+      <div class="card-grid wide">
+        <div class="card">
+          <div class="card-title">AWG / kcmil — Copper &amp; Aluminum (75°C)</div>
+          <div class="card-body">
+            <div class="ref-table-wrap">
+              <table class="ref-table">
+                <thead>
+                  <tr>
+                    <th>Size</th>
+                    <th>Circular Mils</th>
+                    <th>Cu Ampacity (75°C)</th>
+                    <th>Al Ampacity (75°C)</th>
+                    <th>THHN Area (sq in)</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr><td>14 AWG</td><td>4,110</td><td>20 A</td><td>—</td><td>0.0097</td></tr>
+                  <tr><td>12 AWG</td><td>6,530</td><td>25 A</td><td>20 A</td><td>0.0133</td></tr>
+                  <tr><td>10 AWG</td><td>10,380</td><td>35 A</td><td>30 A</td><td>0.0211</td></tr>
+                  <tr><td>8 AWG</td><td>16,510</td><td>50 A</td><td>40 A</td><td>0.0366</td></tr>
+                  <tr><td>6 AWG</td><td>26,240</td><td>65 A</td><td>50 A</td><td>0.0507</td></tr>
+                  <tr><td>4 AWG</td><td>41,740</td><td>85 A</td><td>65 A</td><td>0.0824</td></tr>
+                  <tr><td>3 AWG</td><td>52,620</td><td>100 A</td><td>75 A</td><td>0.0973</td></tr>
+                  <tr><td>2 AWG</td><td>66,360</td><td>115 A</td><td>90 A</td><td>0.1158</td></tr>
+                  <tr><td>1 AWG</td><td>83,690</td><td>130 A</td><td>100 A</td><td>0.1562</td></tr>
+                  <tr><td>1/0 AWG</td><td>105,600</td><td>150 A</td><td>120 A</td><td>0.1855</td></tr>
+                  <tr><td>2/0 AWG</td><td>133,100</td><td>175 A</td><td>135 A</td><td>0.2223</td></tr>
+                  <tr><td>3/0 AWG</td><td>167,800</td><td>200 A</td><td>155 A</td><td>0.2679</td></tr>
+                  <tr><td>4/0 AWG</td><td>211,600</td><td>230 A</td><td>180 A</td><td>0.3237</td></tr>
+                  <tr><td>250 kcmil</td><td>250,000</td><td>255 A</td><td>205 A</td><td>0.3970</td></tr>
+                  <tr><td>300 kcmil</td><td>300,000</td><td>285 A</td><td>230 A</td><td>0.4608</td></tr>
+                  <tr><td>350 kcmil</td><td>350,000</td><td>310 A</td><td>250 A</td><td>0.5242</td></tr>
+                  <tr><td>400 kcmil</td><td>400,000</td><td>335 A</td><td>270 A</td><td>0.5863</td></tr>
+                  <tr><td>500 kcmil</td><td>500,000</td><td>380 A</td><td>310 A</td><td>0.7073</td></tr>
+                  <tr><td>600 kcmil</td><td>600,000</td><td>420 A</td><td>340 A</td><td>—</td></tr>
+                  <tr><td>750 kcmil</td><td>750,000</td><td>475 A</td><td>385 A</td><td>—</td></tr>
+                </tbody>
+              </table>
+            </div>
+            <div class="note">
+              ℹ NEC 310.16 (75°C column). Derate for ambient temperature, more than 3 conductors, or continuous loads. 14 AWG aluminum not listed in NEC for service conductors. Consult current NEC edition for complete rules.
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">K Values for Voltage Drop</div>
+          <div class="card-body">
+            <div class="formula-box">
+              K = resistance constant in ohms/circular mil/foot<br><br>
+              Copper (Cu):   K = 12.9<br>
+              Aluminum (Al): K = 21.2<br><br>
+              Used in: VD = (M × K × I × L) / CM<br>
+              M = 2 (single-phase) | √3 ≈ 1.732 (three-phase)<br><br>
+              CM = circular mils of conductor<br>
+              L  = one-way length in feet<br>
+              I  = current in amperes
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ════════════════════════════════════════
+         MOTOR FLA REFERENCE TABLES
+         ════════════════════════════════════════ -->
+    <section id="sec-motor-ref" class="section">
+      <div class="section-header">
+        <h2>⚙ Motor FLA Reference Tables</h2>
+        <p>NEC Table 430.248 (single-phase) and NEC Table 430.250 (three-phase, squirrel-cage).</p>
+      </div>
+
+      <div class="tab-group">
+        <div class="tabs">
+          <button class="tab-btn" data-tab="tab-mr-1p">Single-Phase (430.248)</button>
+          <button class="tab-btn" data-tab="tab-mr-3p">Three-Phase (430.250)</button>
+        </div>
+
+        <div id="tab-mr-1p" class="tab-pane">
+          <div class="card-grid wide">
+            <div class="card">
+              <div class="card-title">Single-Phase AC Motor FLA — NEC Table 430.248</div>
+              <div class="card-body">
+                <div class="ref-table-wrap">
+                  <table class="ref-table">
+                    <thead>
+                      <tr><th>Horsepower</th><th>115 V</th><th>200 V</th><th>208 V</th><th>230 V</th></tr>
+                    </thead>
+                    <tbody>
+                      <tr><td>1/6</td><td>4.4 A</td><td>2.5 A</td><td>2.4 A</td><td>2.2 A</td></tr>
+                      <tr><td>1/4</td><td>5.8 A</td><td>3.3 A</td><td>3.2 A</td><td>2.9 A</td></tr>
+                      <tr><td>1/3</td><td>7.2 A</td><td>4.1 A</td><td>4.0 A</td><td>3.6 A</td></tr>
+                      <tr><td>1/2</td><td>9.8 A</td><td>5.6 A</td><td>5.4 A</td><td>4.9 A</td></tr>
+                      <tr><td>3/4</td><td>13.8 A</td><td>7.9 A</td><td>7.6 A</td><td>6.9 A</td></tr>
+                      <tr><td>1</td><td>16 A</td><td>9.2 A</td><td>8.8 A</td><td>8.0 A</td></tr>
+                      <tr><td>1-1/2</td><td>20 A</td><td>11.5 A</td><td>11 A</td><td>10 A</td></tr>
+                      <tr><td>2</td><td>24 A</td><td>13.8 A</td><td>13.2 A</td><td>12 A</td></tr>
+                      <tr><td>3</td><td>34 A</td><td>19.6 A</td><td>18.7 A</td><td>17 A</td></tr>
+                      <tr><td>5</td><td>56 A</td><td>32.2 A</td><td>30.8 A</td><td>28 A</td></tr>
+                      <tr><td>7-1/2</td><td>80 A</td><td>46 A</td><td>44 A</td><td>40 A</td></tr>
+                      <tr><td>10</td><td>100 A</td><td>57.5 A</td><td>55 A</td><td>50 A</td></tr>
+                    </tbody>
+                  </table>
+                </div>
+                <div class="note">ℹ Values from NEC Table 430.248. Use for conductor sizing, OCPD sizing, and overload protection. Not to be confused with nameplate FLA.</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div id="tab-mr-3p" class="tab-pane">
+          <div class="card-grid wide">
+            <div class="card">
+              <div class="card-title">Three-Phase AC Motor FLA — NEC Table 430.250 (Squirrel-Cage)</div>
+              <div class="card-body">
+                <div class="ref-table-wrap">
+                  <table class="ref-table">
+                    <thead>
+                      <tr><th>HP</th><th>115 V</th><th>200 V</th><th>208 V</th><th>230 V</th><th>460 V</th><th>575 V</th></tr>
+                    </thead>
+                    <tbody>
+                      <tr><td>1/2</td><td>4.4 A</td><td>2.5 A</td><td>2.4 A</td><td>2.2 A</td><td>1.1 A</td><td>0.9 A</td></tr>
+                      <tr><td>3/4</td><td>6.4 A</td><td>3.7 A</td><td>3.5 A</td><td>3.2 A</td><td>1.6 A</td><td>1.3 A</td></tr>
+                      <tr><td>1</td><td>8.4 A</td><td>4.8 A</td><td>4.6 A</td><td>4.2 A</td><td>2.1 A</td><td>1.7 A</td></tr>
+                      <tr><td>1-1/2</td><td>12 A</td><td>6.9 A</td><td>6.6 A</td><td>6.0 A</td><td>3.0 A</td><td>2.4 A</td></tr>
+                      <tr><td>2</td><td>13.6 A</td><td>7.8 A</td><td>7.5 A</td><td>6.8 A</td><td>3.4 A</td><td>2.7 A</td></tr>
+                      <tr><td>3</td><td>—</td><td>11 A</td><td>10.6 A</td><td>9.6 A</td><td>4.8 A</td><td>3.9 A</td></tr>
+                      <tr><td>5</td><td>—</td><td>17.5 A</td><td>16.7 A</td><td>15.2 A</td><td>7.6 A</td><td>6.1 A</td></tr>
+                      <tr><td>7-1/2</td><td>—</td><td>25.3 A</td><td>24.2 A</td><td>22 A</td><td>11 A</td><td>9.0 A</td></tr>
+                      <tr><td>10</td><td>—</td><td>32.2 A</td><td>30.8 A</td><td>28 A</td><td>14 A</td><td>11 A</td></tr>
+                      <tr><td>15</td><td>—</td><td>48.3 A</td><td>46.2 A</td><td>42 A</td><td>21 A</td><td>17 A</td></tr>
+                      <tr><td>20</td><td>—</td><td>62.1 A</td><td>59.4 A</td><td>54 A</td><td>27 A</td><td>22 A</td></tr>
+                      <tr><td>25</td><td>—</td><td>78.2 A</td><td>74.8 A</td><td>68 A</td><td>34 A</td><td>27 A</td></tr>
+                      <tr><td>30</td><td>—</td><td>92 A</td><td>88 A</td><td>80 A</td><td>40 A</td><td>32 A</td></tr>
+                      <tr><td>40</td><td>—</td><td>120 A</td><td>114 A</td><td>104 A</td><td>52 A</td><td>41 A</td></tr>
+                      <tr><td>50</td><td>—</td><td>150 A</td><td>143 A</td><td>130 A</td><td>65 A</td><td>52 A</td></tr>
+                      <tr><td>60</td><td>—</td><td>177 A</td><td>169 A</td><td>154 A</td><td>77 A</td><td>62 A</td></tr>
+                      <tr><td>75</td><td>—</td><td>221 A</td><td>211 A</td><td>192 A</td><td>96 A</td><td>77 A</td></tr>
+                      <tr><td>100</td><td>—</td><td>285 A</td><td>273 A</td><td>248 A</td><td>124 A</td><td>99 A</td></tr>
+                      <tr><td>125</td><td>—</td><td>359 A</td><td>343 A</td><td>312 A</td><td>156 A</td><td>125 A</td></tr>
+                      <tr><td>150</td><td>—</td><td>414 A</td><td>396 A</td><td>360 A</td><td>180 A</td><td>144 A</td></tr>
+                      <tr><td>200</td><td>—</td><td>552 A</td><td>528 A</td><td>480 A</td><td>240 A</td><td>192 A</td></tr>
+                    </tbody>
+                  </table>
+                </div>
+                <div class="note">ℹ NEC Table 430.250 — Induction-type squirrel-cage and wound-rotor motors. For 460 V values, multiply 230 V by 0.5. Common 460 V motors operate on 480 V systems; use NEC table for sizing, not nameplate FLA.</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ════════════════════════════════════════
+         CONDUIT FILL REFERENCE TABLES
+         ════════════════════════════════════════ -->
+    <section id="sec-conduit-ref" class="section">
+      <div class="section-header">
+        <h2>🔵 Conduit Fill Reference Tables</h2>
+        <p>EMT internal dimensions and maximum conductor counts from NEC Annex C, Table C.1.</p>
+      </div>
+      <div class="card-grid wide">
+
+        <div class="card">
+          <div class="card-title">EMT Trade Sizes — Internal Dimensions &amp; Fill Areas</div>
+          <div class="card-body">
+            <div class="ref-table-wrap">
+              <table class="ref-table">
+                <thead>
+                  <tr>
+                    <th>Trade Size</th>
+                    <th>Inside Dia (in)</th>
+                    <th>Total Area (sq in)</th>
+                    <th>1 Wire (53%)</th>
+                    <th>2 Wires (31%)</th>
+                    <th>3+ Wires (40%)</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr><td>1/2"</td><td>0.622</td><td>0.304</td><td>0.161</td><td>0.094</td><td>0.122</td></tr>
+                  <tr><td>3/4"</td><td>0.824</td><td>0.533</td><td>0.283</td><td>0.165</td><td>0.213</td></tr>
+                  <tr><td>1"</td><td>1.049</td><td>0.864</td><td>0.458</td><td>0.268</td><td>0.346</td></tr>
+                  <tr><td>1-1/4"</td><td>1.380</td><td>1.496</td><td>0.793</td><td>0.464</td><td>0.598</td></tr>
+                  <tr><td>1-1/2"</td><td>1.610</td><td>2.036</td><td>1.079</td><td>0.631</td><td>0.814</td></tr>
+                  <tr><td>2"</td><td>2.067</td><td>3.356</td><td>1.778</td><td>1.040</td><td>1.342</td></tr>
+                  <tr><td>2-1/2"</td><td>2.469</td><td>4.788</td><td>2.538</td><td>1.484</td><td>1.915</td></tr>
+                  <tr><td>3"</td><td>3.068</td><td>7.393</td><td>3.918</td><td>2.292</td><td>2.957</td></tr>
+                  <tr><td>3-1/2"</td><td>3.548</td><td>9.893</td><td>5.243</td><td>3.067</td><td>3.957</td></tr>
+                  <tr><td>4"</td><td>4.026</td><td>12.72</td><td>6.741</td><td>3.943</td><td>5.088</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">THHN/THWN-2 Max Conductor Count in EMT (3+ Wires, 40% Fill)</div>
+          <div class="card-body">
+            <div class="ref-table-wrap">
+              <table class="ref-table">
+                <thead>
+                  <tr><th>AWG/kcmil</th><th>1/2"</th><th>3/4"</th><th>1"</th><th>1-1/4"</th><th>1-1/2"</th><th>2"</th><th>2-1/2"</th><th>3"</th><th>4"</th></tr>
+                </thead>
+                <tbody>
+                  <tr><td>14 AWG</td><td>12</td><td>22</td><td>35</td><td>61</td><td>84</td><td>138</td><td>197</td><td>305</td><td>524</td></tr>
+                  <tr><td>12 AWG</td><td>9</td><td>16</td><td>26</td><td>45</td><td>61</td><td>101</td><td>144</td><td>222</td><td>382</td></tr>
+                  <tr><td>10 AWG</td><td>5</td><td>10</td><td>16</td><td>28</td><td>38</td><td>63</td><td>90</td><td>140</td><td>241</td></tr>
+                  <tr><td>8 AWG</td><td>3</td><td>6</td><td>9</td><td>16</td><td>22</td><td>36</td><td>52</td><td>80</td><td>138</td></tr>
+                  <tr><td>6 AWG</td><td>1</td><td>4</td><td>7</td><td>12</td><td>16</td><td>26</td><td>38</td><td>58</td><td>100</td></tr>
+                  <tr><td>4 AWG</td><td>1</td><td>2</td><td>4</td><td>7</td><td>10</td><td>16</td><td>23</td><td>35</td><td>61</td></tr>
+                  <tr><td>2 AWG</td><td>1</td><td>1</td><td>3</td><td>5</td><td>7</td><td>11</td><td>16</td><td>25</td><td>43</td></tr>
+                  <tr><td>1 AWG</td><td>—</td><td>1</td><td>1</td><td>4</td><td>5</td><td>8</td><td>11</td><td>18</td><td>31</td></tr>
+                  <tr><td>1/0 AWG</td><td>—</td><td>1</td><td>1</td><td>3</td><td>4</td><td>7</td><td>10</td><td>15</td><td>26</td></tr>
+                  <tr><td>2/0 AWG</td><td>—</td><td>1</td><td>1</td><td>2</td><td>3</td><td>6</td><td>8</td><td>13</td><td>22</td></tr>
+                  <tr><td>3/0 AWG</td><td>—</td><td>—</td><td>1</td><td>1</td><td>3</td><td>5</td><td>7</td><td>10</td><td>18</td></tr>
+                  <tr><td>4/0 AWG</td><td>—</td><td>—</td><td>1</td><td>1</td><td>2</td><td>4</td><td>6</td><td>9</td><td>15</td></tr>
+                  <tr><td>250 kcmil</td><td>—</td><td>—</td><td>—</td><td>1</td><td>1</td><td>3</td><td>4</td><td>7</td><td>12</td></tr>
+                  <tr><td>300 kcmil</td><td>—</td><td>—</td><td>—</td><td>1</td><td>1</td><td>3</td><td>4</td><td>6</td><td>11</td></tr>
+                  <tr><td>350 kcmil</td><td>—</td><td>—</td><td>—</td><td>1</td><td>1</td><td>2</td><td>3</td><td>5</td><td>9</td></tr>
+                  <tr><td>500 kcmil</td><td>—</td><td>—</td><td>—</td><td>—</td><td>1</td><td>1</td><td>2</td><td>4</td><td>7</td></tr>
+                </tbody>
+              </table>
+            </div>
+            <div class="note">ℹ Based on NEC Annex C, Table C.1 (EMT, THHN/THWN-2 conductors). For mixed sizes, use the conduit fill calculator.</div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ════════════════════════════════════════
+         UNIT CONVERSIONS
+         ════════════════════════════════════════ -->
+    <section id="sec-convert" class="section">
+      <div class="section-header">
+        <h2>🔁 Unit Conversions</h2>
+        <p>Common electrical unit conversions for field and engineering use.</p>
+      </div>
+      <div class="card-grid">
+
+        <div class="card">
+          <div class="card-title">Unit Converter</div>
+          <div class="card-body">
+            <div class="input-group single">
+              <div><label>Value to Convert</label><input type="number" id="uc_val" placeholder="Enter value" step="any"></div>
+            </div>
+            <div class="input-group">
+              <div>
+                <label>From Unit</label>
+                <select id="uc_from">
+                  <optgroup label="Power">
+                    <option value="W">Watts (W)</option>
+                    <option value="kW">Kilowatts (kW)</option>
+                    <option value="MW">Megawatts (MW)</option>
+                    <option value="HP">Horsepower (HP)</option>
+                    <option value="BTU/h">BTU/hour</option>
+                  </optgroup>
+                  <optgroup label="Apparent / Reactive">
+                    <option value="VA">Volt-Amps (VA)</option>
+                    <option value="kVA">kVA</option>
+                    <option value="MVA">MVA</option>
+                    <option value="VAR">VAR</option>
+                    <option value="kVAR">kVAR</option>
+                  </optgroup>
+                  <optgroup label="Voltage">
+                    <option value="V">Volts (V)</option>
+                    <option value="kV">Kilovolts (kV)</option>
+                    <option value="mV">Millivolts (mV)</option>
+                  </optgroup>
+                  <optgroup label="Current">
+                    <option value="A">Amps (A)</option>
+                    <option value="mA">Milliamps (mA)</option>
+                    <option value="kA">Kiloamps (kA)</option>
+                  </optgroup>
+                  <optgroup label="Resistance">
+                    <option value="Ohm">Ohms (Ω)</option>
+                    <option value="kOhm">Kilohms (kΩ)</option>
+                    <option value="MOhm">Megohms (MΩ)</option>
+                  </optgroup>
+                  <optgroup label="Capacitance">
+                    <option value="F">Farads (F)</option>
+                    <option value="mF">Millifarads (mF)</option>
+                    <option value="uF">Microfarads (µF)</option>
+                    <option value="nF">Nanofarads (nF)</option>
+                    <option value="pF">Picofarads (pF)</option>
+                  </optgroup>
+                  <optgroup label="Inductance">
+                    <option value="H">Henries (H)</option>
+                    <option value="mH">Millihenries (mH)</option>
+                    <option value="uH">Microhenries (µH)</option>
+                  </optgroup>
+                  <optgroup label="Frequency">
+                    <option value="Hz">Hertz (Hz)</option>
+                    <option value="kHz">Kilohertz (kHz)</option>
+                    <option value="MHz">Megahertz (MHz)</option>
+                  </optgroup>
+                  <optgroup label="Length">
+                    <option value="ft">Feet (ft)</option>
+                    <option value="m">Meters (m)</option>
+                    <option value="in">Inches (in)</option>
+                  </optgroup>
+                </select>
+              </div>
+              <div>
+                <label>To Unit</label>
+                <select id="uc_to">
+                  <optgroup label="Power">
+                    <option value="W">Watts (W)</option>
+                    <option value="kW">Kilowatts (kW)</option>
+                    <option value="MW">Megawatts (MW)</option>
+                    <option value="HP" selected>Horsepower (HP)</option>
+                    <option value="BTU/h">BTU/hour</option>
+                  </optgroup>
+                  <optgroup label="Apparent / Reactive">
+                    <option value="VA">Volt-Amps (VA)</option>
+                    <option value="kVA">kVA</option>
+                    <option value="MVA">MVA</option>
+                    <option value="VAR">VAR</option>
+                    <option value="kVAR">kVAR</option>
+                  </optgroup>
+                  <optgroup label="Voltage">
+                    <option value="V">Volts (V)</option>
+                    <option value="kV">Kilovolts (kV)</option>
+                    <option value="mV">Millivolts (mV)</option>
+                  </optgroup>
+                  <optgroup label="Current">
+                    <option value="A">Amps (A)</option>
+                    <option value="mA">Milliamps (mA)</option>
+                    <option value="kA">Kiloamps (kA)</option>
+                  </optgroup>
+                  <optgroup label="Resistance">
+                    <option value="Ohm">Ohms (Ω)</option>
+                    <option value="kOhm">Kilohms (kΩ)</option>
+                    <option value="MOhm">Megohms (MΩ)</option>
+                  </optgroup>
+                  <optgroup label="Capacitance">
+                    <option value="F">Farads (F)</option>
+                    <option value="mF">Millifarads (mF)</option>
+                    <option value="uF">Microfarads (µF)</option>
+                    <option value="nF">Nanofarads (nF)</option>
+                    <option value="pF">Picofarads (pF)</option>
+                  </optgroup>
+                  <optgroup label="Inductance">
+                    <option value="H">Henries (H)</option>
+                    <option value="mH">Millihenries (mH)</option>
+                    <option value="uH">Microhenries (µH)</option>
+                  </optgroup>
+                  <optgroup label="Frequency">
+                    <option value="Hz">Hertz (Hz)</option>
+                    <option value="kHz">Kilohertz (kHz)</option>
+                    <option value="MHz">Megahertz (MHz)</option>
+                  </optgroup>
+                  <optgroup label="Length">
+                    <option value="ft">Feet (ft)</option>
+                    <option value="m">Meters (m)</option>
+                    <option value="in">Inches (in)</option>
+                  </optgroup>
+                </select>
+              </div>
+            </div>
+            <button class="btn" onclick="convertUnits()">Convert</button>
+            <div id="uc_result" class="result"></div>
+            <div class="note">ℹ Select compatible unit types (e.g., power → power). Mixing types (W → A) is not valid without additional parameters.</div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">Quick Reference Conversions</div>
+          <div class="card-body">
+            <div class="formula-box">
+              <strong>Power:</strong><br>
+              1 HP = 746 W = 0.746 kW<br>
+              1 kW = 1.341 HP<br>
+              1 BTU/h = 0.29307 W<br>
+              1 kW = 3,412 BTU/h<br><br>
+              <strong>Electrical Prefixes:</strong><br>
+              pico  (p) = 10⁻¹²<br>
+              nano  (n) = 10⁻⁹<br>
+              micro (µ) = 10⁻⁶<br>
+              milli (m) = 10⁻³<br>
+              kilo  (k) = 10³<br>
+              mega  (M) = 10⁶<br>
+              giga  (G) = 10⁹<br><br>
+              <strong>Length:</strong><br>
+              1 ft = 0.3048 m &nbsp;|&nbsp; 1 in = 25.4 mm
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ════════════════════════════════════════
+         CIRCULAR MILS
+         ════════════════════════════════════════ -->
+    <section id="sec-cm" class="section">
+      <div class="section-header">
+        <h2>🔵 Circular Mils (CM)</h2>
+        <p>Convert between circular mils and wire diameter in inches.</p>
+      </div>
+      <div class="card-grid">
+
+        <div class="card">
+          <div class="card-title">Circular Mils Calculator</div>
+          <div class="card-body">
+            <div class="formula-box">
+              CM = (d × 1000)²  &nbsp; (d in inches)<br>
+              d = √CM / 1000
+            </div>
+            <div class="input-group single">
+              <div>
+                <label>Conversion Direction</label>
+                <select id="cm_mode" onchange="cmModeChange()">
+                  <option value="to_cm">Diameter (in) → Circular Mils</option>
+                  <option value="to_in">Circular Mils → Diameter (in)</option>
+                </select>
+              </div>
+            </div>
+            <div id="cm_form_to_cm">
+              <div class="input-group single">
+                <div><label>Wire Diameter (inches)</label><input type="number" id="cm_d" placeholder="e.g. 0.0641" step="any" min="0"></div>
+              </div>
+            </div>
+            <div id="cm_form_to_in" style="display:none">
+              <div class="input-group single">
+                <div><label>Circular Mils</label><input type="number" id="cm_cm" placeholder="e.g. 4110" step="any" min="0"></div>
+              </div>
+            </div>
+            <button class="btn" onclick="calcCM()">Calculate</button>
+            <div id="cm_result" class="result"></div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">Circular Mils Reference</div>
+          <div class="card-body">
+            <div class="formula-box">
+              <strong>Definition:</strong><br>
+              1 circular mil = area of a circle with 1 mil (0.001 in) diameter<br><br>
+              <strong>Formula:</strong><br>
+              CM = (d_mils)² = (d_in × 1000)²<br><br>
+              <strong>Why use CM?</strong><br>
+              Eliminates π from wire area calculations.<br>
+              Standard unit in NEC for conductor sizing.<br><br>
+              <strong>Common wire areas:</strong><br>
+              14 AWG = 4,110 CM<br>
+              12 AWG = 6,530 CM<br>
+              10 AWG = 10,380 CM<br>
+              4/0 AWG = 211,600 CM<br>
+              500 kcmil = 500,000 CM
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+  </main><!-- end .main -->
+</div><!-- end .layout -->
+
+<script src="js/app.js"></script>
+</body>
+</html>
