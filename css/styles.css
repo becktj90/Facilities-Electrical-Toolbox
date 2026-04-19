@@ -641,6 +641,57 @@ select option {
 }
 .note::before { content: '! '; color: var(--amber); }
 
+/* ── Expandable Info Panels (<details>/<summary>) ── */
+.section-info {
+  margin-top: 8px;
+  border: 1px dashed var(--green-dark);
+  border-radius: 0;
+  background: #000;
+}
+
+.section-info summary {
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  color: var(--green-mid);
+  padding: 5px 10px;
+  cursor: pointer;
+  letter-spacing: 0.04em;
+  list-style: none;
+  user-select: none;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: color 0.1s;
+}
+.section-info summary::-webkit-details-marker { display: none; }
+.section-info summary::before {
+  content: '[+]';
+  color: var(--green-dark);
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+}
+.section-info[open] summary::before { content: '[−]'; color: var(--amber); }
+.section-info summary:hover { color: var(--green); }
+.section-info summary:hover::before { color: var(--green-mid); }
+
+.section-info-body {
+  padding: 8px 12px 10px;
+  border-top: 1px dashed var(--green-dark);
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  color: var(--green-mid);
+  line-height: 1.7;
+  letter-spacing: 0.02em;
+}
+.section-info-body strong {
+  color: var(--green);
+}
+.section-info-body ul {
+  margin: 4px 0 4px 16px;
+  padding: 0;
+}
+.section-info-body li::marker { color: var(--amber); }
+
 /* ── Responsive ── */
 @media (max-width: 768px) {
   .layout { flex-direction: column; }
