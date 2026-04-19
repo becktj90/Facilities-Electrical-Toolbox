@@ -1022,15 +1022,18 @@ window.calcNEC = function () {
   }
 
   const CW = 600, CH = 350;
-  const GRAVITY = 0.32;
-  const THRUST  = -6.5;
-  const OBS_W   = 32;
-  const GAP_H   = 130;
+  const GRAVITY        = 0.38;
+  const THRUST         = -5.0;
+  const OBS_W          = 32;
+  const GAP_480V       = 130;
+  const GAP_23KV       = 90;
+  const ARC_DIST       = 20;
+  const FARADAY_FRAMES = 300;   // ~5 s at 60 fps
 
   let canvas, ctx;
   let state;             // 'READY' | 'PLAYING' | 'GAMEOVER'
-  let rocket, obstacles, particles, stars;
-  let score, hiScore, frame, speedMult;
+  let rocket, obstacles, particles, stars, powerups;
+  let score, hiScore, frame, speedMult, faradayCageTimer, lightningFlash;
 
   function init() {
     canvas = document.getElementById('arcadeCanvas');
@@ -1072,18 +1075,33 @@ window.calcNEC = function () {
   }
 
   function resetGame() {
-    rocket    = { x: 90, y: CH / 2, vy: 0, w: 28, h: 14 };
-    obstacles = [];
-    particles = [];
-    score     = 0;
-    frame     = 0;
-    speedMult = 1;
-    state     = state === 'GAMEOVER' ? 'GAMEOVER' : 'READY';
+    rocket           = { x: 90, y: CH / 2, vy: 0, w: 28, h: 14 };
+    obstacles        = [];
+    particles        = [];
+    powerups         = [];
+    score            = 0;
+    frame            = 0;
+    speedMult        = 1;
+    faradayCageTimer = 0;
+    lightningFlash   = null;
+    state            = state === 'GAMEOVER' ? 'GAMEOVER' : 'READY';
   }
 
   function spawnObs() {
-    const gapY = Math.random() * (CH - GAP_H - 80) + 40;
-    obstacles.push({ x: CW + 4, topH: gapY, botY: gapY + GAP_H, passed: false });
+    const voltage = Math.random() < 0.30 ? '23kV' : '480V';
+    const gap     = voltage === '23kV' ? GAP_23KV : GAP_480V;
+    const gapY    = Math.random() * (CH - gap - 80) + 40;
+    obstacles.push({ x: CW + 4, topH: gapY, botY: gapY + gap, passed: false, voltage });
+  }
+
+  function spawnPowerup() {
+    powerups.push({
+      x: CW + 4,
+      y: Math.random() * (CH - 80) + 40,
+      type: 'faraday',
+      r: 12,
+      collected: false
+    });
   }
 
   function loop() {
@@ -1096,6 +1114,9 @@ window.calcNEC = function () {
     if (state !== 'PLAYING') { frame++; return; }
     frame++;
     speedMult = 1 + score * 0.018;
+
+    // Faraday cage timer countdown
+    if (faradayCageTimer > 0) faradayCageTimer--;
 
     // Physics
     rocket.vy += GRAVITY;
@@ -1123,6 +1144,9 @@ window.calcNEC = function () {
     const spawnEvery = Math.max(55, Math.round(110 / speedMult));
     if (frame % spawnEvery === 0) spawnObs();
 
+    // Power-ups: spawn every ~250 frames
+    if (frame % 250 === 0) spawnPowerup();
+
     const spd = 2.8 * speedMult;
     for (const o of obstacles) {
       o.x -= spd;
@@ -1130,11 +1154,41 @@ window.calcNEC = function () {
     }
     obstacles = obstacles.filter(o => o.x + OBS_W > -5);
 
+    // Power-up movement and collection
+    for (const pu of powerups) {
+      pu.x -= spd;
+      if (!pu.collected) {
+        const dx = rocket.x - pu.x, dy = rocket.y - pu.y;
+        if (Math.sqrt(dx * dx + dy * dy) < rocket.w / 2 + pu.r) {
+          pu.collected     = true;
+          faradayCageTimer = FARADAY_FRAMES;
+        }
+      }
+    }
+    powerups = powerups.filter(pu => !pu.collected && pu.x + pu.r > -5);
+
     // Scroll stars
     for (const s of stars) { s.x -= s.spd * speedMult; if (s.x < 0) s.x = CW; }
 
     // Boundary collision
     if (rocket.y - rocket.h / 2 < 0 || rocket.y + rocket.h / 2 > CH) { endGame(); return; }
+
+    // Arc proximity check for 23kV barriers (skip if Faraday cage is active)
+    lightningFlash = null;
+    if (faradayCageTimer <= 0) {
+      for (const o of obstacles) {
+        if (o.voltage !== '23kV') continue;
+        const inXRange = rocket.x > o.x - ARC_DIST && rocket.x < o.x + OBS_W + ARC_DIST;
+        const nearTop  = inXRange && rocket.y < o.topH + ARC_DIST;
+        const nearBot  = inXRange && rocket.y > o.botY - ARC_DIST;
+        if (nearTop || nearBot) {
+          const ay = nearTop ? o.topH : o.botY;
+          lightningFlash = { x1: o.x + OBS_W / 2, y1: ay, x2: rocket.x, y2: rocket.y };
+          endGame();
+          return;
+        }
+      }
+    }
 
     // Obstacle collision (shrunk hitbox for fairness)
     const hx = rocket.x - rocket.w / 2 + 4, hy = rocket.y - rocket.h / 2 + 3;
@@ -1191,9 +1245,18 @@ window.calcNEC = function () {
     // Obstacles
     for (const o of obstacles) drawObs(o);
 
+    // Power-ups
+    for (const pu of powerups) drawPowerup(pu);
+
     // Rocket (always drawn in PLAYING; blink in READY/GAMEOVER)
     const showRocket = state === 'PLAYING' || (Math.floor(Date.now() / 500) % 2 === 0);
-    if (showRocket) drawRocket(rocket.x, rocket.y, rocket.vy);
+    if (showRocket) {
+      drawRocket(rocket.x, rocket.y, rocket.vy);
+      if (faradayCageTimer > 0) drawFaradayCage(rocket.x, rocket.y);
+    }
+
+    // Lightning arc (visible on impact frame and game-over screen)
+    if (lightningFlash) drawLightning(lightningFlash.x1, lightningFlash.y1, lightningFlash.x2, lightningFlash.y2);
 
     // Overlays
     if      (state === 'READY')    drawReady();
@@ -1202,29 +1265,55 @@ window.calcNEC = function () {
   }
 
   function drawObs(o) {
+    const is23kV = o.voltage === '23kV';
     ctx.save();
-    // Panel body
-    ctx.fillStyle   = '#0b150b';
-    ctx.strokeStyle = '#22cc22';
-    ctx.lineWidth   = 2;
-    ctx.shadowColor = '#33ff33'; ctx.shadowBlur = 6;
+
+    // Panel body colours based on voltage level
+    if (is23kV) {
+      ctx.fillStyle   = '#150505';
+      ctx.strokeStyle = '#ff3300';
+      ctx.shadowColor = '#ff3300';
+    } else {
+      ctx.fillStyle   = '#15110a';
+      ctx.strokeStyle = '#ffcc00';
+      ctx.shadowColor = '#ffcc00';
+    }
+    ctx.lineWidth  = 2;
+    ctx.shadowBlur = 6;
 
     ctx.fillRect(o.x, 0, OBS_W, o.topH);
     ctx.strokeRect(o.x, 0, OBS_W, o.topH);
     ctx.fillRect(o.x, o.botY, OBS_W, CH - o.botY);
     ctx.strokeRect(o.x, o.botY, OBS_W, CH - o.botY);
 
+    // Electric field glow for 23 kV barriers
+    if (is23kV) {
+      const glowPulse = 0.35 + 0.25 * Math.sin(Date.now() / 120);
+      ctx.strokeStyle = 'rgba(255,80,0,' + glowPulse + ')';
+      ctx.shadowBlur  = 20;
+      ctx.lineWidth   = 6;
+      ctx.strokeRect(o.x, 0, OBS_W, o.topH);
+      ctx.strokeRect(o.x, o.botY, OBS_W, CH - o.botY);
+    }
+
     // Hazard bolt icons
     ctx.shadowBlur = 12;
-    ctx.fillStyle  = '#ffb300';
+    ctx.fillStyle  = is23kV ? '#ff6633' : '#ffcc00';
     ctx.font       = '14px sans-serif';
     ctx.textAlign  = 'center';
-    if (o.topH > 22)          ctx.fillText('\u26a1', o.x + OBS_W / 2, o.topH - 6);
-    if (CH - o.botY > 22)     ctx.fillText('\u26a1', o.x + OBS_W / 2, o.botY + 18);
+    if (o.topH > 22)       ctx.fillText('\u26a1', o.x + OBS_W / 2, o.topH - 6);
+    if (CH - o.botY > 22)  ctx.fillText('\u26a1', o.x + OBS_W / 2, o.botY + 18);
+
+    // Voltage label
+    ctx.shadowBlur = 8;
+    ctx.fillStyle  = is23kV ? '#ff3300' : '#ffcc00';
+    ctx.font       = '9px "Share Tech Mono",monospace';
+    if (o.topH > 30)       ctx.fillText(o.voltage, o.x + OBS_W / 2, o.topH - 20);
+    if (CH - o.botY > 30)  ctx.fillText(o.voltage, o.x + OBS_W / 2, o.botY + 30);
 
     // Gap indicator lines
     ctx.shadowBlur  = 0;
-    ctx.strokeStyle = 'rgba(255,179,0,0.25)';
+    ctx.strokeStyle = is23kV ? 'rgba(255,80,0,0.3)' : 'rgba(255,204,0,0.25)';
     ctx.lineWidth   = 1;
     ctx.setLineDash([4, 4]);
     ctx.beginPath();
@@ -1236,6 +1325,60 @@ window.calcNEC = function () {
     ctx.lineTo(o.x + OBS_W, o.botY);
     ctx.stroke();
     ctx.setLineDash([]);
+    ctx.restore();
+  }
+
+  function drawLightning(x1, y1, x2, y2) {
+    const segments = 8;
+    ctx.save();
+    ctx.strokeStyle = '#ffff33';
+    ctx.shadowColor = '#ffff33';
+    ctx.shadowBlur  = 18;
+    ctx.lineWidth   = 2;
+    ctx.beginPath();
+    ctx.moveTo(x1, y1);
+    for (let i = 1; i < segments; i++) {
+      const t  = i / segments;
+      const jx = x1 + (x2 - x1) * t + (Math.random() - 0.5) * 28;
+      const jy = y1 + (y2 - y1) * t + (Math.random() - 0.5) * 28;
+      ctx.lineTo(jx, jy);
+    }
+    ctx.lineTo(x2, y2);
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  function drawPowerup(pu) {
+    ctx.save();
+    ctx.translate(pu.x, pu.y);
+    const pulse = 0.5 + 0.4 * Math.sin(Date.now() / 200);
+    ctx.strokeStyle = 'rgba(100,200,255,' + pulse + ')';
+    ctx.shadowColor = '#64c8ff';
+    ctx.shadowBlur  = 14;
+    ctx.lineWidth   = 1.5;
+    ctx.beginPath(); ctx.arc(0, 0, pu.r, 0, Math.PI * 2); ctx.stroke();
+    ctx.beginPath(); ctx.ellipse(0, 0, pu.r, pu.r * 0.35, 0, 0, Math.PI * 2); ctx.stroke();
+    ctx.beginPath(); ctx.ellipse(0, 0, pu.r * 0.35, pu.r, 0, 0, Math.PI * 2); ctx.stroke();
+    ctx.fillStyle    = 'rgba(100,200,255,' + pulse + ')';
+    ctx.shadowBlur   = 8;
+    ctx.font         = '8px "Share Tech Mono",monospace';
+    ctx.textAlign    = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('FC', 0, 0);
+    ctx.restore();
+  }
+
+  function drawFaradayCage(cx, cy) {
+    ctx.save();
+    ctx.translate(cx, cy);
+    const pulse = 0.6 + 0.3 * Math.sin(Date.now() / 150);
+    ctx.strokeStyle = 'rgba(100,200,255,' + pulse + ')';
+    ctx.shadowColor = '#64c8ff';
+    ctx.shadowBlur  = 16;
+    ctx.lineWidth   = 1.5;
+    ctx.beginPath(); ctx.ellipse(0, 0, 22, 22, 0, 0, Math.PI * 2); ctx.stroke();
+    ctx.beginPath(); ctx.ellipse(0, 0, 22, 9, 0, 0, Math.PI * 2); ctx.stroke();
+    ctx.beginPath(); ctx.ellipse(0, 0, 9, 22, Math.PI / 2, 0, Math.PI * 2); ctx.stroke();
     ctx.restore();
   }
 
@@ -1292,6 +1435,12 @@ window.calcNEC = function () {
     ctx.font        = 'bold 13px "Share Tech Mono",monospace';
     ctx.textAlign   = 'left';
     ctx.fillText('Score: ' + score + '  \u2014  ' + lbl, 10, 22);
+    if (faradayCageTimer > 0) {
+      const secs = (faradayCageTimer / 60).toFixed(1);
+      ctx.fillStyle   = '#64c8ff';
+      ctx.shadowColor = '#64c8ff';
+      ctx.fillText('\u26f6 FARADAY CAGE: ' + secs + 's', 10, 40);
+    }
     ctx.restore();
   }
 
@@ -1333,10 +1482,17 @@ window.calcNEC = function () {
     ctx.font = '32px "VT323",monospace';
     ctx.fillText('GAME OVER', CW / 2, CH / 2 - 40);
 
+    if (lightningFlash) {
+      ctx.shadowColor = '#ffff33'; ctx.shadowBlur = 12;
+      ctx.fillStyle   = '#ffff33';
+      ctx.font = '13px "Share Tech Mono",monospace';
+      ctx.fillText('\u26a1 23kV ARC FLASH \u26a1', CW / 2, CH / 2 - 20);
+    }
+
     ctx.shadowColor = '#33ff33'; ctx.shadowBlur = 8;
     ctx.fillStyle   = '#33ff33';
     ctx.font = '15px "Share Tech Mono",monospace';
-    ctx.fillText('Score: ' + score + '  \u2014  ' + scoreLabel(score), CW / 2, CH / 2 - 8);
+    ctx.fillText('Score: ' + score + '  \u2014  ' + scoreLabel(score), CW / 2, lightningFlash ? CH / 2 + 4 : CH / 2 - 8);
 
     if (score >= hiScore && score > 0) {
       ctx.shadowColor = '#ffb300'; ctx.shadowBlur = 12;
