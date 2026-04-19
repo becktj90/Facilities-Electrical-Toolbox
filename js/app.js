@@ -1387,46 +1387,102 @@ window.calcNEC = function () {
   }
 
   function drawRocket(cx, cy, vy) {
+    // Blue Origin New Glenn — 8-bit pixel-art style
+    // Nose points right (+x), engine bells at left (-x)
     ctx.save();
     ctx.translate(cx, cy);
     const tilt = Math.max(-0.45, Math.min(0.45, (vy || 0) * 0.035));
     ctx.rotate(tilt);
 
-    ctx.shadowColor = '#33ff33'; ctx.shadowBlur = 14;
+    ctx.shadowColor = '#5abcf0';
+    ctx.shadowBlur  = 14;
 
-    // Fuselage
-    ctx.fillStyle = '#22cc22';
-    ctx.beginPath();
-    ctx.moveTo(15, 0);     // nose
-    ctx.lineTo(-5, -7);    // top edge
-    ctx.lineTo(-10, -5);
-    ctx.lineTo(-10, 5);
-    ctx.lineTo(-5, 7);     // bottom edge
-    ctx.closePath();
-    ctx.fill();
-
-    // Cockpit glow
-    ctx.shadowBlur  = 22;
-    ctx.fillStyle   = '#66ff66';
-    ctx.beginPath(); ctx.arc(3, 0, 4, 0, Math.PI * 2); ctx.fill();
-    ctx.fillStyle   = '#020602';
-    ctx.beginPath(); ctx.arc(3, 0, 2.5, 0, Math.PI * 2); ctx.fill();
-
-    // Fins
-    ctx.shadowBlur = 4;
-    ctx.fillStyle  = '#175017';
+    // ── Swept-back fins (drawn first, behind body) ──
+    ctx.fillStyle = '#002a52';
     // top fin
     ctx.beginPath();
-    ctx.moveTo(-5, -5);
-    ctx.lineTo(-14, -16);
-    ctx.lineTo(-9,  -5);
+    ctx.moveTo(-8, -8);
+    ctx.lineTo(-14, -20);
+    ctx.lineTo(-19, -20);
+    ctx.lineTo(-14, -8);
     ctx.closePath(); ctx.fill();
     // bottom fin
     ctx.beginPath();
-    ctx.moveTo(-5, 5);
-    ctx.lineTo(-14, 16);
-    ctx.lineTo(-9,  5);
+    ctx.moveTo(-8, 8);
+    ctx.lineTo(-14, 20);
+    ctx.lineTo(-19, 20);
+    ctx.lineTo(-14, 8);
     ctx.closePath(); ctx.fill();
+
+    // ── Main booster body (Blue Origin blue) ──
+    ctx.shadowBlur = 6;
+    ctx.fillStyle = '#004b8d';
+    ctx.fillRect(-18, -8, 28, 16);
+
+    // 8-bit panel shading: dark top & bottom bands
+    ctx.fillStyle = '#003468';
+    ctx.fillRect(-18, -8, 28, 3);
+    ctx.fillRect(-18,  5, 28, 3);
+
+    // light reflection strip
+    ctx.fillStyle = '#1a6fad';
+    ctx.fillRect(-18, -5, 28, 2);
+
+    // ── Payload fairing (white section, right portion) ──
+    ctx.fillStyle = '#c8daf0';
+    ctx.fillRect(2, -8, 10, 16);
+    ctx.fillStyle = '#ddeeff';
+    ctx.fillRect(4, -8, 8, 16);
+    ctx.fillStyle = '#eef5ff';
+    ctx.fillRect(6, -8, 4, 16);
+
+    // ── Nose cone (8-bit triangle, points right) ──
+    ctx.fillStyle = '#ddeeff';
+    ctx.beginPath();
+    ctx.moveTo(12, -8);
+    ctx.lineTo(21,  0);
+    ctx.lineTo(12,  8);
+    ctx.closePath(); ctx.fill();
+    // nose highlight pixel
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(17, -1, 3, 2);
+
+    // ── Blue Origin livery: blue band across fairing ──
+    ctx.fillStyle = '#004b8d';
+    ctx.fillRect(2, -2, 14, 4);
+    // light-blue accent lines above/below band
+    ctx.fillStyle = '#5abcf0';
+    ctx.fillRect(2, -4, 14, 2);
+    ctx.fillRect(2,  2, 14, 2);
+
+    // ── Engine bay backing ──
+    ctx.fillStyle = '#111826';
+    ctx.fillRect(-22, -7, 5, 14);
+
+    // ── BE-4 engine bells (3 simplified nozzles) ──
+    ctx.fillStyle = '#5a6880';
+    // top bell
+    ctx.beginPath();
+    ctx.moveTo(-22, -6); ctx.lineTo(-27, -7); ctx.lineTo(-27, -2); ctx.lineTo(-22, -2);
+    ctx.closePath(); ctx.fill();
+    // centre bell
+    ctx.beginPath();
+    ctx.moveTo(-22, -1); ctx.lineTo(-28, -2); ctx.lineTo(-28,  2); ctx.lineTo(-22,  1);
+    ctx.closePath(); ctx.fill();
+    // bottom bell
+    ctx.beginPath();
+    ctx.moveTo(-22,  2); ctx.lineTo(-27,  2); ctx.lineTo(-27,  7); ctx.lineTo(-22,  6);
+    ctx.closePath(); ctx.fill();
+
+    // nozzle exits (dark interior)
+    ctx.fillStyle = '#08081a';
+    ctx.fillRect(-27, -7, 2, 5);
+    ctx.fillRect(-28, -2, 2, 4);
+    ctx.fillRect(-27,  2, 2, 5);
+
+    // nozzle heat glow
+    ctx.fillStyle = 'rgba(255, 140, 30, 0.7)';
+    ctx.fillRect(-29, -1, 2, 2);
 
     ctx.restore();
   }
