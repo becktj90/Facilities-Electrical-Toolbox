@@ -1022,13 +1022,16 @@ window.calcNEC = function () {
   }
 
   const CW = 600, CH = 350;
-  const GRAVITY        = 0.38;
-  const THRUST         = -5.0;
-  const OBS_W          = 32;
-  const GAP_480V       = 130;
-  const GAP_23KV       = 90;
-  const ARC_DIST       = 20;
-  const FARADAY_FRAMES = 300;   // ~5 s at 60 fps
+  const GRAVITY               = 0.38;
+  const THRUST                = -5.0;
+  const OBS_W                 = 32;
+  const GAP_480V              = 130;
+  const GAP_23KV              = 90;
+  const ARC_DIST              = 20;
+  const TARGET_FPS            = 60;
+  const FARADAY_FRAMES        = TARGET_FPS * 5;   // 5 s at target frame rate
+  const SPAWN_23KV_PROB       = 0.30;             // 30 % of barriers are 23 kV
+  const POWERUP_SPAWN_INTERVAL = 250;             // frames between power-up spawns
 
   let canvas, ctx;
   let state;             // 'READY' | 'PLAYING' | 'GAMEOVER'
@@ -1088,7 +1091,7 @@ window.calcNEC = function () {
   }
 
   function spawnObs() {
-    const voltage = Math.random() < 0.30 ? '23kV' : '480V';
+    const voltage = Math.random() < SPAWN_23KV_PROB ? '23kV' : '480V';
     const gap     = voltage === '23kV' ? GAP_23KV : GAP_480V;
     const gapY    = Math.random() * (CH - gap - 80) + 40;
     obstacles.push({ x: CW + 4, topH: gapY, botY: gapY + gap, passed: false, voltage });
@@ -1144,8 +1147,8 @@ window.calcNEC = function () {
     const spawnEvery = Math.max(55, Math.round(110 / speedMult));
     if (frame % spawnEvery === 0) spawnObs();
 
-    // Power-ups: spawn every ~250 frames
-    if (frame % 250 === 0) spawnPowerup();
+    // Power-ups: spawn every POWERUP_SPAWN_INTERVAL frames
+    if (frame % POWERUP_SPAWN_INTERVAL === 0) spawnPowerup();
 
     const spd = 2.8 * speedMult;
     for (const o of obstacles) {
@@ -1159,7 +1162,8 @@ window.calcNEC = function () {
       pu.x -= spd;
       if (!pu.collected) {
         const dx = rocket.x - pu.x, dy = rocket.y - pu.y;
-        if (Math.sqrt(dx * dx + dy * dy) < rocket.w / 2 + pu.r) {
+        const pickupDist = rocket.w / 2 + pu.r;
+        if (dx * dx + dy * dy < pickupDist * pickupDist) {
           pu.collected     = true;
           faradayCageTimer = FARADAY_FRAMES;
         }
@@ -1436,7 +1440,7 @@ window.calcNEC = function () {
     ctx.textAlign   = 'left';
     ctx.fillText('Score: ' + score + '  \u2014  ' + lbl, 10, 22);
     if (faradayCageTimer > 0) {
-      const secs = (faradayCageTimer / 60).toFixed(1);
+      const secs = (faradayCageTimer / TARGET_FPS).toFixed(1);
       ctx.fillStyle   = '#64c8ff';
       ctx.shadowColor = '#64c8ff';
       ctx.fillText('\u26f6 FARADAY CAGE: ' + secs + 's', 10, 40);
