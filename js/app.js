@@ -863,7 +863,7 @@ const NEC_OCPD_MULT = {
   'general': 1.25
 };
 
-function necNECRef(loadType) {
+function necCodeRef(loadType) {
   return { motor: '430.22', 'motor-multi': '430.24', 'lighting-general': '210.20(A)',
            'lighting-hospital': '210.20(A)', hvac: '440.32', heat: '424.3(B)',
            welder: '630.11', general: '210.20(A)' }[loadType] || '210.20(A)';
@@ -974,7 +974,7 @@ window.calcNEC = function () {
 
   showResult('nec_result', [
     ['Load FLA',                                     fmt(fla, 2) + ' A'],
-    ['NEC Conductor Mult (NEC ' + necNECRef(loadType) + ')', '\u00d7' + condMult + ' \u2192 Design I = ' + fmt(designI, 2) + ' A'],
+    ['NEC Conductor Mult (NEC ' + necCodeRef(loadType) + ')', '\u00d7' + condMult + ' \u2192 Design I = ' + fmt(designI, 2) + ' A'],
     ['Temp Correction @ ' + ambientC + '\u00b0C',    '\u00d7' + fmt(tempFactor, 3) + ' (NEC 310.15(B)(2)(a), ' + insulR + '\u00b0C insul)'],
     ['Conduit Fill Derating',                        '\u00d7' + cccDF.toFixed(2) + ' (NEC 310.15(B)(3)(a))'],
     ['Total Derating Factor',                        '\u00d7' + fmt(totalDerating, 3)],
