@@ -302,6 +302,9 @@ const KCMIL_SIZES = new Set(['250', '300', '350', '400', '500']);
 const WIRE_SIZES  = ['14', '12', '10', '8', '6', '4', '3', '2', '1',
                      '1/0', '2/0', '3/0', '4/0',
                      '250', '300', '350', '400', '500'];
+/* Resistivity constants (Ω·CM/ft) — NEC Ch.9 Table 9 at 75°C */
+const K_CU = 12.9;  // Copper
+const K_AL = 21.2;  // Aluminum
 
 window.calcVDrop = function (phase) {
   const I = val('vd_i_' + phase), L = val('vd_l_' + phase);
