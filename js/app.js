@@ -285,7 +285,17 @@ const WIRE_CM = {
   '4/0': 211600, '250': 250000, '300': 300000, '350': 350000,
   '400': 400000, '500': 500000
 };
-const K_CU = 12.9, K_AL = 21.2;
+/* NEC Table 310.15(B)(16) 75°C ampacity lookup keyed to WIRE_SIZES keys */
+const WIRE_AMP_CU75 = {
+  '14': 20, '12': 25, '10': 35, '8': 50, '6': 65, '4': 85, '3': 100,
+  '2': 115, '1': 130, '1/0': 150, '2/0': 175, '3/0': 200, '4/0': 230,
+  '250': 255, '300': 285, '350': 310, '400': 335, '500': 380
+};
+const WIRE_AMP_AL75 = {
+  '12': 20, '10': 30, '8': 40, '6': 50, '4': 65, '3': 75,
+  '2': 90, '1': 100, '1/0': 120, '2/0': 135, '3/0': 155, '4/0': 180,
+  '250': 205, '300': 230, '350': 250, '400': 270, '500': 310
+};
 const KCMIL_SIZES = new Set(['250', '300', '350', '400', '500']);
 /* Explicit ascending-CM order — Object.keys() cannot be used because JS sorts
    integer-like keys numerically first, placing '1/0'–'4/0' after '500 kcmil'. */
@@ -305,12 +315,18 @@ window.calcVDrop = function (phase) {
   const multiplier = phase === '1p' ? 2 : Math.sqrt(3);
   const VD = multiplier * K * I * L / CM;
   const VDpct = VD / Vs * 100;
+  const ampTable = mat === 'CU' ? WIRE_AMP_CU75 : WIRE_AMP_AL75;
+  const baseAmp = ampTable[awg];
+  const ampNote = baseAmp !== undefined
+    ? baseAmp + ' A (NEC 310.15(B)(16) 75\u00b0C)' + (baseAmp >= I ? ' \u2714' : ' \u2718 undersized for ' + fmt(I, 1) + ' A')
+    : '\u2014';
   showResult('vd_result_' + phase, [
     ['Voltage Drop (VD)', fmt(VD, 2) + ' V'],
     ['Voltage Drop %', fmt(VDpct, 2) + ' %'],
     ['Receiving End Voltage', fmt(Vs - VD, 2) + ' V'],
-    ['NEC Recommendation (≤ 3%)', VDpct <= 3 ? '✔ PASS' : '✘ EXCEEDS 3%'],
-    ['Combined Drop Guideline (≤ 5%)', VDpct <= 5 ? '✔ PASS' : '✘ EXCEEDS 5%']
+    ['NEC Recommendation (\u2264 3%)', VDpct <= 3 ? '\u2714 PASS' : '\u2718 EXCEEDS 3%'],
+    ['Combined Drop Guideline (\u2264 5%)', VDpct <= 5 ? '\u2714 PASS' : '\u2718 EXCEEDS 5%'],
+    ['Conductor Ampacity', ampNote]
   ]);
 };
 
@@ -324,14 +340,33 @@ window.calcMinWire = function (phase) {
   const multiplier = phase === '1p' ? 2 : Math.sqrt(3);
   const maxVD = Vs * pct / 100;
   const minCM = multiplier * K * I * L / maxVD;
-  // Find smallest wire that meets requirement
+  // Find smallest wire that meets VD requirement
   const chosen = WIRE_SIZES.find(s => WIRE_CM[s] >= minCM);
-  showResult('vdm_result_' + phase, [
-    ['Minimum CM Required', fmt(minCM, 0) + ' CM'],
-    ['Recommended Wire Size', chosen ? chosen + (KCMIL_SIZES.has(chosen) ? ' kcmil' : ' AWG') : '> 500 kcmil (consult engineer)'],
+  const chosenLabel = chosen
+    ? chosen + (KCMIL_SIZES.has(chosen) ? ' kcmil' : ' AWG')
+    : '> 500 kcmil (consult engineer)';
+
+  // NEC ampacity lookup from NEC Table 310.15(B)(16) 75°C column
+  const ampTable = mat === 'CU' ? WIRE_AMP_CU75 : WIRE_AMP_AL75;
+  let ampacityNote = '';
+  if (chosen) {
+    const baseAmp = ampTable[chosen];
+    if (baseAmp !== undefined) {
+      const ampOk = baseAmp >= I;
+      ampacityNote = baseAmp + ' A @ 75°C' + (ampOk ? ' \u2714 meets load' : ' \u2718 insufficient for ' + fmt(I, 1) + ' A load — upsize for ampacity');
+    } else {
+      ampacityNote = 'Not listed for Al at this size — use copper or consult NEC';
+    }
+  }
+
+  const rows = [
+    ['Minimum CM Required (VD)', fmt(minCM, 0) + ' CM'],
+    ['Wire Size for VD Compliance', chosenLabel],
     ['Actual CM', chosen ? WIRE_CM[chosen].toLocaleString() + ' CM' : '\u2014'],
+    ['NEC 310.15(B)(16) Ampacity (75\u00b0C)', ampacityNote || '\u2014'],
     ['Formula', phase === '1p' ? 'CM = 2\u00d7K\u00d7I\u00d7L / VD' : 'CM = \u221a3\u00d7K\u00d7I\u00d7L / VD']
-  ]);
+  ];
+  showResult('vdm_result_' + phase, rows);
 };
 
 /* ============================================================
