@@ -1173,23 +1173,23 @@ window.calcNEC = function () {
   'use strict';
 
   const SCORE_LABELS = [
-    { min: 0,   label: 'WARM UP'           },
-    { min: 3,   label: '14 AWG'            },
-    { min: 5,   label: '12 AWG'            },
-    { min: 8,   label: '10 AWG'            },
-    { min: 12,  label: '8 AWG'             },
-    { min: 17,  label: '6 AWG'             },
-    { min: 23,  label: '4 AWG'             },
-    { min: 30,  label: '2 AWG'             },
-    { min: 38,  label: '1/0'               },
-    { min: 47,  label: '2/0'               },
-    { min: 57,  label: '3/0'               },
-    { min: 68,  label: '4/0'               },
-    { min: 80,  label: '250 kcmil'         },
-    { min: 93,  label: '350 kcmil'         },
-    { min: 107, label: '500 kcmil'         },
-    { min: 122, label: '750 kcmil'         },
-    { min: 138, label: '1000 kcmil \u2605 LEGEND \u2605' }
+    { min: 0,   label: 'LC-36 PRE-LAUNCH'               },
+    { min: 3,   label: 'LAUNCH COMMIT'                   },
+    { min: 5,   label: 'IGNITION SEQ'                    },
+    { min: 8,   label: 'LIFTOFF \u2014 NG-1'            },
+    { min: 12,  label: 'TOWER CLEAR'                     },
+    { min: 17,  label: 'MAX-Q'                           },
+    { min: 23,  label: 'MACH 1'                          },
+    { min: 30,  label: 'MECO \u2014 STAGE SEP'          },
+    { min: 38,  label: 'FAIRING DEPLOY'                  },
+    { min: 47,  label: 'GTO INSERTION'                   },
+    { min: 57,  label: 'SECO'                            },
+    { min: 68,  label: 'BOOSTER REENTRY'                 },
+    { min: 80,  label: 'LANDING BURN'                    },
+    { min: 93,  label: 'BOOSTER RECOVERY'                },
+    { min: 107, label: 'MISSION SUCCESS'                 },
+    { min: 122, label: 'NEW GLENN LEGEND'                },
+    { min: 138, label: 'NEW GLENN ACE \u2605 LEGENDARY \u2605' }
   ];
 
   function scoreLabel(n) {
@@ -1199,16 +1199,97 @@ window.calcNEC = function () {
   }
 
   const CW = 600, CH = 350;
-  const GRAVITY               = 0.38;
-  const THRUST                = -5.0;
-  const OBS_W                 = 32;
-  const GAP_480V              = 130;
-  const GAP_23KV              = 90;
-  const ARC_DIST              = 20;
-  const TARGET_FPS            = 60;
-  const FARADAY_FRAMES        = TARGET_FPS * 5;   // 5 s at target frame rate
-  const SPAWN_23KV_PROB       = 0.30;             // 30 % of barriers are 23 kV
+  const GRAVITY                = 0.30;
+  const THRUST                 = -5.0;
+  const OBS_W                  = 32;
+  const GAP_480V_START         = 165;             // gap widens at start, shrinks as score rises
+  const GAP_480V_MIN           = 105;
+  const GAP_23KV_START         = 120;
+  const GAP_23KV_MIN           = 78;
+  const ARC_DIST               = 20;
+  const TARGET_FPS             = 60;
+  const FARADAY_FRAMES         = TARGET_FPS * 5;  // 5 s at target frame rate
   const POWERUP_SPAWN_INTERVAL = 250;             // frames between power-up spawns
+
+  // Dynamic difficulty helpers
+  function currentGap(voltage) {
+    const shrink = Math.min(score * 1.8, 60);
+    return voltage === '23kV'
+      ? Math.max(GAP_23KV_MIN, GAP_23KV_START - shrink)
+      : Math.max(GAP_480V_MIN, GAP_480V_START - shrink);
+  }
+  function spawn23kVProb() {
+    if (score < 8) return 0;
+    return Math.min(0.45, (score - 8) * 0.028);
+  }
+
+  // ── Music system (Web Audio API chiptune) ──
+  let audioCtx = null, musicGain = null;
+  let musicPlaying = false, musicNoteIdx = 0, musicSchedulerTimeout = null;
+
+  // Blue Origin launch theme — C-minor pentatonic
+  // [frequency_Hz, duration_seconds]  null = rest
+  const MUSIC_NOTES = [
+    // Phrase 1: ascending launch motif
+    [196.00, 0.15], [261.63, 0.15], [311.13, 0.15], [392.00, 0.30],
+    [349.23, 0.15], [311.13, 0.15], [261.63, 0.30], [null,   0.15],
+    // Phrase 2: tension build
+    [293.66, 0.15], [392.00, 0.15], [466.16, 0.15], [523.25, 0.30],
+    [466.16, 0.15], [392.00, 0.15], [349.23, 0.45], [null,   0.15],
+    // Phrase 3: energetic high run (liftoff!)
+    [392.00, 0.15], [523.25, 0.15], [587.33, 0.15], [622.25, 0.15],
+    [587.33, 0.15], [523.25, 0.15], [466.16, 0.15], [392.00, 0.15],
+    // Phrase 4: descent / resolution
+    [349.23, 0.15], [311.13, 0.15], [261.63, 0.30], [196.00, 0.30],
+    [261.63, 0.15], [311.13, 0.15], [392.00, 0.60], [null,   0.30],
+  ];
+
+  function initAudio() {
+    if (audioCtx) return;
+    try {
+      audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      musicGain = audioCtx.createGain();
+      musicGain.gain.value = 0.09;
+      musicGain.connect(audioCtx.destination);
+    } catch (e) { audioCtx = null; }
+  }
+
+  function playChipNote(freq, duration) {
+    if (!audioCtx || !freq) return;
+    try {
+      const t = audioCtx.currentTime;
+      const osc = audioCtx.createOscillator();
+      const env = audioCtx.createGain();
+      osc.connect(env); env.connect(musicGain);
+      osc.type = 'square';
+      osc.frequency.value = freq;
+      env.gain.setValueAtTime(1.0, t);
+      env.gain.exponentialRampToValueAtTime(0.001, t + Math.max(0.01, duration * 0.82));
+      osc.start(t); osc.stop(t + duration + 0.02);
+    } catch (e) { /* audio not available */ }
+  }
+
+  function scheduleMusicNote() {
+    if (!musicPlaying) return;
+    const [freq, dur] = MUSIC_NOTES[musicNoteIdx % MUSIC_NOTES.length];
+    musicNoteIdx++;
+    playChipNote(freq, dur);
+    musicSchedulerTimeout = setTimeout(scheduleMusicNote, dur * 1000);
+  }
+
+  function startMusic() {
+    if (musicPlaying) return;
+    initAudio();
+    if (!audioCtx) return;
+    if (audioCtx.state === 'suspended') audioCtx.resume();
+    musicPlaying = true;
+    scheduleMusicNote();
+  }
+
+  function stopMusic() {
+    musicPlaying = false;
+    if (musicSchedulerTimeout) { clearTimeout(musicSchedulerTimeout); musicSchedulerTimeout = null; }
+  }
 
   let canvas, ctx;
   let state;             // 'READY' | 'PLAYING' | 'GAMEOVER'
@@ -1240,7 +1321,7 @@ window.calcNEC = function () {
   }
 
   function handleInput() {
-    if      (state === 'READY')    { state = 'PLAYING'; }
+    if      (state === 'READY')    { state = 'PLAYING'; startMusic(); }
     else if (state === 'PLAYING')  { rocket.vy = THRUST; }
     else if (state === 'GAMEOVER') { resetGame(); state = 'READY'; }
   }
@@ -1268,8 +1349,8 @@ window.calcNEC = function () {
   }
 
   function spawnObs() {
-    const voltage = Math.random() < SPAWN_23KV_PROB ? '23kV' : '480V';
-    const gap     = voltage === '23kV' ? GAP_23KV : GAP_480V;
+    const voltage = Math.random() < spawn23kVProb() ? '23kV' : '480V';
+    const gap     = currentGap(voltage);
     const gapY    = Math.random() * (CH - gap - 80) + 40;
     obstacles.push({ x: CW + 4, topH: gapY, botY: gapY + gap, passed: false, voltage });
   }
@@ -1293,7 +1374,7 @@ window.calcNEC = function () {
   function update() {
     if (state !== 'PLAYING') { frame++; return; }
     frame++;
-    speedMult = 1 + score * 0.018;
+    speedMult = 1 + score * 0.022;
 
     // Faraday cage timer countdown
     if (faradayCageTimer > 0) faradayCageTimer--;
@@ -1321,13 +1402,13 @@ window.calcNEC = function () {
     });
 
     // Obstacles
-    const spawnEvery = Math.max(55, Math.round(110 / speedMult));
+    const spawnEvery = Math.max(55, Math.round(140 / speedMult));
     if (frame % spawnEvery === 0) spawnObs();
 
     // Power-ups: spawn every POWERUP_SPAWN_INTERVAL frames
     if (frame % POWERUP_SPAWN_INTERVAL === 0) spawnPowerup();
 
-    const spd = 2.8 * speedMult;
+    const spd = 2.2 * speedMult;
     for (const o of obstacles) {
       o.x -= spd;
       if (!o.passed && o.x + OBS_W < rocket.x) { o.passed = true; score++; }
@@ -1383,6 +1464,7 @@ window.calcNEC = function () {
 
   function endGame() {
     state = 'GAMEOVER';
+    stopMusic();
     if (score > hiScore) {
       hiScore = score;
       localStorage.setItem('rocketRiderHi', hiScore);
@@ -1395,7 +1477,7 @@ window.calcNEC = function () {
     if (!el) return;
     el.textContent = hiScore > 0
       ? scoreLabel(hiScore) + '  (score: ' + hiScore + ')'
-      : '---';
+      : 'NO MISSIONS FLOWN';
   }
 
   /* ── Draw ── */
@@ -1545,7 +1627,7 @@ window.calcNEC = function () {
     ctx.font         = '8px "Share Tech Mono",monospace';
     ctx.textAlign    = 'center';
     ctx.textBaseline = 'middle';
-    ctx.fillText('FC', 0, 0);
+    ctx.fillText('EM', 0, 0); // EM = EMI Shield power-up
     ctx.restore();
   }
 
@@ -1671,39 +1753,53 @@ window.calcNEC = function () {
     ctx.fillStyle   = '#ffb300';
     ctx.font        = 'bold 13px "Share Tech Mono",monospace';
     ctx.textAlign   = 'left';
-    ctx.fillText('Score: ' + score + '  \u2014  ' + lbl, 10, 22);
+    ctx.fillText('PHASE: ' + lbl + '  [#' + score + ']', 10, 22);
+    // Pad label top-right
+    ctx.textAlign   = 'right';
+    ctx.fillStyle   = '#5abcf0';
+    ctx.shadowColor = '#5abcf0';
+    ctx.font        = '11px "Share Tech Mono",monospace';
+    ctx.fillText('LC-36 \u2502 NEW GLENN \u2502 BE-4\u00d77', CW - 8, 22);
+    ctx.textAlign   = 'left';
     if (faradayCageTimer > 0) {
       const secs = (faradayCageTimer / TARGET_FPS).toFixed(1);
       ctx.fillStyle   = '#64c8ff';
       ctx.shadowColor = '#64c8ff';
-      ctx.fillText('\u26f6 FARADAY CAGE: ' + secs + 's', 10, 40);
+      ctx.fillText('\u26f6 EMI SHIELD ACTIVE: ' + secs + 's', 10, 40);
     }
     ctx.restore();
   }
 
   function drawReady() {
     ctx.save();
-    ctx.fillStyle = 'rgba(0,0,0,0.52)';
+    ctx.fillStyle = 'rgba(0,0,0,0.55)';
     ctx.fillRect(0, 0, CW, CH);
 
     ctx.textAlign = 'center';
     ctx.shadowColor = '#33ff33'; ctx.shadowBlur = 16;
     ctx.fillStyle   = '#33ff33';
     ctx.font = '28px "VT323",monospace';
-    ctx.fillText('ROCKET RIDER', CW / 2, CH / 2 - 32);
+    ctx.fillText('NEW GLENN RUNNER', CW / 2, CH / 2 - 58);
+
+    // Blue Origin / LC-36 details
+    ctx.shadowColor = '#5abcf0'; ctx.shadowBlur = 8;
+    ctx.fillStyle   = '#5abcf0';
+    ctx.font = '11px "Share Tech Mono",monospace';
+    ctx.fillText('BLUE ORIGIN  \u2502  LAUNCH COMPLEX 36  \u2502  CAPE CANAVERAL SFS, FL', CW / 2, CH / 2 - 36);
+    ctx.fillText('VEHICLE: NEW GLENN  \u2502  PROPULSION: 7\u00d7 BE-4 (LNG/LOX)', CW / 2, CH / 2 - 20);
 
     const blink = Math.floor(Date.now() / 550) % 2 === 0;
     if (blink) {
       ctx.shadowColor = '#ffb300'; ctx.shadowBlur = 10;
       ctx.fillStyle   = '#ffb300';
       ctx.font = '15px "Share Tech Mono",monospace';
-      ctx.fillText('PRESS SPACE or TAP TO START', CW / 2, CH / 2 + 8);
+      ctx.fillText('PRESS SPACE or TAP TO LAUNCH', CW / 2, CH / 2 + 8);
     }
 
     ctx.shadowColor = '#33ff33'; ctx.shadowBlur = 4;
     ctx.fillStyle   = '#22cc22';
     ctx.font = '12px "Share Tech Mono",monospace';
-    ctx.fillText('HI-SCORE: ' + (hiScore > 0 ? scoreLabel(hiScore) + ' (' + hiScore + ')' : '---'),
+    ctx.fillText('MISSION RECORD: ' + (hiScore > 0 ? scoreLabel(hiScore) + ' (' + hiScore + ')' : 'NO PRIOR MISSIONS'),
                  CW / 2, CH / 2 + 36);
     ctx.restore();
   }
@@ -1717,24 +1813,29 @@ window.calcNEC = function () {
     ctx.shadowColor = '#ff3300'; ctx.shadowBlur = 16;
     ctx.fillStyle   = '#ff3300';
     ctx.font = '32px "VT323",monospace';
-    ctx.fillText('GAME OVER', CW / 2, CH / 2 - 40);
+    ctx.fillText('ANOMALY DETECTED', CW / 2, CH / 2 - 44);
 
     if (lightningFlash) {
       ctx.shadowColor = '#ffff33'; ctx.shadowBlur = 12;
       ctx.fillStyle   = '#ffff33';
-      ctx.font = '13px "Share Tech Mono",monospace';
-      ctx.fillText('\u26a1 23kV ARC FLASH \u26a1', CW / 2, CH / 2 - 20);
+      ctx.font = '12px "Share Tech Mono",monospace';
+      ctx.fillText('\u26a1 23kV ARC FLASH \u2014 RANGE SAFETY ABORT \u26a1', CW / 2, CH / 2 - 22);
+    } else {
+      ctx.shadowColor = '#ff3300'; ctx.shadowBlur = 4;
+      ctx.fillStyle   = '#ff8866';
+      ctx.font = '11px "Share Tech Mono",monospace';
+      ctx.fillText('FLIGHT TERMINATION SYSTEM ACTIVATED', CW / 2, CH / 2 - 22);
     }
 
     ctx.shadowColor = '#33ff33'; ctx.shadowBlur = 8;
     ctx.fillStyle   = '#33ff33';
     ctx.font = '15px "Share Tech Mono",monospace';
-    ctx.fillText('Score: ' + score + '  \u2014  ' + scoreLabel(score), CW / 2, lightningFlash ? CH / 2 + 4 : CH / 2 - 8);
+    ctx.fillText('Mission Phase: ' + scoreLabel(score) + '  (#' + score + ')', CW / 2, CH / 2 + 4);
 
     if (score >= hiScore && score > 0) {
       ctx.shadowColor = '#ffb300'; ctx.shadowBlur = 12;
       ctx.fillStyle   = '#ffb300';
-      ctx.fillText('\u2605 NEW HIGH SCORE! \u2605', CW / 2, CH / 2 + 20);
+      ctx.fillText('\u2605 NEW MISSION RECORD! \u2605', CW / 2, CH / 2 + 22);
     }
 
     const blink = Math.floor(Date.now() / 550) % 2 === 0;
@@ -1742,7 +1843,7 @@ window.calcNEC = function () {
       ctx.shadowColor = '#22cc22'; ctx.shadowBlur = 4;
       ctx.fillStyle   = '#22cc22';
       ctx.font = '12px "Share Tech Mono",monospace';
-      ctx.fillText('CLICK / SPACE TO PLAY AGAIN', CW / 2, CH / 2 + 50);
+      ctx.fillText('CLICK / SPACE TO RE-ATTEMPT MISSION', CW / 2, CH / 2 + 50);
     }
     ctx.restore();
   }
@@ -1753,6 +1854,39 @@ window.calcNEC = function () {
     localStorage.removeItem('rocketRiderHi');
     updateHiDisplay();
   };
+
+  /* Fullscreen toggle */
+  window.arcadeFullscreen = function () {
+    const wrapper = document.getElementById('arcade-fs-wrapper');
+    if (!wrapper) return;
+    const fsEl = document.fullscreenElement || document.webkitFullscreenElement;
+    if (!fsEl) {
+      const req = wrapper.requestFullscreen || wrapper.webkitRequestFullscreen;
+      if (req) req.call(wrapper);
+    } else {
+      const ex = document.exitFullscreen || document.webkitExitFullscreen;
+      if (ex) ex.call(document);
+    }
+  };
+
+  function handleFsChange() {
+    const wrapper = document.getElementById('arcade-fs-wrapper');
+    const cvs     = document.getElementById('arcadeCanvas');
+    if (!wrapper || !cvs) return;
+    const fsEl = document.fullscreenElement || document.webkitFullscreenElement;
+    if (fsEl === wrapper) {
+      const scaleX = (window.screen.width  / CW).toFixed(4);
+      const scaleY = (window.screen.height / CH).toFixed(4);
+      const scale  = Math.min(scaleX, scaleY);
+      cvs.style.transform       = 'scale(' + scale + ')';
+      cvs.style.transformOrigin = 'top center';
+    } else {
+      cvs.style.transform       = '';
+      cvs.style.transformOrigin = '';
+    }
+  }
+  document.addEventListener('fullscreenchange',       handleFsChange);
+  document.addEventListener('webkitfullscreenchange', handleFsChange);
 
   document.addEventListener('DOMContentLoaded', init);
 }());

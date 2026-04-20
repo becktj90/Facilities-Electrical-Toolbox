@@ -725,3 +725,18 @@ select option {
   .card-grid { grid-template-columns: 1fr; }
   .header-status { display: none; }
 }
+
+/* ── Arcade fullscreen ── */
+#arcade-fs-wrapper:fullscreen,
+#arcade-fs-wrapper:-webkit-full-screen {
+  background: #020602;
+  display: flex !important;
+  align-items: center;
+  justify-content: center;
+  width: 100vw;
+  height: 100vh;
+}
+#arcade-fs-wrapper:fullscreen canvas,
+#arcade-fs-wrapper:-webkit-full-screen canvas {
+  max-width: 100vw !important;
+}
