@@ -287,7 +287,11 @@ const WIRE_CM = {
 };
 const K_CU = 12.9, K_AL = 21.2;
 const KCMIL_SIZES = new Set(['250', '300', '350', '400', '500']);
-const WIRE_SIZES  = Object.keys(WIRE_CM);
+/* Explicit ascending-CM order — Object.keys() cannot be used because JS sorts
+   integer-like keys numerically first, placing '1/0'–'4/0' after '500 kcmil'. */
+const WIRE_SIZES  = ['14', '12', '10', '8', '6', '4', '3', '2', '1',
+                     '1/0', '2/0', '3/0', '4/0',
+                     '250', '300', '350', '400', '500'];
 
 window.calcVDrop = function (phase) {
   const I = val('vd_i_' + phase), L = val('vd_l_' + phase);
@@ -919,12 +923,12 @@ const NEC_CONDUCTORS = [
   { label: '1 AWG',  cu: 130, al: 100,  cm: 83690,   area: 0.1562 },
   { label: '1/0',    cu: 150, al: 120,  cm: 105600,  area: 0.1855 },
   { label: '2/0',    cu: 175, al: 135,  cm: 133100,  area: 0.2223 },
-  { label: '3/0',    cu: 200, al: 155,  cm: 167800,  area: 0.2660 },
+  { label: '3/0',    cu: 200, al: 155,  cm: 167800,  area: 0.2679 },
   { label: '4/0',    cu: 230, al: 180,  cm: 211600,  area: 0.3237 },
   { label: '250 kcmil', cu: 255, al: 205, cm: 250000, area: 0.3970 },
   { label: '300 kcmil', cu: 285, al: 230, cm: 300000, area: 0.4608 },
-  { label: '350 kcmil', cu: 310, al: 250, cm: 350000, area: 0.5281 },
-  { label: '400 kcmil', cu: 335, al: 270, cm: 400000, area: 0.5958 },
+  { label: '350 kcmil', cu: 310, al: 250, cm: 350000, area: 0.5242 },
+  { label: '400 kcmil', cu: 335, al: 270, cm: 400000, area: 0.5863 },
   { label: '500 kcmil', cu: 380, al: 310, cm: 500000, area: 0.7073 },
   { label: '600 kcmil', cu: 420, al: 340, cm: 600000, area: 0.8676 },
   { label: '700 kcmil', cu: 460, al: 375, cm: 700000, area: 0.9887 },
@@ -949,10 +953,10 @@ const EMT_CONDUIT = [
   { size: '1-1/4"', area: 0.598 },
   { size: '1-1/2"', area: 0.814 },
   { size: '2"',     area: 1.342 },
-  { size: '2-1/2"', area: 2.343 },
-  { size: '3"',     area: 3.538 },
-  { size: '3-1/2"', area: 4.618 },
-  { size: '4"',     area: 5.901 }
+  { size: '2-1/2"', area: 1.915 },
+  { size: '3"',     area: 2.957 },
+  { size: '3-1/2"', area: 3.957 },
+  { size: '4"',     area: 5.088 }
 ];
 
 /* NEC 250.122 — EGC sizing based on OCPD rating */
