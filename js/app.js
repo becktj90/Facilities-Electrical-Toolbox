@@ -355,7 +355,7 @@ window.calcMinWire = function (phase) {
       const ampOk = baseAmp >= I;
       ampacityNote = baseAmp + ' A @ 75°C' + (ampOk ? ' \u2714 meets load' : ' \u2718 insufficient for ' + fmt(I, 1) + ' A load — upsize for ampacity');
     } else {
-      ampacityNote = 'Not listed for Al at this size — use copper or consult NEC';
+      ampacityNote = 'Not listed for Aluminum at this size — use copper or consult NEC';
     }
   }
 
