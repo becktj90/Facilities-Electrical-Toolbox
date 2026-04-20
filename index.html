@@ -78,7 +78,7 @@
       <button class="nav-btn" data-target="sec-convert">Unit Conversions</button>
       <button class="nav-btn" data-target="sec-cm">Circular Mils</button>
       <button class="nav-btn" data-target="sec-photometrics">Photometrics</button>
-      <button class="nav-btn" data-target="sec-arcade">🚀 Rocket Arcade</button>
+      <button class="nav-btn" data-target="sec-arcade">🚀 New Glenn Runner</button>
     </div>
     <div class="sidebar-section">
       <div class="sidebar-section-title">Advanced Tools</div>
@@ -2703,29 +2703,32 @@
          ════════════════════════════════════════ -->
     <section id="sec-arcade" class="section">
       <div class="section-header">
-        <h2>&#128640; Rocket Rider &#8212; Arcade</h2>
-        <p>Navigate the rocket through high-voltage barriers. SPACE / TAP to thrust.</p>
+        <h2>&#128640; New Glenn Runner &#8212; Arcade</h2>
+        <p>Pilot New Glenn through GSE voltage barriers launching from LC-36. SPACE / TAP to thrust.</p>
       </div>
       <div class="card-grid">
 
         <div class="card" style="grid-column:1/-1">
-          <div class="card-title">&#128640; Rocket Rider</div>
+          <div class="card-title">&#128640; New Glenn Runner &mdash; LC-36 Launch Simulation</div>
           <div class="card-body" style="text-align:center">
-            <canvas id="arcadeCanvas" width="600" height="350" style="display:block;margin:0 auto;border:2px solid var(--green);box-shadow:var(--glow-md);cursor:pointer;max-width:100%"></canvas>
+            <div id="arcade-fs-wrapper" style="position:relative;display:inline-block;width:100%">
+              <canvas id="arcadeCanvas" width="600" height="350" style="display:block;margin:0 auto;border:2px solid var(--green);box-shadow:var(--glow-md);cursor:pointer;max-width:100%"></canvas>
+              <button onclick="arcadeFullscreen()" title="Toggle fullscreen" style="position:absolute;top:4px;right:4px;background:rgba(0,0,0,0.75);color:var(--green);border:1px solid var(--green);font-family:var(--font-mono);font-size:0.68rem;padding:2px 7px;cursor:pointer;z-index:10">&#x26F6; FS</button>
+            </div>
             <div style="margin-top:8px;font-family:var(--font-mono);font-size:0.78rem;color:var(--green-mid)">
-              SPACE / CLICK / TAP to thrust &nbsp;|&nbsp; Navigate through the voltage barriers
+              SPACE / CLICK / TAP to thrust &nbsp;|&nbsp; Navigate through GSE voltage barriers &nbsp;|&nbsp; Music plays in-game
             </div>
             <div class="note" style="text-align:left">
-              &#9432; Score advances through NEC conductor sizes. How far can you go before hitting a barrier?
+              &#9432; Score advances through New Glenn mission phases. Fly from LC-36 pre-launch all the way to booster recovery!
             </div>
           </div>
         </div>
 
         <div class="card">
-          <div class="card-title">High Score</div>
+          <div class="card-title">Mission Record</div>
           <div class="card-body">
-            <div id="arcade-hi-score" style="font-family:var(--font-mono);font-size:1.5rem;color:var(--amber);text-shadow:var(--glow-amber)">---</div>
-            <button class="btn btn-sm" onclick="arcadeReset()" style="margin-top:8px">RESET HIGH SCORE</button>
+            <div id="arcade-hi-score" style="font-family:var(--font-mono);font-size:1.5rem;color:var(--amber);text-shadow:var(--glow-amber)">NO MISSIONS FLOWN</div>
+            <button class="btn btn-sm" onclick="arcadeReset()" style="margin-top:8px">RESET MISSION RECORD</button>
           </div>
         </div>
 
@@ -2734,12 +2737,13 @@
           <div class="card-body">
             <div class="formula-box">
               SPACE / CLICK / TAP = Thrust up<br>
-              Avoid the voltage barriers<br>
-              Each gap passed = +1 score<br>
-              Score shown in wire gauge<br>
-              Speed increases over time<br><br>
-              14 AWG &#8594; 12 AWG &#8594; 10 AWG...<br>
-              ...1000 kcmil = LEGEND STATUS
+              Avoid GSE voltage barriers (480V / 23kV)<br>
+              Collect EMI shields for temporary protection<br>
+              Each gap cleared = +1 mission phase<br>
+              Starts at LC-36 pre-launch &mdash; easy!<br>
+              23kV barriers + speed increase over time<br><br>
+              LC-36 PRE-LAUNCH &#8594; LIFTOFF &#8594; MAX-Q...<br>
+              ...BOOSTER RECOVERY = LEGEND STATUS
             </div>
           </div>
         </div>
