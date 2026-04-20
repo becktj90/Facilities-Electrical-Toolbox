@@ -503,7 +503,7 @@ window.calcXfmr = function () {
     ['Next Standard kVA', stdKVA + ' kVA (ANSI/NEMA)'],
     ['─── Secondary Conductors (Cu THHN 75°C) ───', ''],
     ['Conductor Size (per run)', cond.size],
-    ['Parallel Runs Required', cond.runs + (cond.runs > 1 ? ' sets (1/0 AWG min per NEC 310.10)' : '')],
+    ['Parallel Runs Required', cond.runs + (cond.runs > 1 ? ' sets (1/0 AWG min per NEC 310.10(C))' : '')],
     ['Conduit per Run (3 ckts)', cond.conduit],
     ['Conductor Ampacity', cond.ampsEach > 0 ? (cond.ampsEach * cond.runs) + ' A total (' + cond.ampsEach + ' A × ' + cond.runs + ')' : '—'],
     ['─── NEC 450.3(B) OCP Recommendations ───', ''],
@@ -601,6 +601,9 @@ function nextStdOCPD(amps) {
   return STD_OCPD.find(s => s >= amps) || Math.ceil(amps / 100) * 100;
 }
 
+/* NEC 310.10(C): parallel conductors must be 1/0 AWG or larger */
+const MIN_PARALLEL_AMPACITY = 150; /* 1/0 AWG Cu THHN 75°C = 150 A */
+
 function selectConductorAndConduit(amps) {
   /* single conductor run */
   const single = CU_THHN.find(c => c.amps >= amps);
@@ -617,8 +620,8 @@ function selectConductorAndConduit(amps) {
   /* parallel runs (NEC allows ≥ 1/0 AWG, max 500 kcmil typical) */
   for (let runs = 2; runs <= 6; runs++) {
     const perRun = amps / runs;
-    /* parallel conductors must be ≥ 1/0 AWG */
-    const cond = CU_THHN.find(c => c.amps >= perRun && c.amps >= 150); /* 150A = 1/0 AWG min */
+    /* parallel conductors must be ≥ 1/0 AWG per NEC 310.10(C) */
+    const cond = CU_THHN.find(c => c.amps >= perRun && c.amps >= MIN_PARALLEL_AMPACITY);
     if (cond) {
       const totalArea = 3 * cond.area;
       const conduitEntry = Object.entries(EMT_SIZES).find(([, v]) => v.area * 0.40 >= totalArea);
