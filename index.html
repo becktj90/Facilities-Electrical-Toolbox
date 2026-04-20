@@ -67,6 +67,7 @@
       <button class="nav-btn" data-target="sec-conduit-ref">Conduit Fill Tables</button>
       <button class="nav-btn" data-target="sec-ip-rating">IP Rating Chart</button>
       <button class="nav-btn" data-target="sec-nema-class">NEMA Enclosures</button>
+      <button class="nav-btn" data-target="sec-nec-tables">NEC Code Tables</button>
     </div>
     <div class="sidebar-section">
       <div class="sidebar-section-title">NEC Calculations</div>
@@ -1507,6 +1508,502 @@
         </div>
 
       </div>
+    </section>
+
+    <!-- ════════════════════════════════════════
+         NEC CODE TABLES
+         ════════════════════════════════════════ -->
+    <section id="sec-nec-tables" class="section">
+      <div class="section-header">
+        <h2>&#9889; NEC Code Tables</h2>
+        <p>Key National Electrical Code reference tables for conductor sizing, derating, protection, and conduit fill.</p>
+        <details class="section-info">
+          <summary>ℹ More Info — NEC Code Tables</summary>
+          <div class="section-info-body">
+            <strong>National Electrical Code (NEC)</strong> reference tables used in everyday electrical design. All values are from the 2023 NEC unless noted.<br><br>
+            <ul>
+              <li><strong>Table 310.15(B)(16):</strong> Allowable ampacity for conductors in raceways and cables at 30°C ambient, ≤3 current-carrying conductors.</li>
+              <li><strong>Table 310.15(C)(1):</strong> Adjustment factors when more than 3 current-carrying conductors are bundled in a conduit or cable.</li>
+              <li><strong>Table 310.15(B)(2)(a):</strong> Ambient temperature correction factors applied to ampacity values.</li>
+              <li><strong>Table 240.6(A):</strong> Standard ampere ratings for fuses and inverse-time circuit breakers.</li>
+              <li><strong>Table 250.122:</strong> Minimum equipment grounding conductor (EGC) sizes based on OCPD rating.</li>
+              <li><strong>Table 430.52:</strong> Maximum motor branch-circuit OCPD ratings as a percentage of motor FLA.</li>
+              <li><strong>Table 450.3(B):</strong> Transformer overcurrent protection requirements for transformers ≤600V.</li>
+              <li><strong>Chapter 9 Table 4:</strong> Conduit dimensions and fill areas (EMT, IMC, RMC, PVC).</li>
+              <li><strong>Chapter 9 Table 5:</strong> Conductor dimensions and areas for THHN/THWN-2 insulation.</li>
+            </ul>
+            <strong>Always refer to the current edition of the NEC and local amendments. These tables are provided for reference only.</strong>
+          </div>
+        </details>
+      </div>
+
+      <div class="tab-group">
+        <div class="tabs">
+          <button class="tab-btn active" data-tab="tab-nec-amp">Ampacity 310.16</button>
+          <button class="tab-btn" data-tab="tab-nec-derate">Derating Factors</button>
+          <button class="tab-btn" data-tab="tab-nec-ocpd">OCPD &amp; EGC</button>
+          <button class="tab-btn" data-tab="tab-nec-motor">Motor OCPD 430.52</button>
+          <button class="tab-btn" data-tab="tab-nec-xfmr">Transformer 450.3</button>
+          <button class="tab-btn" data-tab="tab-nec-conduit">Conduit Ch.9</button>
+        </div>
+
+        <!-- TAB 1: AMPACITY 310.16 -->
+        <div id="tab-nec-amp" class="tab-pane active">
+          <div class="card-grid">
+            <div class="card" style="grid-column:1/-1">
+              <div class="card-title">NEC Table 310.15(B)(16) — Allowable Ampacity, 30°C Ambient, ≤3 Current-Carrying Conductors in Raceway</div>
+              <div class="card-body">
+                <div class="note">&#9432; Use 75°C column for terminals rated 75°C (most equipment). Use 90°C column only as the starting point for derating calculations — final ampacity is limited to the terminal rating. 14 AWG aluminum not listed for service conductors. Based on NEC 2023 Table 310.15(B)(16).</div>
+                <div class="ref-table-wrap" style="margin-top:10px">
+                  <table class="ref-table">
+                    <thead>
+                      <tr>
+                        <th rowspan="2">Size</th>
+                        <th colspan="3">Copper</th>
+                        <th colspan="3">Aluminum / Copper-Clad Al</th>
+                        <th rowspan="2">THHN Area (in&sup2;)</th>
+                        <th rowspan="2">Circular Mils</th>
+                      </tr>
+                      <tr>
+                        <th>60&deg;C (A)</th>
+                        <th>75&deg;C (A)</th>
+                        <th>90&deg;C (A)</th>
+                        <th>60&deg;C (A)</th>
+                        <th>75&deg;C (A)</th>
+                        <th>90&deg;C (A)</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr><td>14 AWG</td><td>15</td><td>20</td><td>25</td><td>&#8212;</td><td>&#8212;</td><td>&#8212;</td><td>0.0097</td><td>4,110</td></tr>
+                      <tr><td>12 AWG</td><td>20</td><td>25</td><td>30</td><td>15</td><td>20</td><td>25</td><td>0.0133</td><td>6,530</td></tr>
+                      <tr><td>10 AWG</td><td>30</td><td>35</td><td>40</td><td>25</td><td>30</td><td>35</td><td>0.0211</td><td>10,380</td></tr>
+                      <tr><td>8 AWG</td><td>40</td><td>50</td><td>55</td><td>30</td><td>40</td><td>45</td><td>0.0366</td><td>16,510</td></tr>
+                      <tr><td>6 AWG</td><td>55</td><td>65</td><td>75</td><td>40</td><td>50</td><td>60</td><td>0.0507</td><td>26,240</td></tr>
+                      <tr><td>4 AWG</td><td>70</td><td>85</td><td>95</td><td>55</td><td>65</td><td>75</td><td>0.0824</td><td>41,740</td></tr>
+                      <tr><td>3 AWG</td><td>85</td><td>100</td><td>110</td><td>65</td><td>75</td><td>85</td><td>0.0973</td><td>52,620</td></tr>
+                      <tr><td>2 AWG</td><td>95</td><td>115</td><td>130</td><td>75</td><td>90</td><td>100</td><td>0.1158</td><td>66,360</td></tr>
+                      <tr><td>1 AWG</td><td>110</td><td>130</td><td>150</td><td>85</td><td>100</td><td>115</td><td>0.1562</td><td>83,690</td></tr>
+                      <tr class="highlight"><td>1/0 AWG</td><td>125</td><td>150</td><td>170</td><td>100</td><td>120</td><td>135</td><td>0.1855</td><td>105,600</td></tr>
+                      <tr class="highlight"><td>2/0 AWG</td><td>145</td><td>175</td><td>195</td><td>115</td><td>135</td><td>150</td><td>0.2223</td><td>133,100</td></tr>
+                      <tr class="highlight"><td>3/0 AWG</td><td>165</td><td>200</td><td>225</td><td>130</td><td>155</td><td>175</td><td>0.2679</td><td>167,800</td></tr>
+                      <tr class="highlight"><td>4/0 AWG</td><td>195</td><td>230</td><td>260</td><td>150</td><td>180</td><td>205</td><td>0.3237</td><td>211,600</td></tr>
+                      <tr><td>250 kcmil</td><td>215</td><td>255</td><td>290</td><td>170</td><td>205</td><td>230</td><td>0.3970</td><td>250,000</td></tr>
+                      <tr><td>300 kcmil</td><td>240</td><td>285</td><td>320</td><td>190</td><td>230</td><td>260</td><td>0.4608</td><td>300,000</td></tr>
+                      <tr><td>350 kcmil</td><td>260</td><td>310</td><td>350</td><td>210</td><td>250</td><td>280</td><td>0.5242</td><td>350,000</td></tr>
+                      <tr><td>400 kcmil</td><td>280</td><td>335</td><td>380</td><td>225</td><td>270</td><td>305</td><td>0.5863</td><td>400,000</td></tr>
+                      <tr><td>500 kcmil</td><td>320</td><td>380</td><td>430</td><td>260</td><td>310</td><td>350</td><td>0.7073</td><td>500,000</td></tr>
+                      <tr><td>600 kcmil</td><td>350</td><td>420</td><td>475</td><td>285</td><td>340</td><td>385</td><td>0.8676</td><td>600,000</td></tr>
+                      <tr><td>700 kcmil</td><td>385</td><td>460</td><td>520</td><td>315</td><td>375</td><td>420</td><td>0.9887</td><td>700,000</td></tr>
+                      <tr><td>750 kcmil</td><td>400</td><td>475</td><td>535</td><td>320</td><td>385</td><td>435</td><td>1.0496</td><td>750,000</td></tr>
+                      <tr><td>800 kcmil</td><td>410</td><td>490</td><td>555</td><td>330</td><td>395</td><td>445</td><td>1.1085</td><td>800,000</td></tr>
+                      <tr><td>1000 kcmil</td><td>455</td><td>545</td><td>615</td><td>375</td><td>445</td><td>500</td><td>1.3478</td><td>1,000,000</td></tr>
+                    </tbody>
+                  </table>
+                </div>
+                <div class="note" style="margin-top:8px">&#9432; <strong>NEC 110.14(C):</strong> Conductor ampacity is limited by the temperature rating of terminations. Use the 75°C column when terminations are rated 75°C (most commercial/industrial equipment). Only use the 90°C column when both the conductor AND terminations are rated 90°C.</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- TAB 2: DERATING FACTORS -->
+        <div id="tab-nec-derate" class="tab-pane">
+          <div class="card-grid">
+            <div class="card">
+              <div class="card-title">NEC Table 310.15(C)(1) — Adjustment Factors, More Than 3 Current-Carrying Conductors</div>
+              <div class="card-body">
+                <div class="note">&#9432; Apply this multiplier to the base ampacity when more than 3 current-carrying conductors (CCC) are installed in a raceway, cable, or earth. Does not apply to conductors in free air or to EGC/neutral conductors under NEC 310.15(E)(2).</div>
+                <div class="ref-table-wrap" style="margin-top:10px">
+                  <table class="ref-table">
+                    <thead>
+                      <tr>
+                        <th>Number of Current-Carrying Conductors</th>
+                        <th>Adjustment Factor</th>
+                        <th>Example Application</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr class="highlight"><td>1–3</td><td>100% (no derating)</td><td>Standard circuit — no adjustment</td></tr>
+                      <tr><td>4–6</td><td>80% (&times;0.80)</td><td>Two 3-wire circuits in same conduit</td></tr>
+                      <tr><td>7–9</td><td>70% (&times;0.70)</td><td>Three 3-wire circuits in conduit</td></tr>
+                      <tr><td>10–20</td><td>50% (&times;0.50)</td><td>Multiple circuits, shared raceway</td></tr>
+                      <tr><td>21–30</td><td>45% (&times;0.45)</td><td>Large shared raceway</td></tr>
+                      <tr><td>31–40</td><td>40% (&times;0.40)</td><td>High-density raceway</td></tr>
+                      <tr><td>41 and above</td><td>35% (&times;0.35)</td><td>Very high-density raceway</td></tr>
+                    </tbody>
+                  </table>
+                </div>
+                <div class="formula-box" style="margin-top:10px">
+                  <strong>Counting rules (NEC 310.15(E)):</strong><br>
+                  &bull; Grounded (neutral) conductor counts IF it carries significant harmonic current<br>
+                  &bull; 3-wire single-phase (2 ungrounded + 1 neutral) = 2 CCC<br>
+                  &bull; 3-phase 4-wire wye (3 ungrounded + 1 neutral) = 3 CCC (balanced linear loads)<br>
+                  &bull; EGC and bonding conductors do NOT count<br>
+                  &bull; Neutral carrying &gt;50% of phase current (harmonic loads) DOES count
+                </div>
+              </div>
+            </div>
+            <div class="card">
+              <div class="card-title">NEC Table 310.15(B)(2)(a) — Ambient Temperature Correction Factors</div>
+              <div class="card-body">
+                <div class="note">&#9432; Multiply the base ampacity by the correction factor for the actual ambient temperature. Base ampacity is at 30°C (86°F). Apply BOTH CCC and temperature factors simultaneously: Derated Ampacity = Base &times; CCC Factor &times; Temp Factor.</div>
+                <div class="ref-table-wrap" style="margin-top:10px">
+                  <table class="ref-table">
+                    <thead>
+                      <tr>
+                        <th>Ambient Temp (&deg;C)</th>
+                        <th>Ambient Temp (&deg;F)</th>
+                        <th>60&deg;C Insul.</th>
+                        <th>75&deg;C Insul.</th>
+                        <th>90&deg;C Insul.</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr><td>10 or less</td><td>50 or less</td><td>1.29</td><td>1.20</td><td>1.15</td></tr>
+                      <tr><td>11–15</td><td>52–59</td><td>1.22</td><td>1.15</td><td>1.12</td></tr>
+                      <tr><td>16–20</td><td>61–68</td><td>1.15</td><td>1.11</td><td>1.08</td></tr>
+                      <tr><td>21–25</td><td>70–77</td><td>1.08</td><td>1.05</td><td>1.04</td></tr>
+                      <tr class="highlight"><td>26–30</td><td>79–86</td><td>1.00</td><td>1.00</td><td>1.00</td></tr>
+                      <tr><td>31–35</td><td>88–95</td><td>0.91</td><td>0.94</td><td>0.96</td></tr>
+                      <tr><td>36–40</td><td>97–104</td><td>0.82</td><td>0.88</td><td>0.91</td></tr>
+                      <tr><td>41–45</td><td>106–113</td><td>0.71</td><td>0.82</td><td>0.87</td></tr>
+                      <tr><td>46–50</td><td>115–122</td><td>0.58</td><td>0.75</td><td>0.82</td></tr>
+                      <tr><td>51–55</td><td>124–131</td><td>0.41</td><td>0.67</td><td>0.76</td></tr>
+                      <tr><td>56–60</td><td>133–140</td><td>0.00*</td><td>0.58</td><td>0.71</td></tr>
+                      <tr><td>61–70</td><td>142–158</td><td>&#8212;</td><td>0.33</td><td>0.58</td></tr>
+                      <tr><td>71–80</td><td>160–176</td><td>&#8212;</td><td>&#8212;</td><td>0.41</td></tr>
+                    </tbody>
+                  </table>
+                </div>
+                <div class="note">* 60°C conductors are NOT rated above 60°C ambient — must use higher-rated insulation. Correction factor formula: CF = √[(T<sub>rating</sub> − T<sub>ambient</sub>) / (T<sub>rating</sub> − 30)]</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- TAB 3: OCPD & EGC -->
+        <div id="tab-nec-ocpd" class="tab-pane">
+          <div class="card-grid">
+            <div class="card">
+              <div class="card-title">NEC Table 240.6(A) — Standard Ampere Ratings for Fuses and Inverse-Time Breakers</div>
+              <div class="card-body">
+                <div class="note">&#9432; When sizing an OCPD, the next standard rating above the calculated minimum may be used per NEC 240.4(B), provided the conductor is not smaller than the minimum ampacity rating. NEC 240.4(D) limits protection for small conductors: 15A max for 14 AWG, 20A max for 12 AWG, 30A max for 10 AWG.</div>
+                <div class="ref-table-wrap" style="margin-top:10px">
+                  <table class="ref-table">
+                    <thead>
+                      <tr><th colspan="6">Standard Ampere Ratings — NEC 240.6(A)</th></tr>
+                    </thead>
+                    <tbody>
+                      <tr><td>15</td><td>20</td><td>25</td><td>30</td><td>35</td><td>40</td></tr>
+                      <tr><td>45</td><td>50</td><td>60</td><td>70</td><td>80</td><td>90</td></tr>
+                      <tr><td>100</td><td>110</td><td>125</td><td>150</td><td>175</td><td>200</td></tr>
+                      <tr><td>225</td><td>250</td><td>300</td><td>350</td><td>400</td><td>450</td></tr>
+                      <tr><td>500</td><td>600</td><td>700</td><td>800</td><td>1000</td><td>1200</td></tr>
+                      <tr><td>1600</td><td>2000</td><td>2500</td><td>3000</td><td>4000</td><td>5000</td></tr>
+                      <tr><td>6000</td><td>&#8212;</td><td>&#8212;</td><td>&#8212;</td><td>&#8212;</td><td>&#8212;</td></tr>
+                    </tbody>
+                  </table>
+                </div>
+                <div class="formula-box" style="margin-top:10px">
+                  <strong>NEC 240.4(D) — Maximum OCPD for Small Conductors:</strong><br>
+                  14 AWG Cu → 15 A maximum<br>
+                  12 AWG Cu → 20 A maximum<br>
+                  10 AWG Cu → 30 A maximum<br><br>
+                  <strong>NEC 240.4(B) — Next Standard Size Up rule:</strong><br>
+                  Allowed when the calculated OCPD does not correspond to a standard size AND the conductor ampacity is not less than the load.
+                </div>
+              </div>
+            </div>
+            <div class="card">
+              <div class="card-title">NEC Table 250.122 — Minimum Equipment Grounding Conductor (EGC) Size</div>
+              <div class="card-body">
+                <div class="note">&#9432; The EGC must be sized based on the rating of the overcurrent protective device ahead of the equipment. Where conductors are increased in size for voltage drop, the EGC must be proportionally increased. Min. 14 AWG Cu or 12 AWG Al.</div>
+                <div class="ref-table-wrap" style="margin-top:10px">
+                  <table class="ref-table">
+                    <thead>
+                      <tr>
+                        <th>Rating of OCPD (A)</th>
+                        <th>Copper EGC Min</th>
+                        <th>Aluminum EGC Min</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr><td>15</td><td>14 AWG</td><td>12 AWG</td></tr>
+                      <tr><td>20</td><td>12 AWG</td><td>10 AWG</td></tr>
+                      <tr><td>60</td><td>10 AWG</td><td>8 AWG</td></tr>
+                      <tr><td>100</td><td>8 AWG</td><td>6 AWG</td></tr>
+                      <tr><td>200</td><td>6 AWG</td><td>4 AWG</td></tr>
+                      <tr><td>300</td><td>4 AWG</td><td>2 AWG</td></tr>
+                      <tr><td>400</td><td>3 AWG</td><td>1 AWG</td></tr>
+                      <tr><td>500</td><td>2 AWG</td><td>1/0 AWG</td></tr>
+                      <tr><td>600</td><td>1 AWG</td><td>2/0 AWG</td></tr>
+                      <tr><td>800</td><td>1/0 AWG</td><td>3/0 AWG</td></tr>
+                      <tr><td>1000</td><td>2/0 AWG</td><td>4/0 AWG</td></tr>
+                      <tr><td>1200</td><td>3/0 AWG</td><td>250 kcmil</td></tr>
+                      <tr><td>1600</td><td>4/0 AWG</td><td>350 kcmil</td></tr>
+                      <tr><td>2000</td><td>250 kcmil</td><td>400 kcmil</td></tr>
+                      <tr><td>2500</td><td>350 kcmil</td><td>600 kcmil</td></tr>
+                      <tr><td>3000</td><td>400 kcmil</td><td>600 kcmil</td></tr>
+                      <tr><td>4000</td><td>500 kcmil</td><td>750 kcmil</td></tr>
+                      <tr><td>5000</td><td>700 kcmil</td><td>1200 kcmil</td></tr>
+                      <tr><td>6000</td><td>800 kcmil</td><td>1200 kcmil</td></tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- TAB 4: MOTOR OCPD 430.52 -->
+        <div id="tab-nec-motor" class="tab-pane">
+          <div class="card-grid">
+            <div class="card" style="grid-column:1/-1">
+              <div class="card-title">NEC Table 430.52 — Maximum Rating or Setting of Motor Branch-Circuit SCGFPD (% of Motor FLA)</div>
+              <div class="card-body">
+                <div class="note">&#9432; Values are the MAXIMUM allowed ratings for motor branch-circuit short-circuit and ground-fault protective devices. Apply to full-load current from NEC Tables 430.248 (single-phase) or 430.250 (three-phase). If the calculated value does not correspond to a standard rating, use the next standard size up per NEC 240.6(A). Per NEC 430.52(C)(1), if the percentage does not correspond to a standard rating, use the next lower standard rating unless it is not sufficient to carry the starting current.</div>
+                <div class="ref-table-wrap" style="margin-top:10px">
+                  <table class="ref-table">
+                    <thead>
+                      <tr>
+                        <th>Motor Type</th>
+                        <th>Non-TD Fuse (%)</th>
+                        <th>Dual-Element TD Fuse (%)</th>
+                        <th>Inst.-Trip Breaker (%)</th>
+                        <th>Inverse-Time Breaker (%)</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr class="highlight"><td>Single-phase AC, all types</td><td>300</td><td>175</td><td>800</td><td>250</td></tr>
+                      <tr class="highlight"><td>AC squirrel-cage (other than single-phase): Design B, D, E</td><td>300</td><td>175</td><td>800</td><td>250</td></tr>
+                      <tr><td>AC squirrel-cage (other than single-phase): Design B, E energy efficient</td><td>300</td><td>175</td><td>1100</td><td>250</td></tr>
+                      <tr><td>AC synchronous (full voltage, resistor or reactor start)</td><td>300</td><td>175</td><td>800</td><td>250</td></tr>
+                      <tr><td>AC synchronous (part-winding)</td><td>150</td><td>150</td><td>800</td><td>200</td></tr>
+                      <tr><td>AC wound-rotor</td><td>150</td><td>150</td><td>800</td><td>150</td></tr>
+                      <tr><td>DC (constant voltage)</td><td>150</td><td>150</td><td>250</td><td>150</td></tr>
+                    </tbody>
+                  </table>
+                </div>
+                <div class="formula-box" style="margin-top:10px">
+                  <strong>Common sizing example (NEC 430.52):</strong><br>
+                  10 HP, 230V, 3-phase squirrel-cage motor: FLA (NEC Table 430.250) = 28 A<br>
+                  Max inverse-time breaker = 28 × 250% = 70 A → Next standard = 70 A &#10003;<br>
+                  Max non-time-delay fuse = 28 × 300% = 84 A → Next standard = 90 A<br><br>
+                  <strong>NEC 430.52(C)(1) Exception:</strong> If 250% is not sufficient to carry motor starting current, the next larger standard rating up to 400% of FLA may be used for inverse-time breakers.
+                </div>
+              </div>
+            </div>
+            <div class="card">
+              <div class="card-title">NEC Table 430.52 — Conductor Sizing (NEC 430.22 / 430.24)</div>
+              <div class="card-body">
+                <div class="formula-box">
+                  <strong>Single motor branch circuit (NEC 430.22):</strong><br>
+                  Conductor ampacity ≥ 125% &times; motor FLA<br><br>
+                  <strong>Several motors on one circuit (NEC 430.24):</strong><br>
+                  Conductor ampacity ≥ 125% &times; largest motor FLA + sum of all other motor FLAs<br><br>
+                  <strong>Overload protection (NEC 430.32):</strong><br>
+                  Overload device ≤ 115% of nameplate FLA (service factor ≥ 1.15 or temp rise ≤ 40°C)<br>
+                  Overload device ≤ 125% of nameplate FLA (all other motors)<br><br>
+                  <strong>Motor feeder (NEC 430.62):</strong><br>
+                  Rating ≥ largest motor branch-circuit OCPD + sum of all other motor FLAs
+                </div>
+              </div>
+            </div>
+            <div class="card">
+              <div class="card-title">NEC 430.6 — FLA Reference Tables</div>
+              <div class="card-body">
+                <div class="formula-box">
+                  For conductor and OCPD sizing, use NEC table FLA — NOT nameplate FLA:<br><br>
+                  <strong>NEC Table 430.248</strong> — Single-phase AC motors (see Motor FLA Tables section)<br>
+                  <strong>NEC Table 430.250</strong> — Three-phase AC motors (see Motor FLA Tables section)<br>
+                  <strong>NEC Table 430.247</strong> — DC motors<br>
+                  <strong>NEC Table 430.249</strong> — Single-phase AC, 2-pole, 50 Hz motors<br><br>
+                  Exception: For multi-speed motors and motors with unusual starting conditions, use nameplate FLA for overload protection.
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- TAB 5: TRANSFORMER OCP 450.3 -->
+        <div id="tab-nec-xfmr" class="tab-pane">
+          <div class="card-grid">
+            <div class="card" style="grid-column:1/-1">
+              <div class="card-title">NEC Table 450.3(B) — Maximum Rating or Setting of Overcurrent Protection for Transformers ≤ 600V (as a Secondary Voltage)</div>
+              <div class="card-body">
+                <div class="note">&#9432; Ratings are expressed as a percentage of rated transformer current. "Primary only" protection means no secondary OCPD is required. "Primary and secondary" means both primary and secondary OCPDs are provided. Values apply to supervised and unsupervised locations (supervised locations may use slightly different percentages). From NEC 2023 Table 450.3(B).</div>
+                <div class="ref-table-wrap" style="margin-top:10px">
+                  <table class="ref-table">
+                    <thead>
+                      <tr>
+                        <th>Primary Current Rating</th>
+                        <th>Primary OCPD Max (%)</th>
+                        <th>Secondary OCPD Max (%)</th>
+                        <th>Notes</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr class="highlight"><td>≥ 9 A primary (supervised)</td><td>125%</td><td>250%</td><td>Both primary + secondary OCPDs provided</td></tr>
+                      <tr class="highlight"><td>≥ 9 A primary (unsupervised)</td><td>125%</td><td>125%</td><td>Standard commercial installation</td></tr>
+                      <tr><td>&lt; 9 A primary, ≥ 2 A secondary</td><td>167%</td><td>167%</td><td>Small transformer</td></tr>
+                      <tr><td>&lt; 2 A primary (any)</td><td>300%</td><td>167%</td><td>Very small transformer</td></tr>
+                    </tbody>
+                  </table>
+                </div>
+                <div class="formula-box" style="margin-top:10px">
+                  <strong>Typical dry-type transformer sizing example:</strong><br>
+                  75 kVA, 480V&Delta; Primary / 208Y/120V Secondary<br>
+                  Primary FLA = 75,000 / (√3 × 480) = 90.2 A<br>
+                  Primary OCPD max (125%) = 90.2 × 1.25 = 112.8 A → 110 A (next standard rating down per NEC 240.6(A))<br>
+                  Secondary FLA = 75,000 / (√3 × 208) = 208.2 A<br>
+                  Secondary OCPD max (125%) = 208.2 × 1.25 = 260.3 A → 250 A<br><br>
+                  <strong>NEC 450.3(B) Exception:</strong> If 125% does not correspond to a standard OCPD rating, the next higher standard rating may be used.
+                </div>
+              </div>
+            </div>
+            <div class="card">
+              <div class="card-title">Standard Dry-Type Transformer kVA Ratings (ANSI/NEMA)</div>
+              <div class="card-body">
+                <div class="ref-table-wrap">
+                  <table class="ref-table">
+                    <thead>
+                      <tr><th>Single-Phase kVA</th><th>Three-Phase kVA</th></tr>
+                    </thead>
+                    <tbody>
+                      <tr><td>0.050, 0.100, 0.150, 0.250</td><td>3, 6, 9, 15</td></tr>
+                      <tr><td>0.500, 0.750, 1.0, 1.5</td><td>30, 45, 75, 112.5</td></tr>
+                      <tr><td>2.0, 3.0, 5.0, 7.5</td><td>150, 225, 300, 500</td></tr>
+                      <tr><td>10, 15, 25, 37.5</td><td>750, 1000, 1500, 2000</td></tr>
+                      <tr><td>50, 75, 100, 167</td><td>2500, 3000, 3750, 5000</td></tr>
+                      <tr><td>250, 333, 500</td><td>7500, 10000</td></tr>
+                    </tbody>
+                  </table>
+                </div>
+                <div class="note" style="margin-top:6px">For transformer sizing, calculate required kVA then select next standard size up. Apply 80% loading guideline for continuous loads to allow thermal headroom.</div>
+              </div>
+            </div>
+            <div class="card">
+              <div class="card-title">NEC Article 450 — Key Transformer Requirements</div>
+              <div class="card-body">
+                <div class="formula-box">
+                  <strong>NEC 450.14</strong> — Disconnecting Means:<br>
+                  Must be within sight of transformer OR lockable in open position<br><br>
+                  <strong>NEC 450.9</strong> — Ventilation:<br>
+                  Adequate ventilation required; clearances per manufacturer<br><br>
+                  <strong>NEC 450.21</strong> — Indoor Dry-Type Location:<br>
+                  Transformers &gt;112.5 kVA must be in fire-resistant rooms<br>
+                  Transformers 600V or less: 1.83 m (6 ft) clearance from combustibles<br><br>
+                  <strong>NEC 450.13</strong> — Accessibility:<br>
+                  Must be accessible to qualified persons only<br><br>
+                  <strong>NEC 450.3(B) Note:</strong> If OCPD rating does not correspond to standard size, next higher standard permitted
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- TAB 6: CONDUIT CHAPTER 9 -->
+        <div id="tab-nec-conduit" class="tab-pane">
+          <div class="card-grid">
+            <div class="card" style="grid-column:1/-1">
+              <div class="card-title">NEC Chapter 9, Table 4 — Dimensions and Percent Area of Conduit / Tubing</div>
+              <div class="card-body">
+                <div class="note">&#9432; Internal diameter and total internal area values from NEC 2023 Chapter 9, Table 4. Fill areas are calculated at the NEC Chapter 9 Table 1 percentages (53% for 1 conductor, 31% for 2 conductors, 40% for 3 or more conductors).</div>
+                <div class="ref-table-wrap" style="margin-top:10px">
+                  <table class="ref-table">
+                    <thead>
+                      <tr>
+                        <th rowspan="2">Trade Size</th>
+                        <th colspan="3">EMT (Electrical Metallic Tubing)</th>
+                        <th colspan="3">IMC (Intermediate Metal Conduit)</th>
+                        <th colspan="3">RMC (Rigid Metal Conduit)</th>
+                      </tr>
+                      <tr>
+                        <th>ID (in)</th>
+                        <th>Total Area (in&sup2;)</th>
+                        <th>40% Fill (in&sup2;)</th>
+                        <th>ID (in)</th>
+                        <th>Total Area (in&sup2;)</th>
+                        <th>40% Fill (in&sup2;)</th>
+                        <th>ID (in)</th>
+                        <th>Total Area (in&sup2;)</th>
+                        <th>40% Fill (in&sup2;)</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr><td>1/2&quot;</td><td>0.622</td><td>0.304</td><td>0.122</td><td>0.660</td><td>0.342</td><td>0.137</td><td>0.632</td><td>0.314</td><td>0.125</td></tr>
+                      <tr><td>3/4&quot;</td><td>0.824</td><td>0.533</td><td>0.213</td><td>0.864</td><td>0.586</td><td>0.235</td><td>0.836</td><td>0.549</td><td>0.220</td></tr>
+                      <tr><td>1&quot;</td><td>1.049</td><td>0.864</td><td>0.346</td><td>1.101</td><td>0.951</td><td>0.380</td><td>1.063</td><td>0.887</td><td>0.355</td></tr>
+                      <tr><td>1-1/4&quot;</td><td>1.380</td><td>1.496</td><td>0.598</td><td>1.452</td><td>1.657</td><td>0.663</td><td>1.394</td><td>1.526</td><td>0.610</td></tr>
+                      <tr><td>1-1/2&quot;</td><td>1.610</td><td>2.036</td><td>0.814</td><td>1.682</td><td>2.223</td><td>0.889</td><td>1.624</td><td>2.071</td><td>0.828</td></tr>
+                      <tr class="highlight"><td>2&quot;</td><td>2.067</td><td>3.356</td><td>1.342</td><td>2.157</td><td>3.656</td><td>1.463</td><td>2.083</td><td>3.408</td><td>1.363</td></tr>
+                      <tr class="highlight"><td>2-1/2&quot;</td><td>2.731</td><td>5.858</td><td>2.343</td><td>2.793</td><td>6.127</td><td>2.451</td><td>2.489</td><td>4.866</td><td>1.946</td></tr>
+                      <tr><td>3&quot;</td><td>3.356</td><td>8.846</td><td>3.538</td><td>3.432</td><td>9.247</td><td>3.699</td><td>3.090</td><td>7.499</td><td>3.000</td></tr>
+                      <tr><td>3-1/2&quot;</td><td>3.834</td><td>11.545</td><td>4.618</td><td>3.917</td><td>12.039</td><td>4.816</td><td>3.570</td><td>10.010</td><td>4.004</td></tr>
+                      <tr><td>4&quot;</td><td>4.334</td><td>14.753</td><td>5.901</td><td>4.360</td><td>14.929</td><td>5.972</td><td>4.050</td><td>12.882</td><td>5.153</td></tr>
+                    </tbody>
+                  </table>
+                </div>
+                <div class="formula-box" style="margin-top:10px">
+                  <strong>NEC Chapter 9, Table 1 — Fill Percentages:</strong><br>
+                  1 conductor: 53% maximum fill<br>
+                  2 conductors: 31% maximum fill<br>
+                  3 or more conductors: 40% maximum fill<br><br>
+                  <strong>PVC Schedule 40 / Schedule 80</strong> have slightly smaller IDs than RMC at the same trade size — use NEC Table 4 or the conduit manufacturer data for those types.
+                </div>
+              </div>
+            </div>
+            <div class="card" style="grid-column:1/-1">
+              <div class="card-title">NEC Chapter 9, Table 5 — Dimensions of Insulated Conductors and Fixture Wires (THHN / THWN-2)</div>
+              <div class="card-body">
+                <div class="note">&#9432; Areas shown for THHN/THWN-2 insulation (the most common insulation type). For other insulation types (XHHW, THW, RHH/RHW-2, USE-2), see NEC Chapter 9 Table 5 — areas will differ. Use these areas when calculating conduit fill.</div>
+                <div class="ref-table-wrap" style="margin-top:10px">
+                  <table class="ref-table">
+                    <thead>
+                      <tr>
+                        <th>Conductor Size</th>
+                        <th>OD (inches)</th>
+                        <th>Area (in&sup2;)</th>
+                        <th>Circular Mils</th>
+                        <th>Conductors per 1" EMT</th>
+                        <th>Conductors per 1-1/4" EMT</th>
+                        <th>Conductors per 2" EMT</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr><td>14 AWG</td><td>0.111</td><td>0.0097</td><td>4,110</td><td>35</td><td>61</td><td>138</td></tr>
+                      <tr><td>12 AWG</td><td>0.130</td><td>0.0133</td><td>6,530</td><td>26</td><td>45</td><td>101</td></tr>
+                      <tr><td>10 AWG</td><td>0.164</td><td>0.0211</td><td>10,380</td><td>16</td><td>28</td><td>63</td></tr>
+                      <tr><td>8 AWG</td><td>0.216</td><td>0.0366</td><td>16,510</td><td>9</td><td>16</td><td>36</td></tr>
+                      <tr><td>6 AWG</td><td>0.254</td><td>0.0507</td><td>26,240</td><td>6</td><td>11</td><td>26</td></tr>
+                      <tr><td>4 AWG</td><td>0.324</td><td>0.0824</td><td>41,740</td><td>4</td><td>7</td><td>16</td></tr>
+                      <tr><td>3 AWG</td><td>0.352</td><td>0.0973</td><td>52,620</td><td>3</td><td>6</td><td>13</td></tr>
+                      <tr><td>2 AWG</td><td>0.384</td><td>0.1158</td><td>66,360</td><td>2</td><td>5</td><td>11</td></tr>
+                      <tr><td>1 AWG</td><td>0.446</td><td>0.1562</td><td>83,690</td><td>2</td><td>3</td><td>8</td></tr>
+                      <tr><td>1/0 AWG</td><td>0.486</td><td>0.1855</td><td>105,600</td><td>1</td><td>3</td><td>7</td></tr>
+                      <tr><td>2/0 AWG</td><td>0.532</td><td>0.2223</td><td>133,100</td><td>1</td><td>2</td><td>6</td></tr>
+                      <tr><td>3/0 AWG</td><td>0.584</td><td>0.2679</td><td>167,800</td><td>1</td><td>2</td><td>5</td></tr>
+                      <tr><td>4/0 AWG</td><td>0.642</td><td>0.3237</td><td>211,600</td><td>1</td><td>1</td><td>4</td></tr>
+                      <tr><td>250 kcmil</td><td>0.711</td><td>0.3970</td><td>250,000</td><td>&#8212;</td><td>1</td><td>3</td></tr>
+                      <tr><td>300 kcmil</td><td>0.766</td><td>0.4608</td><td>300,000</td><td>&#8212;</td><td>1</td><td>2</td></tr>
+                      <tr><td>350 kcmil</td><td>0.817</td><td>0.5242</td><td>350,000</td><td>&#8212;</td><td>1</td><td>2</td></tr>
+                      <tr><td>400 kcmil</td><td>0.864</td><td>0.5863</td><td>400,000</td><td>&#8212;</td><td>1</td><td>2</td></tr>
+                      <tr><td>500 kcmil</td><td>0.949</td><td>0.7073</td><td>500,000</td><td>&#8212;</td><td>&#8212;</td><td>1</td></tr>
+                      <tr><td>600 kcmil</td><td>1.051</td><td>0.8676</td><td>600,000</td><td>&#8212;</td><td>&#8212;</td><td>1</td></tr>
+                      <tr><td>700 kcmil</td><td>1.122</td><td>0.9887</td><td>700,000</td><td>&#8212;</td><td>&#8212;</td><td>1</td></tr>
+                      <tr><td>750 kcmil</td><td>1.156</td><td>1.0496</td><td>750,000</td><td>&#8212;</td><td>&#8212;</td><td>1</td></tr>
+                      <tr><td>800 kcmil</td><td>1.190</td><td>1.1085</td><td>800,000</td><td>&#8212;</td><td>&#8212;</td><td>&#8212;</td></tr>
+                      <tr><td>1000 kcmil</td><td>1.305</td><td>1.3478</td><td>1,000,000</td><td>&#8212;</td><td>&#8212;</td><td>&#8212;</td></tr>
+                    </tbody>
+                  </table>
+                </div>
+                <div class="note" style="margin-top:8px">&#9432; Conductors per conduit values are for 3 or more conductors (40% fill limit) in EMT. Verify using the Conduit Fill Calculator for mixed sizes or other conduit types. Based on NEC Annex C, Table C.1.</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div><!-- end tab-group -->
     </section>
 
     <!-- ════════════════════════════════════════
