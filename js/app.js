@@ -466,20 +466,72 @@ window.calcMotorFLA = function () {
    11. TRANSFORMER CALCULATIONS
    ============================================================ */
 window.calcXfmr = function () {
-  const phase = document.getElementById('xfmr_phase').value;
+  const topology = document.getElementById('xfmr_topology').value;
   const kVA = val('xfmr_kva'), Vp = val('xfmr_vp'), Vs = val('xfmr_vs');
   if (!isPos(kVA, Vp, Vs)) return showError('xfmr_result', 'Enter kVA, primary voltage, and secondary voltage.');
-  const phaseMult = phase === '3' ? Math.sqrt(3) : 1;
+
+  const is3ph = topology !== '1ph';
+  const phaseMult = is3ph ? Math.sqrt(3) : 1;
   const Ip = kVA * 1000 / (Vp * phaseMult);
   const Is = kVA * 1000 / (Vs * phaseMult);
   const turnRatio = Vp / Vs;
-  showResult('xfmr_result', [
+
+  /* Next standard kVA size */
+  const stdKVA = XFMR_STD_KVA.find(s => s >= kVA) || kVA;
+
+  /* Secondary conductor + conduit sizing */
+  const cond = selectConductorAndConduit(Is);
+
+  /* NEC 450.3(B) OCP — next standard OCPD ≥ 125% of FLA */
+  const pOCPD = nextStdOCPD(Ip * 1.25);
+  const sOCPD = nextStdOCPD(Is * 1.25);
+
+  /* Topology label and notes */
+  const topoLabels = {
+    '1ph': '1Ø Single-Phase', 'delta-wye': '3Ø Delta-Wye',
+    'wye-wye': '3Ø Wye-Wye', 'delta-delta': '3Ø Delta-Delta',
+    'highleg': '3Ø High-Leg Delta', 'corner': '3Ø Corner-Grounded Delta'
+  };
+  const topoLabel = topoLabels[topology] || topology;
+
+  const rows = [
+    ['Topology', topoLabel],
     ['Primary Current (Ip)', fmt(Ip, 2) + ' A'],
     ['Secondary Current (Is)', fmt(Is, 2) + ' A'],
-    ['Turns Ratio (Np:Ns = Vp:Vs)', fmt(turnRatio, 4) + ' : 1'],
-    ['kVA Rating', fmt(kVA) + ' kVA'],
-    ['Phase', phase === '3' ? 'Three-Phase' : 'Single-Phase']
-  ]);
+    ['Turns Ratio (Np:Ns)', fmt(turnRatio, 4) + ' : 1'],
+    ['─── Standard Size ───', ''],
+    ['Next Standard kVA', stdKVA + ' kVA (ANSI/NEMA)'],
+    ['─── Secondary Conductors (Cu THHN 75°C) ───', ''],
+    ['Conductor Size (per run)', cond.size],
+    ['Parallel Runs Required', cond.runs + (cond.runs > 1 ? ' sets (1/0 AWG min per NEC 310.10)' : '')],
+    ['Conduit per Run (3 ckts)', cond.conduit],
+    ['Conductor Ampacity', cond.ampsEach > 0 ? (cond.ampsEach * cond.runs) + ' A total (' + cond.ampsEach + ' A × ' + cond.runs + ')' : '—'],
+    ['─── NEC 450.3(B) OCP Recommendations ───', ''],
+    ['Primary OCPD (≤125% of Ip)', pOCPD + ' A'],
+    ['Secondary OCPD (≤125% of Is)', sOCPD + ' A'],
+  ];
+
+  if (topology === 'highleg') {
+    rows.push(['⚠ High-Leg B-Phase V to N', fmt(Vs * Math.sqrt(3) / 2, 1) + ' V (tag orange — NEC 110.15)']);
+  }
+  if (topology === 'corner') {
+    rows.push(['⚠ Corner-Ground Note', 'Grounded phase at 0 V potential — no neutral for 1Ø loads']);
+  }
+  if (topology === 'delta-delta') {
+    rows.push(['⚠ Neutral', 'No secondary neutral — 3-wire load only']);
+  }
+
+  const el = document.getElementById('xfmr_result');
+  if (el) {
+    el.className = 'result show';
+    el.innerHTML = rows.map(r => {
+      const isHdr = r[0].startsWith('───');
+      const isWarn = r[0].startsWith('⚠');
+      const lblStyle = isHdr ? 'color:var(--amber);text-shadow:var(--glow-amber)' : isWarn ? 'color:var(--red);text-shadow:var(--glow-red)' : '';
+      const valStyle = isWarn ? 'color:var(--amber)' : '';
+      return `<div class="res-row"><span class="res-label" style="${lblStyle}">${escapeHtml(r[0])}</span><span class="res-val" style="${valStyle}">${escapeHtml(r[1])}</span></div>`;
+    }).join('');
+  }
 };
 
 window.calcXfmrKVA = function () {
@@ -518,6 +570,68 @@ const THHN_AREAS = {
   '4/0': 0.3237,'250': 0.3970,'300': 0.4608,'350': 0.5242,
   '400': 0.5863,'500': 0.7073
 };
+
+/* ── Standard transformer kVA sizes (ANSI/NEMA) ── */
+const XFMR_STD_KVA = [1, 1.5, 2, 3, 5, 7.5, 10, 15, 25, 37.5, 50, 75, 100,
+                       150, 167, 200, 250, 333, 500, 750, 1000, 1500, 2000, 2500];
+
+/* ── Cu THHN 75°C ampacity + area (NEC Table 310.12 / Table 5) ── */
+const CU_THHN = [
+  { size: '14 AWG',   amps: 20,  area: 0.0097 },
+  { size: '12 AWG',   amps: 25,  area: 0.0133 },
+  { size: '10 AWG',   amps: 35,  area: 0.0211 },
+  { size: '8 AWG',    amps: 50,  area: 0.0366 },
+  { size: '6 AWG',    amps: 65,  area: 0.0507 },
+  { size: '4 AWG',    amps: 85,  area: 0.0824 },
+  { size: '3 AWG',    amps: 100, area: 0.0973 },
+  { size: '2 AWG',    amps: 115, area: 0.1158 },
+  { size: '1 AWG',    amps: 130, area: 0.1562 },
+  { size: '1/0 AWG',  amps: 150, area: 0.1855 },
+  { size: '2/0 AWG',  amps: 175, area: 0.2223 },
+  { size: '3/0 AWG',  amps: 200, area: 0.2679 },
+  { size: '4/0 AWG',  amps: 230, area: 0.3237 },
+  { size: '250 kcmil',amps: 255, area: 0.3970 },
+  { size: '300 kcmil',amps: 285, area: 0.4608 },
+  { size: '350 kcmil',amps: 310, area: 0.5242 },
+  { size: '400 kcmil',amps: 335, area: 0.5863 },
+  { size: '500 kcmil',amps: 380, area: 0.7073 },
+];
+
+function nextStdOCPD(amps) {
+  return STD_OCPD.find(s => s >= amps) || Math.ceil(amps / 100) * 100;
+}
+
+function selectConductorAndConduit(amps) {
+  /* single conductor run */
+  const single = CU_THHN.find(c => c.amps >= amps);
+  if (single) {
+    const totalArea = 3 * single.area;  /* 3 current-carrying conductors */
+    const conduitEntry = Object.entries(EMT_SIZES).find(([, v]) => v.area * 0.40 >= totalArea);
+    return {
+      runs: 1,
+      size: single.size,
+      ampsEach: single.amps,
+      conduit: conduitEntry ? conduitEntry[0] + '" EMT' : '> 4" EMT'
+    };
+  }
+  /* parallel runs (NEC allows ≥ 1/0 AWG, max 500 kcmil typical) */
+  for (let runs = 2; runs <= 6; runs++) {
+    const perRun = amps / runs;
+    /* parallel conductors must be ≥ 1/0 AWG */
+    const cond = CU_THHN.find(c => c.amps >= perRun && c.amps >= 150); /* 150A = 1/0 AWG min */
+    if (cond) {
+      const totalArea = 3 * cond.area;
+      const conduitEntry = Object.entries(EMT_SIZES).find(([, v]) => v.area * 0.40 >= totalArea);
+      return {
+        runs,
+        size: cond.size,
+        ampsEach: cond.amps,
+        conduit: conduitEntry ? conduitEntry[0] + '" EMT' : '> 4" EMT'
+      };
+    }
+  }
+  return { runs: 1, size: 'Special — consult engineer', ampsEach: 0, conduit: 'Special' };
+}
 
 window.calcConduitFill = function () {
   const qty = parseInt(document.getElementById('cf_qty').value) || 0;
@@ -591,7 +705,25 @@ window.convertUnits = function () {
   const to   = document.getElementById('uc_to').value;
   if (!isFinite(val_in)) return showError('uc_result', 'Enter a value to convert.');
 
-  // conversion table: all to SI base then to target
+  /* Temperature: special handling (non-multiplicative) */
+  if (from === 'degC' || from === 'degF' || from === 'K' ||
+      to   === 'degC' || to   === 'degF' || to   === 'K') {
+    let tempC;
+    if (from === 'degC') tempC = val_in;
+    else if (from === 'degF') tempC = (val_in - 32) * 5 / 9;
+    else if (from === 'K')   tempC = val_in - 273.15;
+    else return showError('uc_result', 'Select compatible units (both must be temperature).');
+    let result;
+    if (to === 'degC') result = tempC;
+    else if (to === 'degF') result = tempC * 9 / 5 + 32;
+    else if (to === 'K')   result = tempC + 273.15;
+    else return showError('uc_result', 'Select compatible units (both must be temperature).');
+    return showResult('uc_result', [
+      ['Result', fmt(result, 4) + ' ' + to],
+      ['Input', fmt(val_in, 4) + ' ' + from]
+    ]);
+  }
+
   const toBase = {
     'W':   1, 'kW': 1e3, 'MW': 1e6,
     'HP':  746, 'BTU/h': 0.29307107,
@@ -604,13 +736,16 @@ window.convertUnits = function () {
     'VA':  1, 'kVA': 1e3, 'MVA': 1e6,
     'VAR': 1, 'kVAR': 1e3,
     'ft':  0.3048, 'm': 1, 'in': 0.0254,
-    'AWG_CM': 1 // special
+    'AWG_CM': 1,
+    /* Illuminance (base: lux) */
+    'lux': 1, 'fc': 10.76391,
+    /* Energy (base: joules) */
+    'J': 1, 'Wh': 3600, 'kWh': 3.6e6, 'MWh': 3.6e9, 'BTU': 1055.06,
   };
 
   if (!(from in toBase) || !(to in toBase))
     return showError('uc_result', 'Select compatible units.');
 
-  // Group check (rough: same order of magnitude base type)
   const inBase = val_in * toBase[from];
   const result = inBase / toBase[to];
   showResult('uc_result', [
@@ -2158,6 +2293,175 @@ window.verifyISLoop = function () {
       return `<div class="res-row"><span class="res-label" style="${labelStyle}">${escapeHtml(r[0])}</span><span class="res-val" style="${valStyle}">${escapeHtml(r[1])}</span></div>`;
     }).join('');
   }
+};
+
+/* ============================================================
+   PHOTOMETRICS CALCULATOR
+   ============================================================ */
+window.calcPhotometrics = function () {
+  const lumens   = val('ph_lumens');
+  const fixtures = val('ph_fixtures');
+  const cu       = val('ph_cu');
+  const mf       = val('ph_mf');
+  const area     = val('ph_area');
+  if (!isPos(lumens, fixtures, area)) return showError('ph_result', 'Enter lumens, fixture count, and area (all > 0).');
+  if (!isFinite(cu) || cu <= 0 || cu > 1) return showError('ph_result', 'CU must be between 0 and 1.');
+  if (!isFinite(mf) || mf <= 0 || mf > 1) return showError('ph_result', 'MF must be between 0 and 1.');
+  const totalLumens = lumens * fixtures;
+  const fc  = (totalLumens * cu * mf) / area;
+  const lux = fc * 10.76391;
+  showResult('ph_result', [
+    ['Total Fixture Lumens', fmt(totalLumens, 0) + ' lm'],
+    ['Illuminance', fmt(fc, 2) + ' foot-candles (fc)'],
+    ['Illuminance', fmt(lux, 1) + ' lux (lx)'],
+    ['Formula', 'FC = (lm × Fixtures × CU × MF) / Area']
+  ]);
+};
+
+window.calcLuxFC = function () {
+  const v   = parseFloat(document.getElementById('ph_conv_val').value);
+  const dir = document.getElementById('ph_conv_dir').value;
+  if (!isFinite(v)) return showError('ph_conv_result', 'Enter a value to convert.');
+  if (dir === 'fc2lux') {
+    showResult('ph_conv_result', [['Result', fmt(v * 10.76391, 2) + ' lux'],['Input', fmt(v, 4) + ' fc']]);
+  } else {
+    showResult('ph_conv_result', [['Result', fmt(v * 0.092903, 4) + ' fc'],['Input', fmt(v, 4) + ' lux']]);
+  }
+};
+
+window.calcInverseSquare = function () {
+  const cd   = val('ph_isl_cd');
+  const d    = val('ph_isl_d');
+  const unit = document.getElementById('ph_isl_unit').value;
+  if (!isPos(cd, d)) return showError('ph_isl_result', 'Enter intensity (cd) and distance (> 0).');
+  const E = cd / (d * d);
+  const unitLabel = unit === 'm' ? 'lux' : 'foot-candles';
+  showResult('ph_isl_result', [
+    ['Illuminance at d=' + fmt(d,2) + ' ' + unit, fmt(E, 2) + ' ' + unitLabel],
+    ['Luminous Intensity', fmt(cd, 2) + ' cd'],
+    ['Formula', 'E = I / d²']
+  ]);
+};
+
+/* ============================================================
+   HARMONICS TOOL
+   ============================================================ */
+window.harmLookup = function () {
+  const type = document.getElementById('harm_load_type').value;
+  const data = {
+    vfd6: {
+      name: 'VFD / 6-Pulse Rectifier',
+      orders: '5th, 7th, 11th, 13th, 17th, 19th … (6k±1, k=1,2,3…)',
+      dominant: '5th (300 Hz) and 7th (420 Hz)',
+      typicalTHD: '25–40% at full load',
+      filter: 'Passive 5th-harmonic filter, 12-pulse transformer, or Active Harmonic Filter (AHF)',
+      note: 'Most common harmonic source in industrial facilities. 5th harmonic is negative-sequence — causes motor heating and torque pulsation.'
+    },
+    vfd12: {
+      name: '12-Pulse Rectifier Drive',
+      orders: '11th, 13th, 23rd, 25th … (12k±1, k=1,2,3…)',
+      dominant: '11th (660 Hz) and 13th (780 Hz)',
+      typicalTHD: '8–15% at full load',
+      filter: 'Passive 11th/13th filter or AHF if needed. 5th/7th already cancelled.',
+      note: 'Phase-shifting transformer (30° phase shift) cancels 5th and 7th harmonics. Requires matched transformer.'
+    },
+    smps: {
+      name: 'Switch-Mode Power Supply (PC/UPS/Charger)',
+      orders: '3rd, 5th, 7th, 9th, 11th … (all odd)',
+      dominant: '3rd (180 Hz) — zero-sequence, accumulates in neutral',
+      typicalTHD: '60–150% (high for single-phase SMPS)',
+      filter: 'Active harmonic filter or zero-sequence blocking transformer (ZSB). Size neutral conductor at 200% for SMPS-heavy loads.',
+      note: 'Single-phase SMPS creates large triplen harmonics. In 3Ø 4-wire systems neutral current can exceed phase current by 173%.'
+    },
+    fluor: {
+      name: 'Fluorescent / LED Driver (Electronic Ballast)',
+      orders: '3rd, 5th, 7th (odd harmonics)',
+      dominant: '3rd (180 Hz) in older ballasts; modern LED drivers may have <20% THD',
+      typicalTHD: '15–30% (magnetic ballast), 5–20% (electronic ballast), <20% (LED driver)',
+      filter: 'Typically no filter needed if %THD < 20%. For large lighting loads, ZSB transformer or derating neutral.',
+      note: 'LED drivers with PFC (power factor correction) have much lower harmonic content. Specify THD < 20% for procurement.'
+    },
+    arc: {
+      name: 'Arc Furnace / Arc Welder',
+      orders: '2nd, 3rd, 4th, 5th … broadband (all orders); highly variable',
+      dominant: 'Broadband — 2nd through 9th; random variation due to arc instability',
+      typicalTHD: '20–50%; flicker is also a significant concern',
+      filter: 'Static VAR compensator (SVC) or STATCOM for flicker. Active filter for harmonics. Dedicated transformer/supply recommended.',
+      note: 'Arc loads are non-periodic — stochastic harmonic generation. Also produces voltage flicker (IEC 61000-3-7). Best served from dedicated HV supply.'
+    },
+    ups1ph: {
+      name: 'Single-Phase UPS',
+      orders: '3rd, 9th, 15th … (triplen — zero-sequence)',
+      dominant: '3rd harmonic — zero-sequence, adds in neutral',
+      typicalTHD: '25–40%',
+      filter: 'Online double-conversion UPS with input PFC reduces input THD. ZSB transformer at feeder level.',
+      note: 'Triplen harmonics are zero-sequence and do not cancel in balanced 3Ø systems — they add in the neutral. Size neutral conductors to 200% for UPS-heavy circuits.'
+    },
+    motor: {
+      name: 'Linear Load (Motor / Resistive Heater) — Baseline',
+      orders: 'None significant (linear load)',
+      dominant: 'Fundamental only (60 Hz)',
+      typicalTHD: '< 3% (negligible)',
+      filter: 'No harmonic filtering required.',
+      note: 'Induction motors and resistive heaters are essentially linear loads and generate minimal harmonic content. They are, however, victims of harmonics from other loads.'
+    }
+  };
+  const d = data[type];
+  if (!d) return showError('harm_lookup_result', 'Select a load type.');
+  showResult('harm_lookup_result', [
+    ['Load Type', d.name],
+    ['Harmonic Orders Generated', d.orders],
+    ['Dominant Harmonics', d.dominant],
+    ['Typical Input %THD', d.typicalTHD],
+    ['─── Mitigation ───', ''],
+    ['Recommended Filter/Solution', d.filter],
+    ['Notes', d.note]
+  ]);
+};
+
+window.calcTHD = function () {
+  const I1  = val('thd_i1');
+  const I2  = val('thd_i2')  || 0;
+  const I3  = val('thd_i3')  || 0;
+  const I5  = val('thd_i5')  || 0;
+  const I7  = val('thd_i7')  || 0;
+  const I9  = val('thd_i9')  || 0;
+  const I11 = val('thd_i11') || 0;
+  const I13 = val('thd_i13') || 0;
+
+  if (!isPos(I1)) return showError('thd_result', 'Enter fundamental current I₁ (must be > 0).');
+
+  const harmonics = [
+    { n: 2,  v: isFinite(I2)  && I2  >= 0 ? I2  : 0 },
+    { n: 3,  v: isFinite(I3)  && I3  >= 0 ? I3  : 0 },
+    { n: 5,  v: isFinite(I5)  && I5  >= 0 ? I5  : 0 },
+    { n: 7,  v: isFinite(I7)  && I7  >= 0 ? I7  : 0 },
+    { n: 9,  v: isFinite(I9)  && I9  >= 0 ? I9  : 0 },
+    { n: 11, v: isFinite(I11) && I11 >= 0 ? I11 : 0 },
+    { n: 13, v: isFinite(I13) && I13 >= 0 ? I13 : 0 },
+  ];
+
+  const sumSq = harmonics.reduce((acc, h) => acc + h.v * h.v, 0);
+  const thd = Math.sqrt(sumSq) / I1 * 100;
+  const dominant = harmonics.reduce((a, b) => a.v > b.v ? a : b);
+
+  let filterRec = '—';
+  if (dominant.v > 0) {
+    if (dominant.n === 3 || dominant.n === 9) filterRec = 'Zero-sequence blocking transformer (ZSB) or Active Harmonic Filter';
+    else if (dominant.n === 5 || dominant.n === 7) filterRec = 'Passive 5th/7th filter or 12-pulse transformer or AHF';
+    else if (dominant.n === 11 || dominant.n === 13) filterRec = 'Passive 11th/13th filter or Active Harmonic Filter';
+    else filterRec = 'Active Harmonic Filter (broadband)';
+  }
+  const thdStatus = thd < 5 ? 'ACCEPTABLE (<5% IEEE 519 typical)' : thd < 15 ? 'MODERATE — evaluate IEEE 519 limits at PCC' : 'HIGH — likely exceeds IEEE 519 limits; mitigation recommended';
+
+  showResult('thd_result', [
+    ['Fundamental I₁', fmt(I1, 2) + ' A (or % base)'],
+    ['Total Harmonic Content (rms)', fmt(Math.sqrt(sumSq), 2)],
+    ['%THD', fmt(thd, 2) + '%'],
+    ['THD Status', thdStatus],
+    ['Dominant Harmonic', dominant.v > 0 ? dominant.n + 'th (' + fmt(dominant.v, 2) + ' A)' : 'None'],
+    ['Recommended Mitigation', filterRec]
+  ]);
 };
 
 /* ============================================================
