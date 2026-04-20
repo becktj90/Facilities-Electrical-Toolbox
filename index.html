@@ -65,6 +65,8 @@
       <button class="nav-btn" data-target="sec-wire-ref">Conductor Reference</button>
       <button class="nav-btn" data-target="sec-motor-ref">Motor FLA Tables</button>
       <button class="nav-btn" data-target="sec-conduit-ref">Conduit Fill Tables</button>
+      <button class="nav-btn" data-target="sec-ip-rating">IP Rating Chart</button>
+      <button class="nav-btn" data-target="sec-nema-class">NEMA Enclosures</button>
     </div>
     <div class="sidebar-section">
       <div class="sidebar-section-title">NEC Calculations</div>
@@ -74,6 +76,7 @@
       <div class="sidebar-section-title">Tools</div>
       <button class="nav-btn" data-target="sec-convert">Unit Conversions</button>
       <button class="nav-btn" data-target="sec-cm">Circular Mils</button>
+      <button class="nav-btn" data-target="sec-photometrics">Photometrics</button>
       <button class="nav-btn" data-target="sec-arcade">🚀 Rocket Arcade</button>
     </div>
     <div class="sidebar-section">
@@ -81,6 +84,7 @@
       <button class="nav-btn" data-target="sec-lsi">LSI Breaker Visualizer</button>
       <button class="nav-btn" data-target="sec-bess">BESS Peak-Shave</button>
       <button class="nav-btn" data-target="sec-tap">Tap-Changer Calc</button>
+      <button class="nav-btn" data-target="sec-harmonics">Harmonics Tool</button>
     </div>
     <div class="sidebar-section">
       <div class="sidebar-section-title">Hazardous / Safety</div>
@@ -849,6 +853,28 @@
         </div>
 
       </div><!-- end tab-group -->
+
+      <div class="card-grid" style="margin-top:16px">
+        <div class="card">
+          <div class="card-title">3Ø System Topology — Voltage Drop Notes</div>
+          <div class="card-body">
+            <div class="formula-box">
+              <strong>Wye (Y) Systems:</strong><br>
+              L-N loads: VD formula uses 2×K (single-phase, 2-wire return)<br>
+              L-L loads: VD formula uses √3×K (3-phase)<br><br>
+              <strong>High-Leg Delta (Wild Leg):</strong><br>
+              Do NOT use B-phase for single-phase L-N loads (208V, not 120V)<br>
+              Use A or C phases only for 120V single-phase circuits<br><br>
+              <strong>Corner-Grounded Delta:</strong><br>
+              No neutral conductor — all loads must be 3-wire 3-phase or L-L only<br>
+              Single-phase 120V loads are NOT supported<br><br>
+              <strong>Ungrounded (IT) Delta:</strong><br>
+              Ground faults produce no fault current — requires ground fault monitoring
+            </div>
+            <div class="note">Voltage drop calculations above use standard formulas. For grounded systems, verify that the correct supply voltage (L-L or L-N) is entered per your topology.</div>
+          </div>
+        </div>
+      </div>
     </section>
 
     <!-- ════════════════════════════════════════
@@ -917,49 +943,89 @@
           </div>
         </div>
 
+        <!-- Topology awareness note -->
+        <div class="card">
+          <div class="card-title">3Ø Supply Topology — Motor Considerations</div>
+          <div class="card-body">
+            <div class="formula-box">
+              <strong>High-Leg Delta (Wild Leg):</strong><br>
+              B-phase to neutral ≈ 208V (on 240V system)<br>
+              Motors: connect L-L only (never use B-phase for 120V control)<br>
+              NEC 110.15 requires orange conductor identification<br><br>
+              <strong>Corner-Grounded Delta:</strong><br>
+              One phase bonded to ground — asymmetric fault currents<br>
+              Motors run normally (L-L balanced), but grounding/protection differs<br>
+              NEC 250.26 governs grounded conductor identification<br><br>
+              <strong>Wye Systems (208/120 or 480/277):</strong><br>
+              V_LN = V_LL / √3 &nbsp;|&nbsp; Balanced neutral current = 0 for 3Ø motors
+            </div>
+            <div class="note">For motor calculations above, always use the line-to-line voltage (V_LL) regardless of system topology.</div>
+          </div>
+        </div>
+
       </div>
     </section>
 
     <!-- ════════════════════════════════════════
-         TRANSFORMER
+         TRANSFORMER CALCULATIONS
          ════════════════════════════════════════ -->
     <section id="sec-xfmr" class="section">
       <div class="section-header">
         <h2>🔄 Transformer Calculations</h2>
-        <p>Calculate transformer currents, kVA rating, and turns ratio.</p>
+        <p>Currents, turns ratio, standard sizing, conductor selection, conduit, and OCP per NEC 450.3.</p>
         <details class="section-info">
           <summary>ℹ More Info — Transformer Calculations</summary>
           <div class="section-info-body">
-            <strong>Transformer Calculations</strong> use turns ratio and kVA ratings to find primary/secondary currents.<br><br>
-            <ul><li><strong>Turns Ratio:</strong> a = Vp / Vs = Np / Ns = Is / Ip — voltage and current are inversely proportional</li><li><strong>Primary Current:</strong> Ip = kVA×1000 / Vp (1Ø) or kVA×1000 / (√3×Vp) (3Ø)</li><li><strong>kVA from V &amp; I:</strong> S = V×I/1000 (1Ø) or √3×V×I/1000 (3Ø)</li></ul>
-            <strong>Typical %Z:</strong> Dry-type ≤15 kVA: 2–4%; 15–500 kVA: 4–6%; Liquid-filled: 5–7%.<br>
-            <strong>NEC 450:</strong> Transformers must have overcurrent protection on the primary side per NEC 450.3.
+            <strong>Transformer Calculations</strong> determine primary/secondary currents, select the next standard ANSI/NEMA kVA rating, size secondary copper conductors, and recommend overcurrent protection per NEC 450.3(B).<br><br>
+            <ul>
+              <li><strong>Turns Ratio:</strong> a = Vp/Vs = Np/Ns = Is/Ip</li>
+              <li><strong>Primary Current:</strong> Ip = kVA×1000/Vp (1Ø) or kVA×1000/(√3×Vp) (3Ø)</li>
+              <li><strong>Conductors:</strong> Cu THHN 75°C per NEC Table 310.12. Parallel runs (1/0 AWG min) when single 500 kcmil is insufficient.</li>
+              <li><strong>OCP — NEC 450.3(B):</strong> Primary ≤125% of Ip, Secondary ≤125% of Is; next standard OCPD size up.</li>
+              <li><strong>High-Leg Delta:</strong> B-phase to neutral = V_LL × √3/2 ≈ 208V on 240V system. Tag orange per NEC 110.15.</li>
+              <li><strong>Corner-Grounded Delta:</strong> One corner at ground potential — no neutral for single-phase loads.</li>
+            </ul>
+            <strong>Typical %Z:</strong> Dry-type ≤15 kVA: 2–4%; 15–500 kVA: 4–6%; Liquid-filled: 5–7%.
           </div>
         </details>
       </div>
       <div class="card-grid">
 
+        <!-- ── Card 1: Main calculator ── -->
         <div class="card">
-          <div class="card-title">Current &amp; Turns Ratio from kVA</div>
+          <div class="card-title">Current, Sizing &amp; Conductor Selection</div>
           <div class="card-body">
             <div class="formula-box">
-              1Ø: Ip = kVA×1000 / Vp &nbsp;|&nbsp; Is = kVA×1000 / Vs<br>
-              3Ø: Ip = kVA×1000 / (√3×Vp) &nbsp;|&nbsp; Is = kVA×1000 / (√3×Vs)<br>
-              Turns Ratio = Vp / Vs = Np / Ns = Is / Ip
+              1Ø: Ip = kVA×1000/Vp &nbsp;|&nbsp; Is = kVA×1000/Vs<br>
+              3Ø: Ip = kVA×1000/(√3×Vp) &nbsp;|&nbsp; Is = kVA×1000/(√3×Vs)<br>
+              Turns Ratio a = Vp/Vs &nbsp;|&nbsp; OCP ≤ 125% FLA (NEC 450.3B)
+            </div>
+            <div class="input-group single">
+              <div>
+                <label>Topology</label>
+                <select id="xfmr_topology">
+                  <option value="1ph">1Ø Single-Phase</option>
+                  <option value="delta-wye" selected>3Ø Delta-Wye (Most Common)</option>
+                  <option value="wye-wye">3Ø Wye-Wye</option>
+                  <option value="delta-delta">3Ø Delta-Delta (No Neutral)</option>
+                  <option value="highleg">3Ø High-Leg Delta (Wild Leg)</option>
+                  <option value="corner">3Ø Corner-Grounded Delta</option>
+                </select>
+              </div>
             </div>
             <div class="input-group">
-              <div><label>Phase</label><select id="xfmr_phase"><option value="1">Single-Phase</option><option value="3">Three-Phase</option></select></div>
               <div><label>Rating — kVA</label><input type="number" id="xfmr_kva" placeholder="e.g. 75" step="any" min="0"></div>
-            </div>
-            <div class="input-group">
               <div><label>Primary Voltage — Vp (V)</label><input type="number" id="xfmr_vp" placeholder="e.g. 480" step="any" min="0"></div>
-              <div><label>Secondary Voltage — Vs (V)</label><input type="number" id="xfmr_vs" placeholder="e.g. 208" step="any" min="0"></div>
+            </div>
+            <div class="input-group single">
+              <div><label>Secondary Voltage — Vs (V) <small style="color:var(--green-mid)">(L-L for 3Ø)</small></label><input type="number" id="xfmr_vs" placeholder="e.g. 208" step="any" min="0"></div>
             </div>
             <button class="btn" onclick="calcXfmr()">Calculate</button>
             <div id="xfmr_result" class="result"></div>
           </div>
         </div>
 
+        <!-- ── Card 2: kVA from V & I ── -->
         <div class="card">
           <div class="card-title">kVA from Voltage &amp; Current</div>
           <div class="card-body">
@@ -979,22 +1045,46 @@
           </div>
         </div>
 
+        <!-- ── Card 3: Standard Sizes Reference ── -->
         <div class="card">
-          <div class="card-title">Transformer Reference</div>
+          <div class="card-title">Standard Transformer kVA Sizes (ANSI/NEMA)</div>
           <div class="card-body">
-            <div class="formula-box">
-              <strong>Turns Ratio (a):</strong><br>
-              a = Np/Ns = Vp/Vs = Is/Ip<br><br>
-              <strong>Conservation of energy:</strong><br>
-              Vp × Ip ≈ Vs × Is  (ideal transformer)<br><br>
-              <strong>3Ø winding configurations:</strong><br>
-              Wye (Y):   V_phase = V_line / √3<br>
-              Delta (Δ): V_phase = V_line<br><br>
-              <strong>% Impedance (typical):</strong><br>
-              Dry-type ≤ 15 kVA: 2–4%<br>
-              Dry-type &gt; 15 kVA: 4–6%<br>
-              Liquid-filled: 5–7%
+            <div class="ref-table-wrap">
+              <table class="ref-table">
+                <thead><tr><th>Single-Phase</th><th>Three-Phase</th><th>Voltage Classes</th></tr></thead>
+                <tbody>
+                  <tr><td>1, 1.5, 2, 3 kVA</td><td>3, 6, 9, 15 kVA</td><td>120, 208, 240 V</td></tr>
+                  <tr><td>5, 7.5, 10 kVA</td><td>30, 45, 75 kVA</td><td>480 V (primary)</td></tr>
+                  <tr><td>15, 25, 37.5 kVA</td><td>112.5, 150 kVA</td><td>208/120 V (sec)</td></tr>
+                  <tr><td>50, 75, 100 kVA</td><td>225, 300 kVA</td><td>480/277 V (sec)</td></tr>
+                  <tr><td>167, 250 kVA</td><td>500, 750 kVA</td><td>2400, 4160 V</td></tr>
+                  <tr><td>333, 500 kVA</td><td>1000, 1500 kVA</td><td>12.47, 13.8 kV</td></tr>
+                  <tr class="highlight"><td colspan="2">2000, 2500 kVA</td><td>34.5 kV</td></tr>
+                </tbody>
+              </table>
             </div>
+            <div class="note">ANSI C57.12.20 / NEMA ST-20 standard ratings. Sizes up to 2500 kVA available dry-type; liquid-filled extends higher.</div>
+          </div>
+        </div>
+
+        <!-- ── Card 4: Topology Reference ── -->
+        <div class="card">
+          <div class="card-title">3Ø Topology Quick Reference</div>
+          <div class="card-body">
+            <div class="ref-table-wrap">
+              <table class="ref-table">
+                <thead><tr><th>Topology</th><th>Neutral?</th><th>V_LN from V_LL</th><th>Notes</th></tr></thead>
+                <tbody>
+                  <tr><td>Δ–Y (Delta-Wye)</td><td>Yes (Y side)</td><td>V_LL / √3</td><td>Most common; 480→208/120V</td></tr>
+                  <tr><td>Y–Y (Wye-Wye)</td><td>Yes (both)</td><td>V_LL / √3</td><td>Neutral both sides; triplen harmonics can circulate</td></tr>
+                  <tr><td>Δ–Δ (Delta-Delta)</td><td>No</td><td>N/A</td><td>Motor loads; open-delta possible</td></tr>
+                  <tr class="highlight"><td>High-Leg Δ</td><td>Partial</td><td>A,C: V_LL/2; B: V_LL×√3/2</td><td>B-phase (wild leg) = 208V on 240V; NEC 110.15 orange tag</td></tr>
+                  <tr class="highlight"><td>Corner-Gnd Δ</td><td>No</td><td>One phase = 0V to gnd</td><td>Phase grounded; NEC 250.26; no single-phase neutral loads</td></tr>
+                  <tr><td>Y–Δ (Wye-Delta)</td><td>Yes (Y side)</td><td>V_LL / √3</td><td>Step-up apps; no neutral on secondary</td></tr>
+                </tbody>
+              </table>
+            </div>
+            <div class="note">For High-Leg: V_B-N = V_LL × sin(60°) = 240 × 0.866 = 208V. For Corner-Grounded: the grounded conductor is at 0V potential — all phase-to-ground voltages are asymmetric.</div>
           </div>
         </div>
 
@@ -1430,7 +1520,7 @@
           <summary>ℹ More Info — Unit Conversions</summary>
           <div class="section-info-body">
             Quickly convert between electrical and related engineering units. Select compatible unit categories (e.g., power → power).<br><br>
-            <strong>Supported categories:</strong><ul><li><strong>Power:</strong> W, kW, MW, HP, BTU/h</li><li><strong>Apparent/Reactive:</strong> VA, kVA, MVA, VAR, kVAR</li><li><strong>Voltage:</strong> V, kV, mV &nbsp;|&nbsp; <strong>Current:</strong> A, mA, kA</li><li><strong>Resistance:</strong> Ω, kΩ, MΩ &nbsp;|&nbsp; <strong>Capacitance:</strong> F, mF, µF, nF, pF</li><li><strong>Inductance:</strong> H, mH, µH &nbsp;|&nbsp; <strong>Frequency:</strong> Hz, kHz, MHz</li><li><strong>Length:</strong> ft, m, in</li></ul>
+            <strong>Supported categories:</strong><ul><li><strong>Power:</strong> W, kW, MW, HP, BTU/h</li><li><strong>Apparent/Reactive:</strong> VA, kVA, MVA, VAR, kVAR</li><li><strong>Voltage:</strong> V, kV, mV &nbsp;|&nbsp; <strong>Current:</strong> A, mA, kA</li><li><strong>Resistance:</strong> Ω, kΩ, MΩ &nbsp;|&nbsp; <strong>Capacitance:</strong> F, mF, µF, nF, pF</li><li><strong>Inductance:</strong> H, mH, µH &nbsp;|&nbsp; <strong>Frequency:</strong> Hz, kHz, MHz</li><li><strong>Length:</strong> ft, m, in</li><li><strong>Illuminance:</strong> lux, foot-candles (fc)</li><li><strong>Temperature:</strong> °C, °F, K</li><li><strong>Energy:</strong> J, Wh, kWh, MWh, BTU</li></ul>
             <strong>Note:</strong> Cross-category conversions (e.g., W → A) require additional parameters not available here — use the Ohm's Law or Power calculators for those.
           </div>
         </details>
@@ -1498,6 +1588,22 @@
                     <option value="m">Meters (m)</option>
                     <option value="in">Inches (in)</option>
                   </optgroup>
+                  <optgroup label="Illuminance">
+                    <option value="lux">Lux (lx)</option>
+                    <option value="fc">Foot-candles (fc)</option>
+                  </optgroup>
+                  <optgroup label="Temperature">
+                    <option value="degC">Celsius (°C)</option>
+                    <option value="degF">Fahrenheit (°F)</option>
+                    <option value="K">Kelvin (K)</option>
+                  </optgroup>
+                  <optgroup label="Energy">
+                    <option value="J">Joules (J)</option>
+                    <option value="Wh">Watt-hours (Wh)</option>
+                    <option value="kWh">Kilowatt-hours (kWh)</option>
+                    <option value="MWh">Megawatt-hours (MWh)</option>
+                    <option value="BTU">BTU</option>
+                  </optgroup>
                 </select>
               </div>
               <div>
@@ -1554,6 +1660,22 @@
                     <option value="m">Meters (m)</option>
                     <option value="in">Inches (in)</option>
                   </optgroup>
+                  <optgroup label="Illuminance">
+                    <option value="lux">Lux (lx)</option>
+                    <option value="fc">Foot-candles (fc)</option>
+                  </optgroup>
+                  <optgroup label="Temperature">
+                    <option value="degC">Celsius (°C)</option>
+                    <option value="degF">Fahrenheit (°F)</option>
+                    <option value="K">Kelvin (K)</option>
+                  </optgroup>
+                  <optgroup label="Energy">
+                    <option value="J">Joules (J)</option>
+                    <option value="Wh">Watt-hours (Wh)</option>
+                    <option value="kWh">Kilowatt-hours (kWh)</option>
+                    <option value="MWh">Megawatt-hours (MWh)</option>
+                    <option value="BTU">BTU</option>
+                  </optgroup>
                 </select>
               </div>
             </div>
@@ -1581,7 +1703,14 @@
               mega  (M) = 10⁶<br>
               giga  (G) = 10⁹<br><br>
               <strong>Length:</strong><br>
-              1 ft = 0.3048 m &nbsp;|&nbsp; 1 in = 25.4 mm
+              1 ft = 0.3048 m &nbsp;|&nbsp; 1 in = 25.4 mm<br><br>
+              <strong>Illuminance:</strong><br>
+              1 fc = 10.764 lux &nbsp;|&nbsp; 1 lux = 0.0929 fc<br><br>
+              <strong>Temperature:</strong><br>
+              °F = (°C × 9/5) + 32 &nbsp;|&nbsp; K = °C + 273.15<br><br>
+              <strong>Energy:</strong><br>
+              1 kWh = 3,600,000 J = 3,412 BTU<br>
+              1 BTU = 1,055.06 J
             </div>
           </div>
         </div>
@@ -2720,6 +2849,492 @@
         </div>
 
       </div>
+    </section>
+
+    <!-- ════════════════════════════════════════
+         IP RATING CHART
+         ════════════════════════════════════════ -->
+    <section id="sec-ip-rating" class="section">
+      <div class="section-header">
+        <h2>🛡 IP Rating Chart (IEC 60529)</h2>
+        <p>Ingress Protection ratings for electrical enclosures — solid particle and liquid protection.</p>
+        <details class="section-info">
+          <summary>ℹ More Info — IP Ratings</summary>
+          <div class="section-info-body">
+            <strong>IP (Ingress Protection)</strong> ratings per IEC 60529 indicate protection against solid particles (first digit) and liquids (second digit).<br><br>
+            Format: <strong>IP XY</strong> where X = solid protection (0–6), Y = liquid protection (0–9K).<br>
+            Common ratings for facilities: IP54 (dust-protected, splash), IP65 (dust-tight, water jets), IP67 (immersion), IP68 (continuous immersion), IP69K (high-pressure steam cleaning).
+          </div>
+        </details>
+      </div>
+      <div class="card-grid">
+
+        <div class="card">
+          <div class="card-title">First Digit — Solid Particle Protection</div>
+          <div class="card-body">
+            <div class="ref-table-wrap">
+              <table class="ref-table">
+                <thead><tr><th>Digit</th><th>Protection Level</th><th>Description</th></tr></thead>
+                <tbody>
+                  <tr><td>0</td><td>None</td><td>No protection</td></tr>
+                  <tr><td>1</td><td>&gt;50 mm</td><td>Large body parts (back of hand)</td></tr>
+                  <tr><td>2</td><td>&gt;12.5 mm</td><td>Fingers or similar objects</td></tr>
+                  <tr><td>3</td><td>&gt;2.5 mm</td><td>Tools, thick wires</td></tr>
+                  <tr><td>4</td><td>&gt;1 mm</td><td>Most wires, screws, ants</td></tr>
+                  <tr class="highlight"><td>5</td><td>Dust-Protected</td><td>Dust ingress limited (no harmful deposit)</td></tr>
+                  <tr class="highlight"><td>6</td><td>Dust-Tight</td><td>No dust ingress whatsoever</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">Second Digit — Liquid Ingress Protection</div>
+          <div class="card-body">
+            <div class="ref-table-wrap">
+              <table class="ref-table">
+                <thead><tr><th>Digit</th><th>Protection Level</th><th>Description</th></tr></thead>
+                <tbody>
+                  <tr><td>0</td><td>None</td><td>No protection</td></tr>
+                  <tr><td>1</td><td>Dripping water</td><td>Vertical drips (1 mm/min)</td></tr>
+                  <tr><td>2</td><td>Dripping (15°)</td><td>Drips up to 15° tilt</td></tr>
+                  <tr><td>3</td><td>Spraying water</td><td>Up to 60° from vertical</td></tr>
+                  <tr><td>4</td><td>Splashing</td><td>All directions</td></tr>
+                  <tr class="highlight"><td>5</td><td>Water jets</td><td>6.3 mm nozzle, any direction</td></tr>
+                  <tr class="highlight"><td>6</td><td>Powerful jets</td><td>12.5 mm nozzle, any direction</td></tr>
+                  <tr class="highlight"><td>7</td><td>Immersion (1 m)</td><td>Up to 1 m depth, 30 min</td></tr>
+                  <tr class="highlight"><td>8</td><td>Immersion (deep)</td><td>Manufacturer specified depth &gt;1 m</td></tr>
+                  <tr class="highlight"><td>9K</td><td>High-pressure steam</td><td>Close-range high-pressure/high-temp jets</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">Common IP Ratings in Facilities</div>
+          <div class="card-body">
+            <div class="ref-table-wrap">
+              <table class="ref-table">
+                <thead><tr><th>IP Rating</th><th>Typical Application</th><th>NEMA Equiv (approx)</th></tr></thead>
+                <tbody>
+                  <tr><td>IP20</td><td>Indoor, clean environments (panelboards)</td><td>NEMA 1</td></tr>
+                  <tr><td>IP44</td><td>Outdoor, splash-protected</td><td>NEMA 3</td></tr>
+                  <tr><td>IP54</td><td>Dusty/splash environments (HVAC)</td><td>NEMA 3S</td></tr>
+                  <tr class="highlight"><td>IP55</td><td>General outdoor (motors, drives)</td><td>NEMA 3R (close)</td></tr>
+                  <tr class="highlight"><td>IP65</td><td>Dust-tight + water jets (washdown)</td><td>NEMA 4 (close)</td></tr>
+                  <tr class="highlight"><td>IP66</td><td>Heavy water jets (outdoor panels)</td><td>NEMA 4</td></tr>
+                  <tr class="highlight"><td>IP67</td><td>Temporary immersion (portable equip)</td><td>NEMA 6</td></tr>
+                  <tr class="highlight"><td>IP68</td><td>Continuous submersion</td><td>NEMA 6P</td></tr>
+                  <tr class="highlight"><td>IP69K</td><td>High-pressure steam cleaning (food mfg)</td><td>—</td></tr>
+                </tbody>
+              </table>
+            </div>
+            <div class="note">NEMA and IP ratings are not directly equivalent. Verify both standards when specifying equipment for regulated environments (food processing, pharma, hazardous locations).</div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ════════════════════════════════════════
+         NEMA ENCLOSURE CLASSES
+         ════════════════════════════════════════ -->
+    <section id="sec-nema-class" class="section">
+      <div class="section-header">
+        <h2>🗄 NEMA Enclosure Types (NEMA 250)</h2>
+        <p>Enclosure ratings for electrical equipment — environmental and safety protection levels.</p>
+        <details class="section-info">
+          <summary>ℹ More Info — NEMA Enclosures</summary>
+          <div class="section-info-body">
+            <strong>NEMA 250</strong> defines enclosure types for electrical equipment. Types are selected based on environment (indoor/outdoor), hazards (dust, water, corrosion), and agency requirements.<br><br>
+            Types 7, 9 are for hazardous locations (NEC Articles 500–501). Type 4X is the most common for corrosive/washdown environments. Type 12 is the indoor industrial workhorse.
+          </div>
+        </details>
+      </div>
+      <div class="card-grid">
+
+        <div class="card">
+          <div class="card-title">NEMA Enclosure Type Reference</div>
+          <div class="card-body">
+            <div class="ref-table-wrap">
+              <table class="ref-table">
+                <thead>
+                  <tr>
+                    <th>Type</th>
+                    <th>Indoor/ Outdoor</th>
+                    <th>Description</th>
+                    <th>Corrosion Resist.</th>
+                    <th>IP Equiv (approx)</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr><td>1</td><td>Indoor</td><td>General purpose — dirt, light dust, indirect contact</td><td>No</td><td>IP20</td></tr>
+                  <tr><td>2</td><td>Indoor</td><td>Type 1 + drip-proof (limited condensate)</td><td>No</td><td>IP31</td></tr>
+                  <tr><td>3</td><td>Outdoor</td><td>Rainproof, sleet-resistant, windblown dust</td><td>No</td><td>IP54</td></tr>
+                  <tr><td>3R</td><td>Outdoor</td><td>Rain/sleet resistant (no dust protection)</td><td>No</td><td>IP32</td></tr>
+                  <tr><td>3S</td><td>Outdoor</td><td>Type 3 + external ice formation on mechanism</td><td>No</td><td>IP54</td></tr>
+                  <tr class="highlight"><td>3X</td><td>Outdoor</td><td>Type 3 + corrosion resistant</td><td>Yes</td><td>IP54</td></tr>
+                  <tr class="highlight"><td>4</td><td>In/Out</td><td>Watertight — hosedown, windblown rain/dust/sleet</td><td>No</td><td>IP66</td></tr>
+                  <tr class="highlight"><td>4X</td><td>In/Out</td><td>Type 4 + corrosion resistant (SS/FRP)</td><td>Yes</td><td>IP66</td></tr>
+                  <tr><td>5</td><td>Indoor</td><td>Dust-tight (lint, fibers), drip-proof</td><td>No</td><td>IP52</td></tr>
+                  <tr><td>6</td><td>In/Out</td><td>Submersible — temporary, occasional</td><td>No</td><td>IP67</td></tr>
+                  <tr><td>6P</td><td>In/Out</td><td>Submersible — prolonged depth</td><td>Yes</td><td>IP68</td></tr>
+                  <tr class="highlight"><td>7</td><td>Indoor</td><td>Class I, Div 1, Groups A–D (explosion-proof)</td><td>No</td><td>—</td></tr>
+                  <tr class="highlight"><td>9</td><td>Indoor</td><td>Class II, Div 1, Groups E, F, G (dust-ignitionproof)</td><td>No</td><td>—</td></tr>
+                  <tr><td>12</td><td>Indoor</td><td>Industrial — dust, dripping non-corrosive liquids</td><td>No</td><td>IP54</td></tr>
+                  <tr><td>12K</td><td>Indoor</td><td>Type 12 with knockouts</td><td>No</td><td>IP54</td></tr>
+                  <tr><td>13</td><td>Indoor</td><td>Oil-tight, dust-tight — oil mist, lint, seepage</td><td>No</td><td>IP54</td></tr>
+                </tbody>
+              </table>
+            </div>
+            <div class="note">NEMA types 7 and 9 are for hazardous locations per NEC 500. For corrosive environments (chemical plants, coastal), specify Type 3X or 4X. Type 4X in 316 stainless steel is standard for food/pharma.</div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">Quick Selection Guide</div>
+          <div class="card-body">
+            <div class="formula-box">
+              <strong>Office / Control Room:</strong> Type 1 or 12<br>
+              <strong>Industrial Plant (dry):</strong> Type 12 or 4<br>
+              <strong>Outdoor (non-corrosive):</strong> Type 3R or 4<br>
+              <strong>Outdoor (corrosive/coastal):</strong> Type 3X or 4X<br>
+              <strong>Washdown / Food Processing:</strong> Type 4X (SS)<br>
+              <strong>Wet Locations (pools, car wash):</strong> Type 4 or 4X<br>
+              <strong>Explosion-proof (Class I gas):</strong> Type 7<br>
+              <strong>Dust-ignitionproof (Class II):</strong> Type 9<br>
+              <strong>Submersible (pump stations):</strong> Type 6 or 6P<br>
+              <strong>High-pressure wash (IP69K equiv):</strong> Verify mfr rating — NEMA does not define IP69K
+            </div>
+            <div class="note">Always verify the enclosure rating against the actual environmental conditions and applicable codes (NEC, OSHA, FDA, etc.). IP and NEMA ratings test different characteristics and are not fully interchangeable.</div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ════════════════════════════════════════
+         PHOTOMETRICS CALCULATOR
+         ════════════════════════════════════════ -->
+    <section id="sec-photometrics" class="section">
+      <div class="section-header">
+        <h2>💡 Photometrics Calculator</h2>
+        <p>Illuminance, lux/foot-candle converter, inverse square law, and lighting level references.</p>
+        <details class="section-info">
+          <summary>ℹ More Info — Photometrics</summary>
+          <div class="section-info-body">
+            <strong>Zonal Cavity / Lumen Method:</strong> FC = (Lumens × Fixtures × CU × MF) / Area<br>
+            CU = Coefficient of Utilization (0.5–0.75 typical), MF = Maintenance Factor / LLF (0.6–0.9)<br><br>
+            <strong>Inverse Square Law:</strong> E = I / d² (candela, meters) or E = I / d² × 10.76 (foot-candles)<br><br>
+            <strong>Units:</strong> 1 foot-candle (fc) = 10.764 lux (lx) &nbsp;|&nbsp; 1 lux = 1 lm/m²
+          </div>
+        </details>
+      </div>
+
+      <div class="tab-group">
+        <div class="tabs">
+          <button class="tab-btn" data-tab="tab-photo-lumen">Lumen Method</button>
+          <button class="tab-btn" data-tab="tab-photo-isl">Inverse Square Law</button>
+          <button class="tab-btn" data-tab="tab-photo-ref">FC Reference</button>
+        </div>
+
+        <div id="tab-photo-lumen" class="tab-pane">
+          <div class="card-grid">
+            <div class="card">
+              <div class="card-title">Lumen / Zonal Cavity Method</div>
+              <div class="card-body">
+                <div class="formula-box">FC = (Lumens × Fixtures × CU × MF) / Area_ft²<br>Lux = FC × 10.764</div>
+                <div class="input-group">
+                  <div><label>Lumens per Fixture (lm)</label><input type="number" id="ph_lumens" placeholder="e.g. 5000" step="any" min="0"></div>
+                  <div><label>Number of Fixtures</label><input type="number" id="ph_fixtures" placeholder="e.g. 20" step="any" min="1"></div>
+                </div>
+                <div class="input-group">
+                  <div><label>CU — Coefficient of Utilization</label><input type="number" id="ph_cu" placeholder="e.g. 0.65" step="any" min="0" max="1" value="0.65"></div>
+                  <div><label>MF — Maintenance Factor (LLF)</label><input type="number" id="ph_mf" placeholder="e.g. 0.80" step="any" min="0" max="1" value="0.80"></div>
+                </div>
+                <div class="input-group single">
+                  <div><label>Room / Area (ft²)</label><input type="number" id="ph_area" placeholder="e.g. 1000" step="any" min="0"></div>
+                </div>
+                <button class="btn" onclick="calcPhotometrics()">Calculate Illuminance</button>
+                <div id="ph_result" class="result"></div>
+              </div>
+            </div>
+            <div class="card">
+              <div class="card-title">Lux ↔ Foot-candle Converter</div>
+              <div class="card-body">
+                <div class="formula-box">1 fc = 10.764 lux &nbsp;|&nbsp; 1 lux = 0.09290 fc</div>
+                <div class="input-group">
+                  <div><label>Value</label><input type="number" id="ph_conv_val" placeholder="Enter value" step="any"></div>
+                  <div>
+                    <label>Direction</label>
+                    <select id="ph_conv_dir">
+                      <option value="fc2lux">Foot-candles → Lux</option>
+                      <option value="lux2fc">Lux → Foot-candles</option>
+                    </select>
+                  </div>
+                </div>
+                <button class="btn" onclick="calcLuxFC()">Convert</button>
+                <div id="ph_conv_result" class="result"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div id="tab-photo-isl" class="tab-pane">
+          <div class="card-grid">
+            <div class="card">
+              <div class="card-title">Inverse Square Law</div>
+              <div class="card-body">
+                <div class="formula-box">E = I / d²<br>E in lux (cd, meters) or fc (cd, feet)<br>Double the distance → ¼ the illuminance</div>
+                <div class="input-group">
+                  <div><label>Luminous Intensity — I (candela, cd)</label><input type="number" id="ph_isl_cd" placeholder="e.g. 1000" step="any" min="0"></div>
+                  <div><label>Distance — d</label><input type="number" id="ph_isl_d" placeholder="e.g. 3" step="any" min="0"></div>
+                </div>
+                <div class="input-group single">
+                  <div>
+                    <label>Distance Unit</label>
+                    <select id="ph_isl_unit">
+                      <option value="m">Meters (result in lux)</option>
+                      <option value="ft">Feet (result in foot-candles)</option>
+                    </select>
+                  </div>
+                </div>
+                <button class="btn" onclick="calcInverseSquare()">Calculate</button>
+                <div id="ph_isl_result" class="result"></div>
+              </div>
+            </div>
+            <div class="card">
+              <div class="card-title">Inverse Square Law Reference</div>
+              <div class="card-body">
+                <div class="formula-box">
+                  <strong>Point Source:</strong><br>
+                  E (lux) = I (cd) / d² (m²)<br>
+                  E (fc)  = I (cd) / d² (ft²)<br><br>
+                  <strong>Cosine Law (oblique angles):</strong><br>
+                  E = (I × cos θ) / d²<br><br>
+                  <strong>Typical Luminous Intensity:</strong><br>
+                  LED retrofit lamp: ~800 cd<br>
+                  High-bay fixture: 5,000–30,000 cd<br>
+                  HID street lamp: 10,000–50,000 cd
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div id="tab-photo-ref" class="tab-pane">
+          <div class="card-grid">
+            <div class="card">
+              <div class="card-title">Recommended Illuminance Levels (IES/IESNA)</div>
+              <div class="card-body">
+                <div class="ref-table-wrap">
+                  <table class="ref-table">
+                    <thead><tr><th>Space / Task</th><th>Foot-candles (fc)</th><th>Lux (lx)</th><th>Notes</th></tr></thead>
+                    <tbody>
+                      <tr><td>Parking Lot (open)</td><td>1–5 fc</td><td>10–50 lx</td><td>IES RP-20</td></tr>
+                      <tr><td>Building Exterior</td><td>2–5 fc</td><td>20–50 lx</td><td>Facade lighting</td></tr>
+                      <tr><td>Warehouse (bulk storage)</td><td>10–30 fc</td><td>100–300 lx</td><td>IES RP-29</td></tr>
+                      <tr><td>Warehouse (order picking)</td><td>30–50 fc</td><td>300–500 lx</td><td>Task-level</td></tr>
+                      <tr><td>Corridor / Hallway</td><td>10–20 fc</td><td>100–200 lx</td><td>IES HB-10</td></tr>
+                      <tr class="highlight"><td>Open Office</td><td>30–50 fc</td><td>300–500 lx</td><td>IECC / ASHRAE 90.1</td></tr>
+                      <tr class="highlight"><td>Private Office / Lab</td><td>50 fc</td><td>500 lx</td><td>Task area standard</td></tr>
+                      <tr><td>Conference Room</td><td>30–50 fc</td><td>300–500 lx</td><td></td></tr>
+                      <tr><td>Classroom</td><td>30–50 fc</td><td>300–500 lx</td><td>IES RP-3</td></tr>
+                      <tr><td>Manufacturing (general)</td><td>30–50 fc</td><td>300–500 lx</td><td>IES RP-7</td></tr>
+                      <tr><td>Manufacturing (precision)</td><td>50–100 fc</td><td>500–1000 lx</td><td>Fine assembly</td></tr>
+                      <tr class="highlight"><td>Electrical Room / MCC</td><td>50 fc</td><td>500 lx</td><td>NEC 110.26(D)</td></tr>
+                      <tr><td>Stairway / Egress</td><td>10 fc</td><td>100 lx</td><td>IBC / Life Safety</td></tr>
+                      <tr><td>Emergency Egress Min.</td><td>1 fc avg / 0.1 fc min</td><td>10/1 lx</td><td>NFPA 101 7.9</td></tr>
+                    </tbody>
+                  </table>
+                </div>
+                <div class="note">Values are typical design targets. Verify with applicable codes (IES, IECC, OSHA 29 CFR 1926, local authority having jurisdiction). AGI32 or DIALux for detailed photometric modeling.</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div><!-- end tab-group -->
+    </section>
+
+    <!-- ════════════════════════════════════════
+         HARMONICS TOOL
+         ════════════════════════════════════════ -->
+    <section id="sec-harmonics" class="section">
+      <div class="section-header">
+        <h2>〜 Harmonics Tool</h2>
+        <p>Identify harmonic sources, compute %THD, and reference IEEE 519 limits.</p>
+        <details class="section-info">
+          <summary>ℹ More Info — Harmonics</summary>
+          <div class="section-info-body">
+            <strong>Harmonics</strong> are voltages or currents at integer multiples of the fundamental (60 Hz). Non-linear loads generate harmonic currents that cause overheating, neutral overloads, resonance, and equipment malfunction.<br><br>
+            <strong>THD (Total Harmonic Distortion):</strong> %THD = (√Σh²ₙ / I₁) × 100, where hₙ = harmonic component magnitudes<br><br>
+            <strong>IEEE 519-2022:</strong> Sets harmonic current limits based on ISC/IL ratio at the point of common coupling (PCC).
+          </div>
+        </details>
+      </div>
+
+      <div class="tab-group">
+        <div class="tabs">
+          <button class="tab-btn" data-tab="tab-harm-lookup">Harmonic Lookup</button>
+          <button class="tab-btn" data-tab="tab-harm-thd">THD Estimator</button>
+          <button class="tab-btn" data-tab="tab-harm-ref">IEEE 519 Reference</button>
+        </div>
+
+        <div id="tab-harm-lookup" class="tab-pane">
+          <div class="card-grid">
+            <div class="card">
+              <div class="card-title">Harmonic Source Identifier</div>
+              <div class="card-body">
+                <div class="input-group single">
+                  <div>
+                    <label>Load Type</label>
+                    <select id="harm_load_type">
+                      <option value="vfd6">VFD / 6-Pulse Rectifier (most common)</option>
+                      <option value="vfd12">12-Pulse Rectifier Drive</option>
+                      <option value="smps">Switch-Mode Power Supply (PC, UPS, charger)</option>
+                      <option value="fluor">Fluorescent / LED Driver (electronic ballast)</option>
+                      <option value="arc">Arc Furnace / Arc Welder</option>
+                      <option value="ups1ph">Single-Phase UPS / Uninterruptible Supply</option>
+                      <option value="motor">Linear Load (motor, resistive) — Baseline</option>
+                    </select>
+                  </div>
+                </div>
+                <button class="btn" onclick="harmLookup()">Show Harmonics</button>
+                <div id="harm_lookup_result" class="result"></div>
+              </div>
+            </div>
+            <div class="card">
+              <div class="card-title">Harmonic Order Reference</div>
+              <div class="card-body">
+                <div class="ref-table-wrap">
+                  <table class="ref-table">
+                    <thead><tr><th>Order (h)</th><th>Freq (60 Hz base)</th><th>Type</th><th>Primary Source</th></tr></thead>
+                    <tbody>
+                      <tr><td>2nd</td><td>120 Hz</td><td>Even</td><td>Arc furnaces, asymmetric loads</td></tr>
+                      <tr class="highlight"><td>3rd</td><td>180 Hz</td><td>Triplen (Zero-seq)</td><td>SMPS, fluorescent, single-phase NL loads</td></tr>
+                      <tr><td>4th</td><td>240 Hz</td><td>Even</td><td>Arc furnaces (minor)</td></tr>
+                      <tr class="highlight"><td>5th</td><td>300 Hz</td><td>Negative-seq</td><td>VFD 6-pulse, most 3Ø NL loads</td></tr>
+                      <tr><td>6th</td><td>360 Hz</td><td>Even</td><td>Rarely significant</td></tr>
+                      <tr class="highlight"><td>7th</td><td>420 Hz</td><td>Positive-seq</td><td>VFD 6-pulse</td></tr>
+                      <tr class="highlight"><td>9th</td><td>540 Hz</td><td>Triplen (Zero-seq)</td><td>SMPS, UPS, saturation</td></tr>
+                      <tr class="highlight"><td>11th</td><td>660 Hz</td><td>Negative-seq</td><td>VFD 6-pulse, 12-pulse</td></tr>
+                      <tr class="highlight"><td>13th</td><td>780 Hz</td><td>Positive-seq</td><td>VFD 6-pulse, 12-pulse</td></tr>
+                      <tr><td>23rd, 25th</td><td>1380/1500 Hz</td><td>Neg/Pos-seq</td><td>12-pulse drives only</td></tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div id="tab-harm-thd" class="tab-pane">
+          <div class="card-grid">
+            <div class="card">
+              <div class="card-title">%THD Calculator</div>
+              <div class="card-body">
+                <div class="formula-box">%THD = (√(I₂²+I₃²+I₄²+…) / I₁) × 100</div>
+                <div class="input-group">
+                  <div><label>Fundamental I₁ (A)</label><input type="number" id="thd_i1" placeholder="e.g. 100" step="any" min="0"></div>
+                  <div><label>2nd Harmonic I₂ (A or %)</label><input type="number" id="thd_i2" placeholder="0" step="any" min="0" value="0"></div>
+                </div>
+                <div class="input-group">
+                  <div><label>3rd Harmonic I₃</label><input type="number" id="thd_i3" placeholder="0" step="any" min="0" value="0"></div>
+                  <div><label>5th Harmonic I₅</label><input type="number" id="thd_i5" placeholder="0" step="any" min="0" value="0"></div>
+                </div>
+                <div class="input-group">
+                  <div><label>7th Harmonic I₇</label><input type="number" id="thd_i7" placeholder="0" step="any" min="0" value="0"></div>
+                  <div><label>9th Harmonic I₉</label><input type="number" id="thd_i9" placeholder="0" step="any" min="0" value="0"></div>
+                </div>
+                <div class="input-group">
+                  <div><label>11th Harmonic I₁₁</label><input type="number" id="thd_i11" placeholder="0" step="any" min="0" value="0"></div>
+                  <div><label>13th Harmonic I₁₃</label><input type="number" id="thd_i13" placeholder="0" step="any" min="0" value="0"></div>
+                </div>
+                <div class="note">Enter harmonic magnitudes in Amps. Or enter as percentage of I₁ — use the same unit for all fields.</div>
+                <button class="btn" onclick="calcTHD()">Calculate %THD</button>
+                <div id="thd_result" class="result"></div>
+              </div>
+            </div>
+            <div class="card">
+              <div class="card-title">Filter Recommendations</div>
+              <div class="card-body">
+                <div class="formula-box">
+                  <strong>Passive Tuned Filter:</strong><br>
+                  Targets a specific harmonic (e.g. 5th)<br>
+                  Low cost; risk of resonance with system<br>
+                  Typical for VFD 6-pulse (5th, 7th)<br><br>
+                  <strong>Active Harmonic Filter (AHF):</strong><br>
+                  Broadband correction, real-time injection<br>
+                  Reduces THD to &lt;5%; no resonance risk<br>
+                  Best for SMPS-heavy loads (datacenters)<br><br>
+                  <strong>12-Pulse / 18-Pulse Drive:</strong><br>
+                  Phase-shifting transformer cancels 5th, 7th<br>
+                  Large drives (&gt;100 HP) with predictable loads<br><br>
+                  <strong>3rd Harmonic Blocking Filter:</strong><br>
+                  Zero-sequence blocking transformer (ZSB)<br>
+                  Prevents triplen harmonic neutral overloads
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div id="tab-harm-ref" class="tab-pane">
+          <div class="card-grid">
+            <div class="card">
+              <div class="card-title">IEEE 519-2022 Current Harmonic Limits (at PCC)</div>
+              <div class="card-body">
+                <div class="ref-table-wrap">
+                  <table class="ref-table">
+                    <thead>
+                      <tr>
+                        <th>I_SC / I_L Ratio</th>
+                        <th>h &lt; 11</th>
+                        <th>11 ≤ h &lt; 17</th>
+                        <th>17 ≤ h &lt; 23</th>
+                        <th>23 ≤ h &lt; 35</th>
+                        <th>TDD (%)</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr><td>&lt;20</td><td>4.0%</td><td>2.0%</td><td>1.5%</td><td>0.6%</td><td>5.0%</td></tr>
+                      <tr><td>20–50</td><td>7.0%</td><td>3.5%</td><td>2.5%</td><td>1.0%</td><td>8.0%</td></tr>
+                      <tr class="highlight"><td>50–100</td><td>10.0%</td><td>4.5%</td><td>4.0%</td><td>1.5%</td><td>12.0%</td></tr>
+                      <tr><td>100–1000</td><td>12.0%</td><td>5.5%</td><td>5.0%</td><td>2.0%</td><td>15.0%</td></tr>
+                      <tr><td>&gt;1000</td><td>15.0%</td><td>7.0%</td><td>6.0%</td><td>2.5%</td><td>20.0%</td></tr>
+                    </tbody>
+                  </table>
+                </div>
+                <div class="note">I_SC = available short-circuit current at PCC. I_L = maximum demand load current (fundamental). TDD = Total Demand Distortion (referenced to I_L, not I₁). Even harmonics limited to 25% of odd harmonic limits. DC offset not permitted.</div>
+              </div>
+            </div>
+            <div class="card">
+              <div class="card-title">Harmonic Effects Reference</div>
+              <div class="card-body">
+                <div class="formula-box">
+                  <strong>Transformers:</strong><br>
+                  Increased eddy current losses → K-factor rating needed<br>
+                  K-4: general NL loads &nbsp;|&nbsp; K-13: VFD-heavy &nbsp;|&nbsp; K-20: SMPS<br><br>
+                  <strong>Neutral Conductors:</strong><br>
+                  Triplens (3rd, 9th, 15th) are zero-sequence — add in neutral<br>
+                  3Ø 4-wire: neutral may carry 173% of phase current<br>
+                  Solution: double neutral conductor or 4-wire feeder<br><br>
+                  <strong>Capacitor Banks (PFC):</strong><br>
+                  Capacitors amplify harmonics at resonant frequency<br>
+                  f_res = f₁ × √(kVA_SC / kVAR_cap) — avoid tuning to 5th/7th<br><br>
+                  <strong>Motors:</strong><br>
+                  Negative-sequence (5th) produces counter-torque → heating<br>
+                  Use NEMA MG1 derating for high-THD supplies
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div><!-- end tab-group -->
     </section>
 
   </main><!-- end .main -->
