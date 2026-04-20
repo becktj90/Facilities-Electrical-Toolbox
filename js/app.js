@@ -1627,7 +1627,7 @@ window.calcNEC = function () {
     ctx.font         = '8px "Share Tech Mono",monospace';
     ctx.textAlign    = 'center';
     ctx.textBaseline = 'middle';
-    ctx.fillText('EM', 0, 0);
+    ctx.fillText('EM', 0, 0); // EM = EMI Shield power-up
     ctx.restore();
   }
 
@@ -1759,7 +1759,7 @@ window.calcNEC = function () {
     ctx.fillStyle   = '#5abcf0';
     ctx.shadowColor = '#5abcf0';
     ctx.font        = '11px "Share Tech Mono",monospace';
-    ctx.fillText('LC-36 \u2502 NEW GLENN \u2502 BE-4\xd77', CW - 8, 22);
+    ctx.fillText('LC-36 \u2502 NEW GLENN \u2502 BE-4\u00d77', CW - 8, 22);
     ctx.textAlign   = 'left';
     if (faradayCageTimer > 0) {
       const secs = (faradayCageTimer / TARGET_FPS).toFixed(1);
@@ -1786,7 +1786,7 @@ window.calcNEC = function () {
     ctx.fillStyle   = '#5abcf0';
     ctx.font = '11px "Share Tech Mono",monospace';
     ctx.fillText('BLUE ORIGIN  \u2502  LAUNCH COMPLEX 36  \u2502  CAPE CANAVERAL SFS, FL', CW / 2, CH / 2 - 36);
-    ctx.fillText('VEHICLE: NEW GLENN  \u2502  PROPULSION: 7\xd7 BE-4 (LNG/LOX)', CW / 2, CH / 2 - 20);
+    ctx.fillText('VEHICLE: NEW GLENN  \u2502  PROPULSION: 7\u00d7 BE-4 (LNG/LOX)', CW / 2, CH / 2 - 20);
 
     const blink = Math.floor(Date.now() / 550) % 2 === 0;
     if (blink) {
