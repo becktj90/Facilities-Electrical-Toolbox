@@ -1199,19 +1199,20 @@ window.calcNEC = function () {
   const TARGET_FPS             = 60;
   const ROCKET_W               = 24;
   const ROCKET_H               = 52;
-  const GRAVITY                = 0.26;
-  const BOOST_IMPULSE          = -4.8;
-  const MAX_BOOST_VELOCITY     = -7.2;
+  const GRAVITY                = 0.20;
+  const BOOST_IMPULSE          = -5.2;
+  const MAX_BOOST_VELOCITY     = -6.4;
   const BOOST_FRAMES           = 10;
   const SIDE_ACCEL             = 0.28;
   const SIDE_DRAG              = 0.88;
   const MAX_SIDE_SPEED         = 4.2;
   const X_MARGIN               = 34;
-  const Y_MARGIN_TOP           = 44;
-  const Y_MARGIN_BOTTOM        = 32;
+  const Y_MARGIN_TOP           = 22;
+  const Y_MARGIN_BOTTOM        = 20;
   const OBS_H                  = 34;
-  const GAP_START              = 190;
-  const GAP_MIN                = 108;
+  const GAP_START              = 230;
+  const GAP_MIN                = 120;
+  const GRACE_FRAMES           = 200;
   const FARADAY_FRAMES         = TARGET_FPS * 5;
   const POWERUP_SPAWN_INTERVAL = 260;
   const ALT_PER_PIXEL          = 6.1;
@@ -1304,7 +1305,7 @@ window.calcNEC = function () {
   let state;
   let rocket, obstacles, particles, stars, clouds, powerups;
   let telemetry;
-  let score, hiScore, frame, speedMult, faradayCageTimer, launchTimer, padOffset;
+  let score, hiScore, frame, speedMult, faradayCageTimer, launchTimer, padOffset, graceTimer;
   let inputState, pointerTargetX;
 
   function init() {
@@ -1324,6 +1325,26 @@ window.calcNEC = function () {
     canvas.addEventListener('touchmove', handleTouchMove, { passive: false });
     document.addEventListener('keydown', handleKeyDown);
     document.addEventListener('keyup', handleKeyUp);
+
+    // On-screen steering buttons (visible on all devices, essential on mobile)
+    function bindBtn(id, onDown, onUp) {
+      const el = document.getElementById(id);
+      if (!el) return;
+      const down = (e) => { e.preventDefault(); if (isSectionActive()) onDown(); };
+      const up   = (e) => { if (onUp) onUp(); };
+      el.addEventListener('touchstart', down, { passive: false });
+      el.addEventListener('touchend',   up,   { passive: false });
+      el.addEventListener('mousedown',  down);
+      el.addEventListener('mouseup',    up);
+      el.addEventListener('mouseleave', up);
+    }
+    bindBtn('atb-left',  () => { inputState.left  = true;  }, () => { inputState.left  = false; });
+    bindBtn('atb-right', () => { inputState.right = true;  }, () => { inputState.right = false; });
+    bindBtn('atb-boost', () => {
+      if (state === 'READY')    { startLaunch(); return; }
+      if (state === 'GAMEOVER') { resetGame(false); return; }
+      triggerBoost();
+    }, null);
 
     requestAnimationFrame(loop);
   }
@@ -1356,16 +1377,18 @@ window.calcNEC = function () {
     if (!isSectionActive()) return;
     const t = e.touches[0];
     if (!t) return;
-    e.preventDefault();
-    updatePointerTarget(t.clientX);
     if (state === 'READY') {
+      e.preventDefault();
       startLaunch();
       return;
     }
     if (state === 'GAMEOVER') {
+      e.preventDefault();
       resetGame(false);
       return;
     }
+    // In PLAYING/LAUNCH: boost upward without changing lateral pointer target
+    e.preventDefault();
     triggerBoost();
   }
 
@@ -1462,6 +1485,7 @@ window.calcNEC = function () {
     frame            = 0;
     speedMult        = 1;
     faradayCageTimer = 0;
+    graceTimer       = 0;
     launchTimer      = 0;
     padOffset        = 0;
     inputState       = { left: false, right: false };
@@ -1631,12 +1655,14 @@ window.calcNEC = function () {
       rocket.y = CH * 0.6;
       rocket.vy = -2.2;
       rocket.burnFrames = BOOST_FRAMES;
+      graceTimer = GRACE_FRAMES;
     }
   }
 
   function updatePlay() {
     speedMult = 1 + score * 0.024;
     if (faradayCageTimer > 0) faradayCageTimer--;
+    if (graceTimer > 0) graceTimer--;
 
     updateHorizontalControl();
 
@@ -1653,8 +1679,11 @@ window.calcNEC = function () {
     updateSky(scrollRate * 0.26);
     updateParticles();
 
-    const spawnEvery = Math.max(48, Math.round(122 / speedMult));
-    if (frame % spawnEvery === 0) spawnObs();
+    // Don't spawn obstacles during grace period
+    if (graceTimer <= 0) {
+      const spawnEvery = Math.max(48, Math.round(122 / speedMult));
+      if (frame % spawnEvery === 0) spawnObs();
+    }
     if (frame % POWERUP_SPAWN_INTERVAL === 0) spawnPowerup();
 
     for (const o of obstacles) {
@@ -1682,6 +1711,9 @@ window.calcNEC = function () {
 
     padOffset += scrollRate * 0.24;
     updateTelemetry(scrollRate, burning);
+
+    // During grace period skip all fatal collisions
+    if (graceTimer > 0) return;
 
     if (rocket.x - rocket.w / 2 < 0 || rocket.x + rocket.w / 2 > CW ||
         rocket.y - rocket.h / 2 < Y_MARGIN_TOP || rocket.y + rocket.h / 2 > CH - Y_MARGIN_BOTTOM) {
@@ -1774,7 +1806,8 @@ window.calcNEC = function () {
     const showRocket = state === 'PLAYING' || state === 'LAUNCH' || (Math.floor(Date.now() / 500) % 2 === 0);
     if (showRocket) {
       drawRocket(rocket.x, rocket.y, rocket.vx);
-      if (faradayCageTimer > 0) drawFaradayCage(rocket.x, rocket.y);
+      if (graceTimer > 0) drawGraceShield(rocket.x, rocket.y);
+      else if (faradayCageTimer > 0) drawFaradayCage(rocket.x, rocket.y);
     }
 
     if (state === 'READY') drawReady();
@@ -1906,6 +1939,22 @@ window.calcNEC = function () {
     ctx.restore();
   }
 
+  function drawGraceShield(cx, cy) {
+    ctx.save();
+    ctx.translate(cx, cy);
+    const pulse = 0.45 + 0.35 * Math.sin(Date.now() / 120);
+    const ratio = graceTimer / GRACE_FRAMES;
+    ctx.strokeStyle = 'rgba(100,255,140,' + (pulse * ratio + 0.1) + ')';
+    ctx.shadowColor = '#64ff8c';
+    ctx.shadowBlur  = 20;
+    ctx.lineWidth   = 2;
+    ctx.beginPath(); ctx.ellipse(0, 0, 26, 36, 0, 0, Math.PI * 2); ctx.stroke();
+    ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.ellipse(0, 0, 18, 36, 0, 0, Math.PI * 2); ctx.stroke();
+    ctx.beginPath(); ctx.ellipse(0, 0, 26, 14, 0, 0, Math.PI * 2); ctx.stroke();
+    ctx.restore();
+  }
+
   function drawRocket(cx, cy, vx) {
     ctx.save();
     ctx.translate(cx, cy);
@@ -1996,7 +2045,15 @@ window.calcNEC = function () {
     ctx.fillText('LNG ' + telemetry.lng.toFixed(1) + '%', 170, 42);
     ctx.fillText('LOX ' + telemetry.lox.toFixed(1) + '%', 170, 56);
     ctx.fillText('MILESTONE: ' + telemetry.milestone, 170, 70);
-    if (faradayCageTimer > 0) {
+    if (graceTimer > 0) {
+      const secs = Math.ceil(graceTimer / TARGET_FPS);
+      const pulse = 0.7 + 0.3 * Math.sin(Date.now() / 180);
+      ctx.fillStyle   = 'rgba(100,255,140,' + pulse + ')';
+      ctx.shadowColor = '#64ff8c';
+      ctx.shadowBlur  = 14;
+      ctx.font        = 'bold 12px "Share Tech Mono",monospace';
+      ctx.fillText('⬡ LAUNCH CORRIDOR CLEAR — ' + secs + 's', 10, 86);
+    } else if (faradayCageTimer > 0) {
       const secs = (faradayCageTimer / TARGET_FPS).toFixed(1);
       ctx.fillStyle   = '#64c8ff';
       ctx.shadowColor = '#64c8ff';
@@ -2007,35 +2064,49 @@ window.calcNEC = function () {
 
   function drawReady() {
     ctx.save();
-    ctx.fillStyle = 'rgba(0,0,0,0.42)';
+    ctx.fillStyle = 'rgba(0,0,0,0.52)';
     ctx.fillRect(0, 0, CW, CH);
 
     ctx.textAlign = 'center';
-    ctx.shadowColor = '#33ff33'; ctx.shadowBlur = 16;
-    ctx.fillStyle   = '#33ff33';
-    ctx.font = '28px "VT323",monospace';
-    ctx.fillText('NEW GLENN RUNNER', CW / 2, CH / 2 - 92);
 
-    ctx.shadowColor = '#5abcf0'; ctx.shadowBlur = 8;
+    // Title
+    ctx.shadowColor = '#33ff33'; ctx.shadowBlur = 20;
+    ctx.fillStyle   = '#33ff33';
+    ctx.font = '36px "VT323",monospace';
+    ctx.fillText('NEW GLENN RUNNER', CW / 2, CH / 2 - 110);
+
+    ctx.shadowColor = '#5abcf0'; ctx.shadowBlur = 6;
     ctx.fillStyle   = '#5abcf0';
     ctx.font = '11px "Share Tech Mono",monospace';
-    ctx.fillText('VERTICAL ASCENT PROFILE │ LC-36 │ CAPE CANAVERAL SFS, FL', CW / 2, CH / 2 - 64);
-    ctx.fillText('VEHICLE: NEW GLENN │ 7× BE-4 │ LNG / LOX', CW / 2, CH / 2 - 46);
+    ctx.fillText('VERTICAL ASCENT │ LC-36 │ CAPE CANAVERAL SFS, FL', CW / 2, CH / 2 - 78);
+    ctx.fillText('NEW GLENN │ 7× BE-4 │ LNG / LOX', CW / 2, CH / 2 - 60);
 
-    const blink = Math.floor(Date.now() / 550) % 2 === 0;
-    if (blink) {
-      ctx.shadowColor = '#ffb300'; ctx.shadowBlur = 10;
-      ctx.fillStyle   = '#ffb300';
-      ctx.font = '15px "Share Tech Mono",monospace';
-      ctx.fillText('PRESS SPACE OR TAP TO START THE COUNTDOWN', CW / 2, CH / 2 - 8);
-    }
+    // Big pulsing start prompt
+    const pulse = 0.7 + 0.3 * Math.sin(Date.now() / 400);
+    ctx.save();
+    ctx.globalAlpha = pulse;
+    ctx.shadowColor = '#ffb300'; ctx.shadowBlur = 18;
+    ctx.fillStyle   = '#ffb300';
+    ctx.font = 'bold 18px "Share Tech Mono",monospace';
+    ctx.fillText('▶  TAP CANVAS  OR  PRESS SPACE  ◀', CW / 2, CH / 2 - 20);
+    ctx.font = '13px "Share Tech Mono",monospace';
+    ctx.fillText('— OR USE THE BOOST BUTTON BELOW —', CW / 2, CH / 2 + 2);
+    ctx.restore();
 
+    // How-to
     ctx.shadowColor = '#33ff33'; ctx.shadowBlur = 4;
     ctx.fillStyle   = '#22cc22';
     ctx.font = '11px "Share Tech Mono",monospace';
-    ctx.fillText('BOOST TO CLIMB, STEER THROUGH DESCENDING BIN-BLOCK GAPS.', CW / 2, CH / 2 + 18);
+    ctx.fillText('BOOST = climb  │  DRAG / ◀▶ BUTTONS = steer', CW / 2, CH / 2 + 28);
+    ctx.fillText('STEER THROUGH DESCENDING GAP BARRIERS TO SCORE', CW / 2, CH / 2 + 44);
+    ctx.fillText('COLLECT EM SHIELDS FOR ONE FREE HIT', CW / 2, CH / 2 + 60);
+
+    // Mission record
+    ctx.shadowColor = '#ffb300'; ctx.shadowBlur = 6;
+    ctx.fillStyle   = '#ffb300';
+    ctx.font = '12px "Share Tech Mono",monospace';
     ctx.fillText('MISSION RECORD: ' + (hiScore > 0 ? scoreLabel(hiScore) + ' (' + hiScore + ')' : 'NO PRIOR MISSIONS'),
-      CW / 2, CH / 2 + 36);
+      CW / 2, CH / 2 + 84);
     ctx.restore();
   }
 
@@ -2093,7 +2164,7 @@ window.calcNEC = function () {
       ctx.shadowColor = '#22cc22'; ctx.shadowBlur = 4;
       ctx.fillStyle   = '#22cc22';
       ctx.font = '12px "Share Tech Mono",monospace';
-      ctx.fillText('CLICK / SPACE TO RE-ATTEMPT MISSION', CW / 2, CH / 2 + 72);
+      ctx.fillText('TAP CANVAS · BOOST BUTTON · SPACE TO RE-ATTEMPT', CW / 2, CH / 2 + 72);
     }
     ctx.restore();
   }
