@@ -375,13 +375,14 @@
   function makeBlock(typeKey, rainbowHue) {
     const def = TYPES[typeKey] || TYPES.GRAY;
     const isRainbow = typeKey === 'RAINBOW';
+    const resolvedRainbowHue = rainbowHue ?? rand(0, 360);
     return {
       type: typeKey,
       hp: def.maxHp || 1,
       label: pick(BLOCK_LABELS),
       cracked: false,
       flashTimer: 0,
-      rainbowHue: isRainbow ? ((rainbowHue === null || rainbowHue === undefined) ? rand(0, 360) : rainbowHue) : null,
+      rainbowHue: isRainbow ? resolvedRainbowHue : null,
     };
   }
 
@@ -1008,8 +1009,9 @@
     scale = scale || 1;
     const w = BLOCK_W * scale, h = BLOCK_H * scale;
     const def = TYPES[typeKey] || TYPES.GRAY;
+    const resolvedRainbowHue = rainbowHue ?? ((Date.now() / 15) % 360);
     const color = typeKey === 'RAINBOW'
-      ? `hsl(${(rainbowHue === null || rainbowHue === undefined) ? (Date.now() / 60) % 360 : rainbowHue},100%,65%)`
+      ? `hsl(${resolvedRainbowHue},100%,65%)`
       : def.color;
 
     ctx.save();
