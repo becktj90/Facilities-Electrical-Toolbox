@@ -45,29 +45,29 @@
   ];
   const DIFFICULTY = {
     KID: { spawnMul: 0.25, hitboxScale: 0.45, graceFrames: 180, qStressGain: 0.04, qStressDecay: 0.20, landingTolerance: 28, secoBand: 280, allowFail: false },
-    CADET: { spawnMul: 0.45, hitboxScale: 0.55, graceFrames: 120, qStressGain: 0.06, qStressDecay: 0.16, landingTolerance: 18, secoBand: 180, allowFail: true },
+    CADET: { spawnMul: 0.20, hitboxScale: 0.40, graceFrames: 180, qStressGain: 0.03, qStressDecay: 0.30, landingTolerance: 32, secoBand: 320, allowFail: true },
     ENGINEER: { spawnMul: 1.0, hitboxScale: 0.7, graceFrames: 60, qStressGain: 0.16, qStressDecay: 0.08, landingTolerance: 10, secoBand: 100, allowFail: true }
   };
   const MISSION_CAPTIONS = {
-    PAD: 'This is LC-36 — Blue Origin’s launch pad in Florida.',
-    ASCENT: 'The rocket leans east as it climbs — that is a gravity turn.',
-    MAX_Q: 'Max-Q now: the air pushes hardest. Easy on the stick.',
-    COAST: 'Engines off. First stage is done and heading home.',
-    STAGE_SEP: 'Stages separate: booster down, upper stage keeps climbing.',
-    UPPER_ASCENT: 'Hydrogen engines now — real flames are nearly invisible.',
-    ORBIT_INSERT: 'Add just enough speed for orbit: not too much, not too little.',
-    PAYLOAD_DEPLOY: 'Mission accomplished! The payload is on its way.'
+    PAD: 'Pad ops complete. Countdown at T-3 and all systems are green.',
+    ASCENT: 'Liftoff! Enjoy the climb — vehicle is flying nominally.',
+    MAX_Q: 'Throttling down — vehicle handling Max-Q nicely.',
+    COAST: 'MECO confirmed. Take in the view while booster heads home.',
+    STAGE_SEP: 'MECO confirmed. Stage sep nominal. Booster heading home.',
+    UPPER_ASCENT: 'Upper stage ignition. Cyan BE-3U plume looks gorgeous.',
+    ORBIT_INSERT: 'SECO target is generous — guide velocity into the green.',
+    PAYLOAD_DEPLOY: 'Payload deployed. Mission accomplished.'
   };
   const RADIO = {
     PAD: 'Pad systems nominal.',
     ASCENT: 'You are go for launch.',
-    MAX_Q: 'Throttling up. Hold tight.',
+    MAX_Q: 'Throttling down — vehicle handling Max-Q nicely.',
     COAST: 'Gradatim ferociter. MECO confirmed.',
-    STAGE_SEP: 'Booster\'s coming home. Don\'t blink.',
-    UPPER_ASCENT: 'Welcome to space. Population: you.',
-    ORBIT_INSERT: 'Payload deploy is waiting on your right hand.',
-    PAYLOAD_DEPLOY: 'Payload deployed. Coffee earned.',
-    BOOSTER_WIN: 'Sea state nominal. Book the celebration.'
+    STAGE_SEP: 'MECO confirmed. Stage sep nominal. Booster heading home.',
+    UPPER_ASCENT: 'Fairing away. Payload exposed.',
+    ORBIT_INSERT: 'SECO guidance is live. Enjoy the easy green band.',
+    PAYLOAD_DEPLOY: 'Payload deployed. Mission accomplished.',
+    BOOSTER_WIN: 'Landed on Jacklyn. Sea state nominal. Coffee earned.'
   };
   const PAYLOADS = ['Blue Ring Pathfinder', 'Twin Probes', 'BlueBird Satellite'];
   const PHASES = {
@@ -76,10 +76,10 @@
     MAX_Q: { label: 'MAX-Q', start: 20, end: 26 },
     COAST: { label: 'MECO APPROACH', start: 26, end: 30 },
     STAGE_SEP: { label: 'STAGE SEPARATION', start: 30, end: 34 },
-    UPPER_ASCENT: { label: 'UPPER ASCENT', start: 34, end: 50 },
+    UPPER_ASCENT: { label: 'UPPER ASCENT', start: 34, end: 51 },
     BOOSTER_LANDING: { label: 'BOOSTER RECOVERY', start: 34, end: 48 },
-    ORBIT_INSERT: { label: 'ORBIT INSERT', start: 50, end: 56 },
-    PAYLOAD_DEPLOY: { label: 'PAYLOAD DEPLOY', start: 56, end: 60 },
+    ORBIT_INSERT: { label: 'ORBIT INSERT', start: 51, end: 57 },
+    PAYLOAD_DEPLOY: { label: 'PAYLOAD DEPLOY', start: 57, end: 61 },
     EXTENDED: { label: 'EXTENDED MISSION', start: 60, end: Infinity }
   };
   const MAIN_TIMELINE = [
@@ -90,9 +90,9 @@
     { t: 30, actual: 185, altitude: 75000, velocity: 2700, q: 5 },
     { t: 34, actual: 197, altitude: 85000, velocity: 2150, q: 1.2 },
     { t: 36, actual: 230, altitude: 110000, velocity: 3200, q: 0.2 },
-    { t: 50, actual: 549, altitude: 170000, velocity: 6300, q: 0 },
-    { t: 56, actual: 780, altitude: 200000, velocity: 7800, q: 0 },
-    { t: 60, actual: 820, altitude: 212000, velocity: 7700, q: 0 }
+    { t: 51, actual: 549, altitude: 170000, velocity: 6300, q: 0 },
+    { t: 57, actual: 780, altitude: 200000, velocity: 7800, q: 0 },
+    { t: 61, actual: 820, altitude: 212000, velocity: 7700, q: 0 }
   ];
   const BOOSTER_TIMELINE = [
     { t: 34, altitude: 80000, velocity: -900 },
@@ -510,10 +510,18 @@
         structuralStress: 0,
         recentSteerSign: 0,
         lastSteerChange: -10,
+        ascentObstacleTarget: 5,
+        ascentObstacleCount: 0,
+        nextAscentSpawnAt: 3,
+        upperObstacleTarget: 2,
+        upperObstacleCount: 0,
+        nextUpperSpawnAt: 1.5,
+        obstacleStreak: 0,
         summaryReady: false
       },
+      world: { scrollY: 0, cameraVy: 0, padGone: false },
       telemetry: { altitude: 0, velocity: 0, q: 0, actualTime: -30, lng: 100, lox: 100, tPlus: 'T-00:30' },
-      rocket: { x: CW / 2, y: CH - 154, vx: 0, vy: 0, tilt: 0, burn: 0, plume: 'be4', fairingGone: false, explosion: 0 },
+      rocket: { x: CW / 2, y: CH * 0.55, vx: 0, vy: 0, tilt: 0, burn: 0, plume: 'be4', fairingGone: false, explosion: 0 },
       upper: { x: CW / 2, y: 142, vx: 0, vy: 0, throttle: 0.45, targetBand: 0.5, targetLock: 0, deployAngle: 0, released: false },
       booster: { x: CW / 2, y: 130, vx: 0, vy: 4.2, burn: 0, alive: true, reentryBurnDone: false, landingBurnDone: false, decalVisible: false, touchdown: false, touchdownVy: 0 },
       obstacles: [],
@@ -620,8 +628,8 @@
     state.ui.radio = 'Gradatim ferociter.';
     state.ui.radioTimer = 3;
     state.ui.countdownStarted = false;
-    state.ui.countdown = 5;
-    state.ui.countdownMark = 5;
+    state.ui.countdown = 3;
+    state.ui.countdownMark = 3;
     state.ui.systems = freshSystems();
     state.ui.tip = LOADING_TIPS[Math.floor(Math.random() * LOADING_TIPS.length)];
     state.ui.padPollTimer = 0;
@@ -656,10 +664,18 @@
       structuralStress: 0,
       recentSteerSign: 0,
       lastSteerChange: -10,
+      ascentObstacleTarget: 5,
+      ascentObstacleCount: 0,
+      nextAscentSpawnAt: 3,
+      upperObstacleTarget: 2,
+      upperObstacleCount: 0,
+      nextUpperSpawnAt: 1.5,
+      obstacleStreak: 0,
       summaryReady: false
     };
+    state.world = { scrollY: 0, cameraVy: 0, padGone: false };
     state.telemetry = { altitude: 0, velocity: 0, q: 0, actualTime: -30, lng: 100, lox: 100, tPlus: 'T-00:30' };
-    state.rocket = { x: CW / 2, y: CH - 154, vx: 0, vy: 0, tilt: 0, burn: 0, plume: 'be4', fairingGone: false, explosion: 0 };
+    state.rocket = { x: CW / 2, y: CH * 0.55, vx: 0, vy: 0, tilt: 0, burn: 0, plume: 'be4', fairingGone: false, explosion: 0 };
     state.upper = { x: CW / 2, y: 142, vx: 0, vy: 0, throttle: 0.45, targetBand: 0.5, targetLock: 0, deployAngle: 0, released: false };
     state.booster = { x: CW / 2, y: 130, vx: 0, vy: 4.2, burn: 0, alive: true, reentryBurnDone: false, landingBurnDone: false, decalVisible: false, touchdown: false, touchdownVy: 0 };
     state.obstacles = [];
@@ -687,7 +703,7 @@
   }
 
   function updateTelemetry() {
-    const t = clamp(state.session.totalElapsed, 0, 60);
+    const t = clamp(state.session.totalElapsed, 0, 61);
     const baseAlt = timelineValue(MAIN_TIMELINE, 'altitude', t);
     const baseVel = timelineValue(MAIN_TIMELINE, 'velocity', t);
     const baseQ = timelineValue(MAIN_TIMELINE, 'q', t);
@@ -770,6 +786,41 @@
     state.ui.overlayTimer = time || 2;
   }
 
+  function phaseCompleteToast(name) {
+    showOverlayMessage(`+ ${name.replace(/_/g, ' ')} COMPLETE`, 1.5);
+    Audio.play('success', state.settings);
+    if (!state.settings.reducedMotion) {
+      Particles.burst(28, () => ({
+        kind: 'flash',
+        section: state.effects.splitView ? 'upper' : 'main',
+        x: rand(80, CW - 80),
+        y: rand(90, CH - 140),
+        vx: rand(-0.7, 0.7),
+        vy: rand(-0.6, 0.6),
+        life: 0.7,
+        decay: 0.05,
+        size: rand(1.5, 3.2),
+        grow: 0.02,
+        alpha: 0.6,
+        color: '150,255,200'
+      }));
+    }
+  }
+
+  function updateWorldScroll(dt) {
+    let target = 0;
+    if (state.session.phase === 'PAD') target = 0;
+    else if (state.session.phase === 'ASCENT') target = 3.5;
+    else if (state.session.phase === 'MAX_Q') target = 5.5;
+    else if (state.session.phase === 'COAST') target = 4.0;
+    else if (state.session.phase === 'STAGE_SEP') target = 2.5;
+    else if (state.session.phase === 'UPPER_ASCENT') target = 2.2;
+    else target = 2.0;
+    state.world.cameraVy += (target - state.world.cameraVy) * 0.04 * dt * BASE_FPS;
+    state.world.scrollY += state.world.cameraVy * dt * BASE_FPS;
+    state.world.padGone = state.world.scrollY > CH + 180;
+  }
+
   function spawnExhaust(kind, x, y, strength, section) {
     const count = state.settings.reducedMotion ? 3 : 10;
     Particles.burst(count, () => ({
@@ -830,15 +881,14 @@
       if (!blocked) break;
       x = rand(42, CW - 42);
     }
-    const speedRamp = clamp(state.session.phaseElapsed / 6, 0.4, 1.0);
     state.obstacles.push({
       type,
       x,
       y: -30,
-      w: type === 'balloon' ? 24 : type === 'drone' ? 30 : 22,
-      h: type === 'balloon' ? 36 : type === 'drone' ? 18 : 16,
+      w: type === 'balloon' ? 20 : type === 'drone' ? 24 : 20,
+      h: type === 'balloon' ? 28 : type === 'drone' ? 14 : 14,
       vx: rand(-0.8, 0.8),
-      vy: rand(2.4, 3.9) * speedRamp,
+      vy: rand(1.4, 1.9),
       whooshed: false
     });
   }
@@ -874,15 +924,17 @@
     state.rocket.vx *= 0.88;
     state.rocket.vx = clamp(state.rocket.vx, -4.2, 4.2);
     state.rocket.x = clamp(state.rocket.x + state.rocket.vx * step, 28, CW - 28);
-    const gravity = lowGravity ? 0.05 : 0.15;
+    const gravity = lowGravity ? 0.03 : 0.08;
     state.rocket.vy += gravity * step;
-    state.rocket.vy *= lowGravity ? 0.992 : 0.986;
+    state.rocket.vy *= lowGravity ? 0.96 : 0.94;
     if (state.input.boostHeld) {
-      state.rocket.vy = Math.max(lowGravity ? -3.2 : -7.2, state.rocket.vy - (lowGravity ? 0.18 : 0.26) * step);
+      state.rocket.vy = Math.max(lowGravity ? -1.8 : -2.8, state.rocket.vy - (lowGravity ? 0.12 : 0.2) * step);
       state.rocket.burn = Math.max(state.rocket.burn, 0.08);
       spawnExhaust(lowGravity ? 'be3u' : 'be4', state.rocket.x, state.rocket.y + 28, lowGravity ? 0.7 : 1.1, state.effects.splitView ? 'upper' : 'main');
     }
-    state.rocket.y = clamp(state.rocket.y + state.rocket.vy * step, lowGravity ? 40 : 74, lowGravity ? 250 : CH - 88);
+    const anchorY = CH * 0.55 + (lowGravity ? -8 : 0);
+    const bob = clamp(state.rocket.vy * 1.2, -7, 7);
+    state.rocket.y = approach(state.rocket.y, anchorY + bob, 0.9 * step);
     state.rocket.tilt = clamp(state.rocket.vx * 0.1, -0.34, 0.34);
     if (state.rocket.burn > 0) state.rocket.burn = Math.max(0, state.rocket.burn - dt);
   }
@@ -915,6 +967,30 @@
 
   function triggerRud(messageKey) {
     if (state.status === 'RUD' || state.status === 'GAMEOVER') return;
+    if (state.settings.difficulty === 'CADET') {
+      Particles.burst(28, () => ({
+        kind: 'smoke',
+        section: state.effects.splitView ? 'upper' : 'main',
+        x: state.effects.splitView ? state.upper.x : state.rocket.x,
+        y: state.effects.splitView ? state.upper.y : state.rocket.y,
+        vx: rand(-1.2, 1.2),
+        vy: rand(-0.6, 0.9),
+        life: 0.7,
+        decay: 0.05,
+        size: rand(2, 6),
+        grow: 0.05,
+        alpha: 0.5,
+        color: '210,245,255'
+      }));
+      state.rocket.x = CW / 2;
+      state.rocket.y = CH * 0.55;
+      state.rocket.vx = 0;
+      state.rocket.vy = -1.2;
+      state.session.phaseGrace = Math.max(state.session.phaseGrace, 3);
+      showOverlayMessage('Range safety triggered — let’s try again!', 2.1);
+      Audio.play('boop', state.settings);
+      return;
+    }
     if (!currentDifficulty().allowFail) {
       Particles.burst(24, () => ({
         kind: 'smoke',
@@ -974,6 +1050,7 @@
   }
 
   function startSummary() {
+    phaseCompleteToast('PAYLOAD_DEPLOY');
     state.status = 'SUMMARY';
     state.settings.missionCount += 1;
     state.ui.missionPatch = createPatch();
@@ -1000,6 +1077,7 @@
 
   function transitionPhase(nextPhase) {
     if (state.session.phase === nextPhase) return;
+    const previousPhase = state.session.phase;
     if (state.session.phase === 'PAD') {
       ratePhase('PAD', state.ui.systems.every(s => s.ok) ? 'GOLD' : 'SILVER');
       Audio.play('liftoff_horn', state.settings);
@@ -1009,6 +1087,7 @@
     if (state.session.phase === 'MAX_Q') ratePhase('MAX_Q', state.session.structuralStress < 0.3 ? 'GOLD' : state.session.structuralStress < 0.65 ? 'SILVER' : 'BRONZE');
     if (state.session.phase === 'STAGE_SEP') ratePhase('STAGE_SEP', 'GOLD');
     if (state.session.phase === 'UPPER_ASCENT') ratePhase('UPPER_ASCENT', state.upperHazards.length < 2 ? 'GOLD' : 'SILVER');
+    phaseCompleteToast(previousPhase);
     state.session.phase = nextPhase;
     state.session.phaseElapsed = 0;
     state.session.phaseGrace = currentDifficulty().graceFrames / BASE_FPS;
@@ -1020,6 +1099,10 @@
         state.effects.liftoffShake = 2;
         state.effects.delugeTimer = Math.max(state.effects.delugeTimer, 3);
         state.effects.shockRing = 1;
+        state.session.ascentObstacleTarget = Math.floor(rand(4, 7));
+        state.session.ascentObstacleCount = 0;
+        state.session.nextAscentSpawnAt = 3;
+        state.session.obstacleStreak = 0;
         Audio.setMood('ascent', state.settings);
         break;
       case 'MAX_Q':
@@ -1040,6 +1123,9 @@
         state.effects.splitView = true;
         state.booster.decalVisible = true;
         setRadio(RADIO.UPPER_ASCENT, 2.4);
+        state.session.upperObstacleTarget = Math.floor(rand(1, 4));
+        state.session.upperObstacleCount = 0;
+        state.session.nextUpperSpawnAt = 1;
         Audio.setMood('triumph', state.settings);
         break;
       case 'ORBIT_INSERT':
@@ -1055,6 +1141,7 @@
   }
 
   function updateMission(dt) {
+    updateWorldScroll(dt);
     state.session.phaseElapsed += dt;
     if (state.ui.radioTimer > 0) state.ui.radioTimer -= dt;
     if (state.ui.overlayTimer > 0) state.ui.overlayTimer -= dt;
@@ -1090,12 +1177,12 @@
   }
 
   function updatePad(dt) {
-    updateSky(dt, 0.14);
+    updateSky(dt, 0.18 + state.world.cameraVy * 0.2);
     state.rocket.y = CH - 154 + Math.sin((performance.now() || 0) / 160) * 0.9;
     state.rocket.x = CW / 2;
     if (Math.random() < 0.4) spawnExhaust('be4', state.rocket.x, state.rocket.y + 34, 0.45, 'main');
     state.ui.padPollTimer += dt;
-    const flipsDone = Math.floor(state.ui.padPollTimer / 0.25);
+    const flipsDone = Math.floor(state.ui.padPollTimer / 0.5);
     state.ui.systems.forEach((s, i) => {
       const shouldGo = i < flipsDone;
       if (shouldGo && !s.ok) Audio.play('ui_click', state.settings);
@@ -1104,13 +1191,13 @@
     const allGreen = state.ui.systems.every(s => s.ok);
     if (allGreen && !state.ui.countdownStarted) {
       state.ui.countdownStarted = true;
-      state.ui.countdown = 5;
-      state.ui.countdownMark = 5;
+      state.ui.countdown = 3;
+      state.ui.countdownMark = 3;
       Audio.play('success', state.settings);
     }
     if (state.ui.countdownStarted) {
       state.session.totalElapsed = clamp(state.session.totalElapsed + dt, 0, PHASES.PAD.end);
-      Audio.updateRumble(0.3 + (5 - state.ui.countdown) * 0.06, state.settings);
+      Audio.updateRumble(0.3 + (3 - state.ui.countdown) * 0.1, state.settings);
       if (state.ui.countdown <= 3 && state.effects.delugeTimer <= 0) state.effects.delugeTimer = Math.max(state.effects.delugeTimer, state.ui.countdown + 3);
       state.ui.countdown -= dt;
       const nextMark = Math.max(0, Math.ceil(state.ui.countdown));
@@ -1120,6 +1207,7 @@
       }
       if (state.ui.countdown <= 0) {
         state.session.totalElapsed = PHASES.PAD.end;
+        state.rocket.y = CH * 0.55;
         transitionPhase('ASCENT');
       }
       addShake(1.1, 0.12);
@@ -1134,7 +1222,7 @@
     const step = dt * BASE_FPS;
     const mode = currentDifficulty();
     state.session.totalElapsed += dt;
-    updateSky(dt, 0.6);
+    updateSky(dt, 0.25 + state.world.cameraVy * 0.55);
     applyRocketControl(dt, false);
     if (state.ui.tutorialTimer > 0) {
       state.ui.tutorialTimer = Math.max(0, state.ui.tutorialTimer - dt);
@@ -1149,9 +1237,12 @@
     } else {
       Audio.updateRumble(0.35, state.settings);
     }
-    const spawnRate = 0.025 * mode.spawnMul;
-    if (state.session.phaseElapsed > 1.5 && state.ui.tutorialTimer <= 0) {
-      if (Math.random() < spawnRate * step) spawnAtmosphericObstacle();
+    if (state.session.phaseElapsed > 3 && state.ui.tutorialTimer <= 0) {
+      if (state.session.ascentObstacleCount < state.session.ascentObstacleTarget && state.session.phaseElapsed >= state.session.nextAscentSpawnAt) {
+        spawnAtmosphericObstacle();
+        state.session.ascentObstacleCount += 1;
+        state.session.nextAscentSpawnAt += rand(1.8, 3.2) / Math.max(0.4, mode.spawnMul + 0.2);
+      }
     }
     if (state.effects.liftoffShake > 0) {
       state.effects.liftoffShake = Math.max(0, state.effects.liftoffShake - dt);
@@ -1175,9 +1266,31 @@
     }
     for (let i = state.obstacles.length - 1; i >= 0; i--) {
       const o = state.obstacles[i];
-      o.y += o.vy * step;
+      o.y += (o.vy + state.world.cameraVy) * step;
       o.x += o.vx * step;
-      if (o.y > CH + 30) state.obstacles.splice(i, 1);
+      if (o.y > CH + 30) {
+        state.obstacles.splice(i, 1);
+        state.session.obstacleStreak += 1;
+        if (state.session.obstacleStreak > 0 && state.session.obstacleStreak % 5 === 0) {
+          showOverlayMessage(`STREAK x${state.session.obstacleStreak}`, 1.2);
+          Audio.play('boop', state.settings);
+          Particles.burst(18, () => ({
+            kind: 'flash',
+            section: 'main',
+            x: rand(60, CW - 60),
+            y: rand(120, CH - 140),
+            vx: rand(-0.8, 0.8),
+            vy: rand(-0.8, 0.8),
+            life: 0.6,
+            decay: 0.06,
+            size: rand(1.4, 2.8),
+            grow: 0.02,
+            alpha: 0.55,
+            color: '255,225,120'
+          }));
+        }
+        continue;
+      }
       const dist = Math.abs(o.x - state.rocket.x) + Math.abs(o.y - state.rocket.y);
       if (!o.whooshed && dist < 90) {
         o.whooshed = true;
@@ -1194,7 +1307,7 @@
   function updateMaxQ(dt) {
     const mode = currentDifficulty();
     state.session.totalElapsed += dt;
-    updateSky(dt, 0.75);
+    updateSky(dt, 0.3 + state.world.cameraVy * 0.6);
     applyRocketControl(dt, false);
     Audio.updateRumble(0.58, state.settings);
     const axis = playerInputAxis();
@@ -1205,8 +1318,9 @@
       addShake(1.4, 0.15);
     }
     state.session.structuralStress = Math.max(0, state.session.structuralStress - dt * mode.qStressDecay);
+    if (state.settings.difficulty === 'CADET') state.session.structuralStress = Math.min(state.session.structuralStress, 0.45);
     state.session.recentSteerSign = sign || state.session.recentSteerSign;
-    if (state.session.structuralStress >= 1) {
+    if (state.session.structuralStress >= (state.settings.difficulty === 'CADET' ? 99 : 1)) {
       triggerRud('maxq');
       return;
     }
@@ -1215,7 +1329,7 @@
 
   function updateCoast(dt) {
     state.session.totalElapsed += dt;
-    updateSky(dt, 0.48);
+    updateSky(dt, 0.22 + state.world.cameraVy * 0.45);
     applyRocketControl(dt, true);
     Audio.updateRumble(0.24, state.settings);
     if (state.session.totalElapsed >= PHASES.COAST.end) transitionPhase('STAGE_SEP');
@@ -1223,7 +1337,7 @@
 
   function updateStageSep(dt) {
     state.session.totalElapsed += dt;
-    updateSky(dt, 0.2);
+    updateSky(dt, 0.18 + state.world.cameraVy * 0.3);
     state.effects.stageSepPuff = Math.max(0, state.effects.stageSepPuff - dt * 0.8);
     if (state.effects.stageSepPuff > 0.4) {
       Particles.burst(5, () => ({
@@ -1238,6 +1352,7 @@
     if (!state.booster.alive || state.booster.touchdown) return;
     const step = dt * BASE_FPS;
     const splitT = state.session.totalElapsed;
+    const isCadet = state.settings.difficulty === 'CADET';
     const desiredAlt = timelineValue(BOOSTER_TIMELINE, 'altitude', clamp(splitT, 34, 48));
     const desiredVy = timelineValue(BOOSTER_TIMELINE, 'velocity', clamp(splitT, 34, 48));
     state.booster.vy = approach(state.booster.vy, desiredVy / 60, 0.06 * step);
@@ -1253,14 +1368,14 @@
     state.booster.vx = approach(state.booster.vx, steer * 2.2, 0.09 * step);
     state.booster.x = clamp(state.booster.x + state.booster.vx * step, 46, CW - 46);
     state.booster.y = lerp(46, 245, 1 - clamp(desiredAlt / 80000, 0, 1));
-    if (!state.booster.reentryBurnDone && splitT >= 40.2 && splitT <= 42.8 && state.input.boostPressed) {
+    if (!state.booster.reentryBurnDone && splitT >= 40.2 && splitT <= 43.2 && (state.input.boostPressed || (isCadet && splitT >= 42.4))) {
       state.booster.reentryBurnDone = true;
       state.booster.burn = 1.6;
       showOverlayMessage('REENTRY BURN COMMANDED', 1.2);
       Audio.play('boost', state.settings);
       addShake(2, 0.35);
     }
-    if (!state.booster.landingBurnDone && splitT >= 45.5 && splitT <= 47.5 && state.input.boostPressed) {
+    if (!state.booster.landingBurnDone && splitT >= 45.5 && splitT <= 48.5 && (state.input.boostPressed || (isCadet && splitT >= 47.7))) {
       state.booster.landingBurnDone = true;
       state.booster.burn = 2.1;
       showOverlayMessage('LANDING BURN GO', 1.4);
@@ -1272,10 +1387,11 @@
       const tol = currentDifficulty().landingTolerance;
       const centered = Math.abs(state.booster.x - CW / 2) <= tol;
       const soft = state.booster.touchdownVy < (tol * 2.4);
-      if (centered && soft && state.booster.reentryBurnDone && state.booster.landingBurnDone) {
+      if (isCadet || (centered && soft && state.booster.reentryBurnDone && state.booster.landingBurnDone)) {
         state.session.boosterRecovered = true;
         Audio.play('landing_touchdown', state.settings);
         setRadio(RADIO.BOOSTER_WIN, 2.5);
+        showOverlayMessage('Landed on Jacklyn. Sea state nominal. Coffee earned.', 3);
         addShake(4.5, 0.5);
         vibrate([40]);
       } else {
@@ -1288,7 +1404,7 @@
   function updateSplitPhase(dt) {
     state.session.totalElapsed += dt;
     state.effects.splitView = true;
-    updateSky(dt, 0.18);
+    updateSky(dt, 0.14 + state.world.cameraVy * 0.28);
     if (state.effects.fairingSplit > 0) state.effects.fairingSplit = Math.max(0, state.effects.fairingSplit - dt);
     applyRocketControl(dt, true);
     state.upper.x = state.rocket.x;
@@ -1297,11 +1413,15 @@
     Audio.updateRumble(state.booster.burn > 0 ? 0.42 : 0.16, state.settings);
     if (!state.rocket.fairingGone && state.session.totalElapsed >= 36) {
       state.rocket.fairingGone = true;
-      state.effects.fairingSplit = 1.6;
+      state.effects.fairingSplit = 2.0;
       showOverlayMessage('FAIRING JETTISON — PAYLOAD EXPOSED', 1.8);
       addShake(2.2, 0.3);
     }
-    if (Math.random() < 0.04) spawnUpperHazard();
+    if (state.session.upperObstacleCount < state.session.upperObstacleTarget && state.session.phaseElapsed >= state.session.nextUpperSpawnAt) {
+      spawnUpperHazard();
+      state.session.upperObstacleCount += 1;
+      state.session.nextUpperSpawnAt += rand(3.2, 5.5);
+    }
     for (let i = state.upperHazards.length - 1; i >= 0; i--) {
       const h = state.upperHazards[i];
       h.x += h.vx;
@@ -1319,7 +1439,7 @@
   function updateOrbitInsert(dt) {
     const mode = currentDifficulty();
     state.session.totalElapsed += dt;
-    updateSky(dt, 0.08);
+    updateSky(dt, 0.1 + state.world.cameraVy * 0.2);
     state.upper.targetBand = 0.5 + Math.sin(state.session.phaseElapsed * 2.2) * 0.22;
     if (state.input.boostHeld) state.upper.throttle = clamp(state.upper.throttle + dt * 0.75, 0, 1);
     else state.upper.throttle = clamp(state.upper.throttle - dt * 0.38, 0, 1);
@@ -1333,7 +1453,7 @@
       else if (state.telemetry.velocity < 7800) state.session.orbitStatus = 'low';
       else {
         state.session.orbitStatus = 'depleted';
-        if (mode.allowFail) {
+        if (mode.allowFail && state.settings.difficulty !== 'CADET') {
           triggerRud('offorbit');
           return;
         }
@@ -1344,26 +1464,25 @@
 
   function updatePayload(dt) {
     state.session.totalElapsed += dt;
-    updateSky(dt, 0.03);
-    const steer = (state.input.right ? 1 : 0) - (state.input.left ? 1 : 0);
-    state.upper.deployAngle = clamp(state.upper.deployAngle + steer * dt * 1.8, -1.4, 1.4);
+    updateSky(dt, 0.08 + state.world.cameraVy * 0.18);
+    state.upper.deployAngle = approach(state.upper.deployAngle, 0.55, dt * 1.5);
     if (state.input.boostPressed && !state.upper.released) {
       state.upper.released = true;
-      const onTarget = Math.abs(state.upper.deployAngle) < 0.2;
-      state.session.payloadDeployed = onTarget;
-      ratePhase('PAYLOAD_DEPLOY', onTarget ? 'GOLD' : 'SILVER');
+      state.session.payloadDeployed = true;
+      ratePhase('PAYLOAD_DEPLOY', 'GOLD');
       startSummary();
     }
     if (state.session.phaseElapsed > 4 && !state.upper.released) {
-      state.session.payloadDeployed = false;
-      ratePhase('PAYLOAD_DEPLOY', 'BRONZE');
+      state.upper.released = true;
+      state.session.payloadDeployed = true;
+      ratePhase('PAYLOAD_DEPLOY', 'SILVER');
       startSummary();
     }
   }
 
   function updateExtended(dt) {
     state.session.totalElapsed += dt;
-    updateSky(dt, 0.22);
+    updateSky(dt, 0.12 + state.world.cameraVy * 0.35);
     applyRocketControl(dt, true);
     if (Math.random() < 0.05) spawnUpperHazard();
     for (let i = state.upperHazards.length - 1; i >= 0; i--) {
@@ -1381,10 +1500,17 @@
   }
 
   function drawBackground(ctx, altitude, panel) {
-    const grad = altitudeGradient(altitude);
+    const isPadSky = altitude < 18000 && !state.world.padGone;
     const bg = ctx.createLinearGradient(0, panel ? panel.y : 0, 0, panel ? panel.y + panel.h : CH);
-    bg.addColorStop(0, grad.top);
-    bg.addColorStop(1, grad.bottom);
+    if (isPadSky) {
+      bg.addColorStop(0, '#1a1a3a');
+      bg.addColorStop(0.62, '#5a3565');
+      bg.addColorStop(1, '#d4807a');
+    } else {
+      const grad = altitudeGradient(altitude);
+      bg.addColorStop(0, grad.top);
+      bg.addColorStop(1, grad.bottom);
+    }
     if (!panel) {
       ctx.fillStyle = bg;
       ctx.fillRect(0, 0, CW, CH);
@@ -1403,21 +1529,26 @@
       drawStarLayers(ctx, altitude, 0, CH);
       if (altitude > 100000) drawEarthHorizon(ctx, CH - 12, 280);
       if (altitude < 40000) drawCloudLayers(ctx, altitude);
+      if (isPadSky) {
+        ctx.fillStyle = 'rgba(10,14,20,0.8)';
+        ctx.fillRect(0, CH - 80, CW, 2);
+      }
     }
   }
 
   function drawStarLayers(ctx, altitude, y0, h) {
     const visible = clamp((altitude - 15000) / 85000, 0, 1);
+    const early = altitude < 15000 ? 0.18 : 0;
     for (const star of state.stars.deep) {
       if (star.y < y0 - 4 || star.y > y0 + h + 4) continue;
-      ctx.fillStyle = `rgba(180,225,255,${(0.1 + star.alpha * visible).toFixed(3)})`;
+      ctx.fillStyle = `rgba(180,225,255,${(0.1 + star.alpha * (visible + early)).toFixed(3)})`;
       ctx.beginPath();
       ctx.arc(star.x, star.y, star.r, 0, Math.PI * 2);
       ctx.fill();
     }
     for (const star of state.stars.mid) {
       if (star.y < y0 - 4 || star.y > y0 + h + 4) continue;
-      ctx.fillStyle = `rgba(120,190,255,${(0.05 + star.alpha * visible * 0.8).toFixed(3)})`;
+      ctx.fillStyle = `rgba(120,190,255,${(0.05 + star.alpha * (visible + early) * 0.8).toFixed(3)})`;
       ctx.beginPath();
       ctx.arc(star.x, star.y, star.r * 0.8, 0, Math.PI * 2);
       ctx.fill();
@@ -1457,156 +1588,146 @@
   }
 
   function drawLaunchPad(ctx) {
-    const baseY = CH - 54;
+    const groundY = CH - 30 + state.world.scrollY;
+    if (groundY > CH + 220) return;
     const blink = Math.floor((performance.now() || 0) / 500) % 2 === 0;
-    const leftTowerX = 40;
-    const rightTowerX = CW - 40;
-    const towerTopY = CH - 380;
-    const strongbackTilt = state.session.phase === 'ASCENT' ? clamp(state.session.phaseElapsed / 1.1, 0, 1) * 0.55 : 0;
+    const leftTowerX = 60;
+    const rightTowerX = CW - 60;
+    const towerTopY = groundY - 380;
 
-    ctx.fillStyle = '#1b2328';
-    ctx.fillRect(CW - 110, baseY - 186, 102, 128);
-    ctx.fillStyle = '#11191d';
-    ctx.fillRect(0, baseY, CW, 90);
-    ctx.fillStyle = '#2f3c45';
-    ctx.fillRect(0, CH - 18, CW, 8);
-    ctx.fillStyle = '#3e4c55';
-    ctx.fillRect(0, CH - 10, CW, 3);
-    ctx.strokeStyle = 'rgba(180,200,210,0.55)';
-    ctx.beginPath();
-    for (let x = 0; x <= CW; x += 12) {
-      ctx.moveTo(x, CH - 8);
-      ctx.lineTo(x + 8, CH - 4);
-    }
-    ctx.stroke();
+    ctx.fillStyle = '#1d2328';
+    ctx.fillRect(0, groundY, CW, 90);
+    ctx.fillStyle = '#2f3a42';
+    ctx.fillRect(0, groundY + 20, CW, 16);
 
-    // Tank farm
-    const tanks = [
-      { x: 70, y: baseY - 132, w: 24, h: 78, label: 'LOX' },
-      { x: 100, y: baseY - 118, w: 20, h: 64, label: 'LNG' },
-      { x: 126, y: baseY - 106, w: 16, h: 52, label: 'HE' },
-      { x: 148, y: baseY - 96, w: 14, h: 42, label: 'HE' }
-    ];
-    tanks.forEach((tank, idx) => {
-      ctx.fillStyle = '#e8f2f8';
-      ctx.fillRect(tank.x, tank.y, tank.w, tank.h);
-      ctx.fillRect(tank.x + 2, tank.y - 8, tank.w - 4, 8);
-      ctx.fillStyle = '#18303d';
-      ctx.font = '7px "Share Tech Mono", monospace';
-      ctx.fillText(tank.label, tank.x + 2, tank.y + tank.h / 2);
-      if (idx === 0 && Math.random() < 0.35) {
-        Particles.spawn({ kind: 'smoke', section: 'main', x: tank.x + tank.w / 2 + rand(-2, 2), y: tank.y - 6, vx: rand(-0.2, 0.2), vy: rand(-0.5, -0.1), life: 0.4, decay: 0.04, size: 2, grow: 0.03, alpha: 0.35, color: '210,245,255' });
-      }
+    // Floodlight masts + cones
+    const mastXs = [100, 150, CW - 150, CW - 100];
+    mastXs.forEach((x) => {
+      const topY = groundY - 80;
+      ctx.strokeStyle = '#d5dce2';
+      ctx.beginPath();
+      ctx.moveTo(x, groundY);
+      ctx.lineTo(x, topY);
+      ctx.stroke();
+      ctx.fillStyle = '#f8fcff';
+      for (let i = -1; i <= 1; i++) ctx.fillRect(x + i * 5 - 2, topY - 3, 4, 3);
+      ctx.save();
+      ctx.globalCompositeOperation = 'lighter';
+      ctx.fillStyle = 'rgba(230,245,255,0.08)';
+      ctx.beginPath();
+      ctx.moveTo(x, topY);
+      ctx.lineTo(x - 32, groundY + 36);
+      ctx.lineTo(x + 32, groundY + 36);
+      ctx.closePath();
+      ctx.fill();
+      ctx.restore();
     });
 
-    // Lightning towers + catenary
+    // Lightning towers lattice
     [leftTowerX, rightTowerX].forEach((x) => {
-      ctx.strokeStyle = '#dce6ef';
+      ctx.strokeStyle = '#edf4fa';
       ctx.beginPath();
-      ctx.moveTo(x - 6, baseY);
+      ctx.moveTo(x - 16, groundY);
+      ctx.lineTo(x - 6, towerTopY);
+      ctx.moveTo(x, groundY);
       ctx.lineTo(x, towerTopY);
-      ctx.lineTo(x + 6, baseY);
+      ctx.moveTo(x + 16, groundY);
+      ctx.lineTo(x + 6, towerTopY);
       ctx.stroke();
+      for (let y = groundY - 18; y > towerTopY + 10; y -= 18) {
+        ctx.beginPath();
+        ctx.moveTo(x - 12, y);
+        ctx.lineTo(x + 12, y - 12);
+        ctx.moveTo(x + 12, y);
+        ctx.lineTo(x - 12, y - 12);
+        ctx.stroke();
+      }
+      ctx.strokeStyle = '#edf4fa';
       ctx.beginPath();
-      ctx.moveTo(x - 6, baseY - 120); ctx.lineTo(x + 6, baseY - 120);
-      ctx.moveTo(x - 4, baseY - 220); ctx.lineTo(x + 4, baseY - 220);
-      ctx.moveTo(x - 2, baseY - 300); ctx.lineTo(x + 2, baseY - 300);
+      ctx.moveTo(x, towerTopY);
+      ctx.lineTo(x, towerTopY - 40);
       ctx.stroke();
       ctx.fillStyle = blink ? '#ff4d4d' : '#5a1a1a';
       ctx.beginPath();
-      ctx.arc(x, towerTopY - 4, 3, 0, Math.PI * 2);
+      ctx.arc(x, towerTopY - 42, 3, 0, Math.PI * 2);
       ctx.fill();
     });
-    ctx.strokeStyle = 'rgba(210,225,235,0.8)';
+
+    // Right FSS + umbilical platforms
+    ctx.strokeStyle = '#dce6ef';
+    ctx.fillStyle = 'rgba(180,196,210,0.18)';
+    ctx.fillRect(rightTowerX - 28, groundY - 200, 20, 200);
     ctx.beginPath();
-    ctx.moveTo(leftTowerX, towerTopY - 4);
-    ctx.quadraticCurveTo(CW / 2, towerTopY + 14, rightTowerX, towerTopY - 4);
+    ctx.moveTo(rightTowerX - 28, groundY);
+    ctx.lineTo(rightTowerX - 28, groundY - 200);
+    ctx.moveTo(rightTowerX - 8, groundY);
+    ctx.lineTo(rightTowerX - 8, groundY - 200);
+    ctx.stroke();
+    [groundY - 36, groundY - 82, groundY - 128, groundY - 174].forEach((y) => {
+      ctx.fillStyle = '#9aa7b2';
+      ctx.fillRect(rightTowerX - 46, y, 38, 4);
+    });
+
+    // Catenary cable
+    ctx.strokeStyle = 'rgba(225,238,247,0.9)';
+    ctx.beginPath();
+    ctx.moveTo(leftTowerX, towerTopY - 42);
+    ctx.quadraticCurveTo(CW / 2, towerTopY - 2, rightTowerX, towerTopY - 42);
     ctx.stroke();
 
-    // Water tower
-    ctx.fillStyle = '#e9f1f6';
-    ctx.fillRect(CW - 96, CH - 248, 14, 140);
-    ctx.fillRect(CW - 108, CH - 262, 38, 18);
-    ctx.fillStyle = '#214150';
-    ctx.font = '8px "Share Tech Mono", monospace';
-    ctx.fillText('H₂O', CW - 103, CH - 248);
-
-    // Launch mount + trench
-    ctx.fillStyle = '#2d3a43';
-    ctx.fillRect(CW / 2 - 118, baseY - 14, 236, 14);
-    ctx.fillStyle = '#36434b';
-    ctx.fillRect(CW / 2 - 28, baseY - 30, 56, 16);
-    ctx.fillStyle = '#0d1216';
-    ctx.fillRect(CW / 2 - 34, baseY - 8, 68, 8);
-
-    // Strongback / T-E
-    ctx.save();
-    ctx.translate(CW / 2 + 34, baseY - 14);
-    ctx.rotate(strongbackTilt);
-    ctx.fillStyle = '#647884';
-    ctx.fillRect(-3, -200, 12, 186);
-    ctx.fillRect(-6, -204, 18, 10);
-    ctx.fillStyle = '#54656f';
-    for (let i = 0; i < 12; i++) ctx.fillRect(-3, -190 + i * 15, 12, 3);
-    [34, 74, 110, 146].forEach((h) => ctx.fillRect(-20, -h, 20, 2));
-    ctx.restore();
+    // Launch mount tiers + trench
+    const tierBottomY = groundY;
+    ctx.fillStyle = '#9aa5ad';
+    ctx.fillRect(CW / 2 - 110, tierBottomY - 16, 220, 16);
+    ctx.fillStyle = '#7e8891';
+    ctx.fillRect(CW / 2 - 80, tierBottomY - 30, 160, 14);
+    ctx.fillStyle = '#6f7880';
+    ctx.fillRect(CW / 2 - 55, tierBottomY - 40, 110, 10);
+    ctx.fillStyle = '#0a0d12';
+    ctx.beginPath();
+    ctx.moveTo(CW / 2 - 25, tierBottomY - 2);
+    ctx.lineTo(CW / 2, tierBottomY - 32);
+    ctx.lineTo(CW / 2 + 25, tierBottomY - 2);
+    ctx.closePath();
+    ctx.fill();
 
     const labels = state.easter.binLabels;
-    const stacks = [28, 48, 68, CW - 42, CW - 62, CW - 82];
+    const stacks = [CW / 2 - 122, CW / 2 - 102, CW / 2 - 82, CW / 2 + 70, CW / 2 + 90, CW / 2 + 110];
     stacks.forEach((x, i) => {
+      const by = groundY - 18 - (i % 2) * 8;
       ctx.fillStyle = '#80878d';
-      ctx.fillRect(x, baseY - 18 - (i % 2) * 4, 16, 10);
+      ctx.fillRect(x, by, 18, 11);
       ctx.strokeStyle = '#c2c7cb';
-      ctx.strokeRect(x, baseY - 18 - (i % 2) * 4, 16, 10);
+      ctx.strokeRect(x, by, 18, 11);
       ctx.fillStyle = '#0b1216';
       ctx.font = '5px "Share Tech Mono", monospace';
-      ctx.fillText(labels[i % labels.length], x - 8, baseY - 22 - (i % 2) * 4);
+      ctx.fillText(labels[i % labels.length], x - 10, by - 3);
     });
 
     ctx.fillStyle = '#7ea36f';
     ctx.beginPath();
-    ctx.ellipse(CW / 2 - 124 + state.ui.tortoiseMoved, baseY - 6, 9, 5, 0, 0, Math.PI * 2);
+    ctx.ellipse(CW / 2 - 134 + state.ui.tortoiseMoved, groundY - 6, 9, 5, 0, 0, Math.PI * 2);
     ctx.fill();
-    ctx.fillRect(CW / 2 - 132 + state.ui.tortoiseMoved, baseY - 5, 4, 3);
-    ctx.fillRect(CW / 2 - 120 + state.ui.tortoiseMoved, baseY - 5, 4, 3);
-    ctx.fillStyle = '#b8d6a7';
-    ctx.fillText('Gradatim, my friend.', CW / 2 - 160, baseY - 26);
+    ctx.fillRect(CW / 2 - 142 + state.ui.tortoiseMoved, groundY - 5, 4, 3);
+    ctx.fillRect(CW / 2 - 130 + state.ui.tortoiseMoved, groundY - 5, 4, 3);
 
-    if (state.ui.countdownStarted) {
-      const t = state.ui.countdown;
-      if (t < 4.5 && t > 4.0) {
-        ctx.fillStyle = '#9ab2bf';
-        ctx.fillRect(CW / 2 - 166 + (4.5 - t) * 80, baseY - 10, 14, 6);
-        ctx.fillRect(CW / 2 - 162 + (4.5 - t) * 80, baseY - 15, 6, 5);
-      }
-      if (t < 3.5 && t > 2.6) {
-        ctx.strokeStyle = '#ffcf5d';
-        ctx.beginPath();
-        ctx.moveTo(CW / 2 + 126, baseY - 12);
-        ctx.lineTo(CW / 2 + 126, baseY - 2);
-        ctx.stroke();
-        ctx.beginPath();
-        ctx.arc(CW / 2 + 126, baseY - 18, 3, 0, Math.PI * 2);
-        ctx.stroke();
-        ctx.fillStyle = '#ffcf5d';
-        ctx.fillText('Last person leaving the pad.', CW / 2 + 70, baseY - 30);
-      }
-    }
-
-    // Deluge and trench steam
-    if (state.effects.delugeTimer > 0) {
-      Particles.burst(5, () => ({
-        kind: 'smoke',
+    // Deluge mist near trench, strongest around liftoff
+    const tPlus = state.telemetry.actualTime || -30;
+    const delugeBoost = clamp(1 - Math.abs(tPlus) / 3, 0, 1);
+    if (state.effects.delugeTimer > 0 || delugeBoost > 0) {
+      const mistAlpha = 0.3 + delugeBoost * 0.2;
+      Particles.burst(6, () => ({
+        kind: 'plasma',
         section: 'main',
-        x: CW / 2 + rand(-26, 26),
-        y: baseY - 16 + rand(-4, 4),
-        vx: rand(-1.4, 1.4),
-        vy: rand(-2.5, -0.8),
-        life: 0.6,
+        x: CW / 2 + rand(-34, 34),
+        y: groundY - 16 + rand(-8, 8),
+        vx: rand(-1.8, 1.8),
+        vy: rand(-2.6, -0.8),
+        life: 0.75,
         decay: 0.06,
-        size: rand(2, 5),
+        size: rand(5, 10),
         grow: 0.04,
-        alpha: 0.45,
+        alpha: mistAlpha,
         color: '240,250,255'
       }));
     }
@@ -1614,8 +1735,9 @@
 
   function drawObstacle(ctx, o) {
     if (state.settings.difficulty !== 'ENGINEER') {
-      const closing = state.rocket.y > o.y ? (state.rocket.y - o.y) / Math.max(0.001, o.vy * BASE_FPS) : 9;
-      if (closing <= 1.05 && Math.abs(o.x - state.rocket.x) < Math.max(24, o.w * 0.9)) {
+      const closingRate = Math.max(0.001, (o.vy + state.world.cameraVy) * BASE_FPS);
+      const closing = state.rocket.y > o.y ? (state.rocket.y - o.y) / closingRate : 9;
+      if (closing <= 1.5 && Math.abs(o.x - state.rocket.x) < Math.max(24, o.w * 0.9)) {
         ctx.fillStyle = 'rgba(255,220,90,0.8)';
         ctx.beginPath();
         ctx.moveTo(o.x, 8);
@@ -1682,23 +1804,33 @@
       ctx.fillRect(-11, -22, 6, 3);
       ctx.fillRect(5, -22, 6, 3);
     }
-    ctx.fillStyle = '#f6faff';
-    ctx.fillRect(-10, -14, 20, 40);
-    ctx.fillStyle = '#0f1720';
-    ctx.fillRect(-10, 16, 20, 10);
-    ctx.fillStyle = '#3b79aa';
-    ctx.fillRect(-9, -10, 18, 2);
-    ctx.fillRect(-9, -5, 18, 2);
+    const bodyGrad = ctx.createLinearGradient(-10, -10, 10, 24);
+    bodyGrad.addColorStop(0, '#d9b188');
+    bodyGrad.addColorStop(0.32, '#c89968');
+    bodyGrad.addColorStop(1, '#b48358');
+    ctx.fillStyle = bodyGrad;
+    ctx.fillRect(-11, -8, 22, 38);
+    ctx.fillStyle = 'rgba(255,240,220,0.18)';
+    ctx.fillRect(-10, -8, 5, 38);
+    ctx.fillStyle = '#1a1f26';
+    ctx.fillRect(-11, 18, 22, 8);
+    ctx.fillStyle = '#33261d';
+    ctx.fillRect(-10, -8, 20, 1);
+    ctx.fillStyle = '#1d2632';
+    ctx.font = 'bold 5px "Share Tech Mono", monospace';
+    ctx.textAlign = 'center';
+    ctx.fillText('BG', 0, -2);
+    ctx.textAlign = 'left';
     if (!opts.fairingGone) {
-      ctx.fillStyle = '#f9fdff';
-      ctx.fillRect(-8, -27, 16, 13);
-      ctx.beginPath(); ctx.moveTo(-8, -27); ctx.lineTo(0, -40); ctx.lineTo(8, -27); ctx.closePath(); ctx.fill();
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(-11, -24, 22, 16);
+      ctx.beginPath(); ctx.moveTo(-11, -24); ctx.lineTo(0, -40); ctx.lineTo(11, -24); ctx.closePath(); ctx.fill();
     }
-    ctx.fillStyle = '#11171f';
-    ctx.fillRect(-10, 26, 20, 6);
-    ctx.fillStyle = '#657585';
-    [[-7, 34], [0, 34], [7, 34], [-3, 37], [3, 37], [-10, 37], [10, 37]].forEach(p => {
-      ctx.beginPath(); ctx.ellipse(p[0], p[1], 2.2, 1.4, 0, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = '#1a1f26';
+    ctx.fillRect(-11, 30, 22, 7);
+    ctx.fillStyle = '#0c1118';
+    [[0, 34], [-7, 36], [7, 36], [-11, 39], [-4, 39], [4, 39], [11, 39]].forEach(p => {
+      ctx.beginPath(); ctx.ellipse(p[0], p[1], 2.4, 1.6, 0, 0, Math.PI * 2); ctx.fill();
     });
     if (mode === 'booster') {
       ctx.fillStyle = '#66c9ff';
@@ -1794,7 +1926,22 @@
       ctx.fillStyle = 'rgba(255,220,90,0.45)';
       ctx.fillRect(171 + 120 * 0.72, 90, 120 * 0.28, 10);
       ctx.fillStyle = '#ff9d5d';
-      ctx.fillText('Easy on the stick — ride it out.', 170, 114);
+      ctx.fillText('Throttling down — handling Max-Q nicely.', 170, 114);
+    }
+    if (state.session.phase === 'UPPER_ASCENT' && !state.booster.touchdown) {
+      const t = state.session.totalElapsed;
+      if (!state.booster.reentryBurnDone && t >= 40.2 && t <= 43.2) {
+        ctx.fillStyle = 'rgba(255,207,93,0.85)';
+        ctx.fillRect(CW - 152, CH - 74, 136, 18);
+        ctx.fillStyle = '#041014';
+        ctx.fillText('REENTRY BURN READY', CW - 146, CH - 61);
+      }
+      if (!state.booster.landingBurnDone && t >= 45.5 && t <= 48.5) {
+        ctx.fillStyle = 'rgba(150,255,190,0.85)';
+        ctx.fillRect(CW - 152, CH - 52, 136, 18);
+        ctx.fillStyle = '#041014';
+        ctx.fillText('LANDING BURN READY', CW - 146, CH - 39);
+      }
     }
     if (state.session.phase === 'ORBIT_INSERT') {
       ctx.strokeStyle = '#8ce0ff';
@@ -1939,7 +2086,7 @@
     ctx.font = '18px "VT323", monospace';
     ctx.fillText('AUTO GO / NO-GO POLL', 34, 260);
     ctx.font = '10px "Share Tech Mono", monospace';
-    ctx.fillText('Systems auto-flip green. Tap anywhere to jump to T-1 liftoff.', 34, 278);
+    ctx.fillText('Systems auto-flip green in 2.5s. Tap once to skip directly to liftoff.', 34, 278);
     state.ui.systems.forEach(sys => {
       ctx.strokeStyle = sys.ok ? '#33ff33' : '#56666f';
       ctx.strokeRect(sys.x, sys.y, sys.w, sys.h);
@@ -1947,7 +2094,7 @@
       ctx.fillText(`${sys.label} ${sys.ok ? '✅' : '—'}`, sys.x + 10, sys.y + 22);
     });
     ctx.fillStyle = state.ui.systems.every(s => s.ok) ? '#ffcf5d' : '#8aa2b0';
-    ctx.fillText(state.ui.countdownStarted ? `IGNITION STARTED — T-${Math.max(0, Math.ceil(state.ui.countdown))}` : 'AUTOMATED POLL IN PROGRESS', 34, 446);
+    ctx.fillText(state.ui.countdownStarted ? `IGNITION STARTED — T-${Math.max(0, Math.ceil(state.ui.countdown))}` : 'AUTOMATED POLL IN PROGRESS (T-3 START)', 34, 446);
     ctx.restore();
   }
 
@@ -2102,7 +2249,7 @@
         drawSplitView(ctx);
       } else {
         drawBackground(ctx, state.telemetry.altitude || 0);
-        if (state.telemetry.altitude < 100000) drawLaunchPad(ctx);
+        if (!state.world.padGone || state.session.phase === 'PAD') drawLaunchPad(ctx);
         Particles.draw(ctx, 'main');
         state.obstacles.forEach(o => drawObstacle(ctx, o));
         drawVaporCone(ctx);
@@ -2256,13 +2403,13 @@
       if (!state.ui.countdownStarted) {
         state.ui.systems.forEach(s => { s.ok = true; });
         state.ui.countdownStarted = true;
-        state.ui.countdown = 1;
+        state.ui.countdown = 0.1;
         state.ui.countdownMark = 1;
         Audio.play('success', state.settings);
         return;
       }
       if (state.ui.countdownStarted) {
-        state.ui.countdown = Math.min(state.ui.countdown, 1);
+        state.ui.countdown = Math.min(state.ui.countdown, 0.1);
         Audio.play('ui_click', state.settings);
         return;
       }
