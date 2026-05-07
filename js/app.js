@@ -1230,6 +1230,8 @@ window.calcNEC = function () {
   const LABEL_LIFTOFF          = 'LIFTOFF — PAD CLEARANCE';
   const LAUNCH_IDLE_FREQUENCY  = 0.65;
   const LAUNCH_IDLE_AMPLITUDE  = 0.8;
+  const EASTER_EGG_BLINK_INTERVAL = 400;
+  const EASTER_EGG_VISIBILITY_DIVISOR = 7;
 
   function currentGap() {
     const shrink = Math.min(score * 1.6, 82);
@@ -2073,10 +2075,10 @@ window.calcNEC = function () {
 
     // Easter egg decals
     ctx.fillStyle = '#64c8ff';
-    ctx.font = 'bold 6px "Share Tech Mono",monospace';
+    ctx.font = 'bold 6px "Share Tech Mono", monospace';
     ctx.textAlign = 'center';
     ctx.fillText('BG', 0, 10);
-    if (Math.floor(Date.now() / 400) % 7 === 0) {
+    if (Math.floor(Date.now() / EASTER_EGG_BLINK_INTERVAL) % EASTER_EGG_VISIBILITY_DIVISOR === 0) {
       ctx.fillStyle = '#ffcf5d';
       ctx.fillText('★', 0, -9);
     }
