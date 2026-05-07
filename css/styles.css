@@ -774,17 +774,24 @@ select option {
 
 /* ── Arcade fullscreen ── */
 #arcade-fs-wrapper:fullscreen,
-#arcade-fs-wrapper:-webkit-full-screen {
+#arcade-fs-wrapper:-webkit-full-screen,
+#binblaster-fs-wrapper:fullscreen,
+#binblaster-fs-wrapper:-webkit-full-screen {
   background: #020602;
   display: flex !important;
   align-items: center;
   justify-content: center;
   width: 100vw;
   height: 100vh;
+  padding: 12px;
+  box-sizing: border-box;
 }
 #arcade-fs-wrapper:fullscreen canvas,
-#arcade-fs-wrapper:-webkit-full-screen canvas {
-  max-width: 100vw !important;
+#arcade-fs-wrapper:-webkit-full-screen canvas,
+#binblaster-fs-wrapper:fullscreen canvas,
+#binblaster-fs-wrapper:-webkit-full-screen canvas {
+  max-width: none !important;
+  max-height: none !important;
 }
 
 @media print {
