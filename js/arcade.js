@@ -385,10 +385,24 @@
     }
 
     function draw(ctx, section) {
+      for (const p of pool) {
+        if (!p.active || (section && p.section !== section)) continue;
+        if (p.kind === 'fire' || p.kind === 'plasma' || p.kind === 'flash') continue;
+        const alpha = Math.max(0, p.life * p.alpha);
+        ctx.fillStyle = `rgba(${p.color},${alpha})`;
+        if (p.kind === 'streak') {
+          ctx.fillRect(p.x, p.y, p.size * 2.6, 1.2);
+        } else {
+          ctx.beginPath();
+          ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+          ctx.fill();
+        }
+      }
       ctx.save();
       ctx.globalCompositeOperation = 'lighter';
       for (const p of pool) {
         if (!p.active || (section && p.section !== section)) continue;
+        if (p.kind !== 'fire' && p.kind !== 'plasma' && p.kind !== 'flash') continue;
         const alpha = Math.max(0, p.life * p.alpha);
         ctx.fillStyle = `rgba(${p.color},${alpha})`;
         if (p.kind === 'streak') {
@@ -1622,7 +1636,7 @@
   function drawStarLayers(ctx, altitude, y0, h) {
     const visible = clamp((altitude - 15000) / 85000, 0, 1);
     const early = altitude < 15000 ? 0.18 : 0;
-    if (!starSpriteDeep || !starSpriteMid) buildStarSprites();
+    if (!starSpriteDeep || !starSpriteMid) return;
     for (const star of state.stars.deep) {
       if (star.y < y0 - 4 || star.y > y0 + h + 4) continue;
       ctx.globalAlpha = clamp(0.1 + star.alpha * (visible + early), 0, 1);
@@ -1757,8 +1771,8 @@
     });
   }
 
-  function drawFloodlightCones(ctx, groundY) {
-    const pulse = 0.06 + (Math.sin((performance.now() || 0) / 280) * 0.02);
+  function drawFloodlightCones(ctx, groundY, nowMs) {
+    const pulse = 0.06 + (Math.sin(nowMs / 280) * 0.02);
     [100, 150, CW - 150, CW - 100].forEach((x) => {
       const topY = groundY - 80;
       ctx.save();
@@ -1774,9 +1788,9 @@
     });
   }
 
-  function drawTowerLights(ctx, groundY) {
+  function drawTowerLights(ctx, groundY, nowMs) {
     const towerTopY = groundY - 380;
-    const blink = Math.floor((performance.now() || 0) / 500) % 2 === 0;
+    const blink = Math.floor(nowMs / 500) % 2 === 0;
     [60, CW - 60].forEach((x) => {
       ctx.fillStyle = blink ? '#ff4d4d' : '#5a1a1a';
       ctx.beginPath();
@@ -1853,11 +1867,11 @@
   function drawLaunchPad(ctx) {
     const groundY = CH - 30 + state.world.scrollY;
     if (groundY > CH + 220) return;
-    if (!padSprite) buildPadSprite();
+    const nowMs = performance.now() || 0;
     const dy = state.world.scrollY + (CH - 30 - (PAD_SPRITE_H - 30));
     ctx.drawImage(padSprite, 0, dy);
-    drawFloodlightCones(ctx, groundY);
-    drawTowerLights(ctx, groundY);
+    drawFloodlightCones(ctx, groundY, nowMs);
+    drawTowerLights(ctx, groundY, nowMs);
     drawBinBlockLabels(ctx, groundY);
     drawWaterDeluge(groundY);
     drawFlameTrenchFire(groundY);
@@ -1981,7 +1995,6 @@
 
   function drawRocket(ctx, x, y, tilt, mode, opts) {
     opts = opts || {};
-    if (!rocketSpriteFairing || !rocketSpriteBare) buildRocketSprites();
     const shouldUseCache = !state.easter.bezosMode && mode !== 'booster';
     ctx.save();
     ctx.translate(x, y);
