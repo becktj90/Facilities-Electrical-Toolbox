@@ -1777,11 +1777,11 @@
     const maxH = isFullscreen ? Math.max(1, window.innerHeight - 24) : Infinity;
     const cssW = Math.max(1, Math.min(maxW, maxH * (CW / CH)));
     const cssH = cssW * (CH / CW);
+    canvas.style.width = cssW + 'px';
+    canvas.style.height = cssH + 'px';
     if (canvas.width !== Math.round(cssW * dpr) || canvas.height !== Math.round(cssH * dpr)) {
-      canvas.style.width = cssW + 'px';
       canvas.width = Math.round(cssW * dpr);
       canvas.height = Math.round(cssH * dpr);
-      canvas.style.height = cssH + 'px';
     }
     const scaleX = canvas.width / CW;
     const scaleY = canvas.height / CH;
@@ -2040,7 +2040,9 @@
       if (!btn) return;
       if (btn.dataset.action === 'binBlasterReset') resetAll();
       if (btn.dataset.action === 'binBlasterStart') {
-        startMission(S.screen === 'mission_select' ? firstUnlockedMission() : S.mission);
+        if (S.screen === 'mission_select') startMission(firstUnlockedMission());
+        else if (S.screen === 'playing' && S.paused) S.paused = false;
+        else if (S.screen !== 'playing') startMission(S.mission);
       }
       if (btn.dataset.action === 'binBlasterFullscreen') toggleFullscreen();
       if (btn.dataset.action === 'binBlasterMute') {
@@ -2058,8 +2060,8 @@
 
   // ─── Start mission ────────────────────────────────────────────────────────────
   function firstUnlockedMission() {
-    const idx = MISSIONS.findIndex(m => !!S.unlocked[m.id]);
-    return idx >= 0 ? idx : 0;
+    const missionIndex = MISSIONS.findIndex(mission => !!S.unlocked[mission.id]);
+    return missionIndex >= 0 ? missionIndex : 0;
   }
 
   function startMission(id) {
