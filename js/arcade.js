@@ -603,7 +603,8 @@
     state.obstacles = [];
     state.upperHazards = [];
     state.effects = { fairingSplit: 0, stageSepPuff: 0, splitView: false, rudTimer: 0, quickMessage: '' };
-    state.easther = state.easther;
+    state.easter.binLabels = BLOCK_LABELS[Math.floor(Math.random() * BLOCK_LABELS.length)];
+    Audio.setMood('idle', state.settings);
     state.effects.quickMessage = '';
     state.effects.splitView = false;
     Audio.stopMusic();
@@ -1114,6 +1115,7 @@
     state.session.totalElapsed += dt;
     state.effects.splitView = true;
     updateSky(dt, 0.18);
+    if (state.effects.fairingSplit > 0) state.effects.fairingSplit = Math.max(0, state.effects.fairingSplit - dt);
     applyRocketControl(dt, true);
     state.upper.x = state.rocket.x;
     state.upper.y = clamp(state.upper.y + state.rocket.vy * 0.45, 78, 210);
@@ -1205,8 +1207,7 @@
     const bg = ctx.createLinearGradient(0, panel ? panel.y : 0, 0, panel ? panel.y + panel.h : CH);
     bg.addColorStop(0, grad.top);
     bg.addColorStop(1, grad.bottom);
-    if (panel) ctx.fillRect(0, panel.y, CW, panel.h);
-    else {
+    if (!panel) {
       ctx.fillStyle = bg;
       ctx.fillRect(0, 0, CW, CH);
     }
@@ -1291,7 +1292,7 @@
     ctx.fillStyle = '#54656f';
     for (let i = 0; i < 12; i++) ctx.fillRect(CW / 2 + 52, baseY - 200 + i * 15, 12, 3);
 
-    const labels = state.easther ? state.easther.binLabels : state.easter.binLabels;
+    const labels = state.easter.binLabels;
     const stacks = [28, 48, 68, CW - 42, CW - 62, CW - 82];
     stacks.forEach((x, i) => {
       ctx.fillStyle = '#80878d';
@@ -1428,7 +1429,6 @@
     ctx.save(); ctx.translate(-spread, spread * 0.4); ctx.rotate(-0.3 - spread * 0.01); ctx.fillRect(-7, -16, 6, 22); ctx.restore();
     ctx.save(); ctx.translate(spread, spread * 0.4); ctx.rotate(0.3 + spread * 0.01); ctx.fillRect(1, -16, 6, 22); ctx.restore();
     ctx.restore();
-    state.effects.fairingSplit = Math.max(0, state.effects.fairingSplit - 1 / BASE_FPS);
   }
 
   function drawVaporCone(ctx) {
@@ -1799,6 +1799,10 @@
     }
   }
 
+  function toggleSettings() {
+    state.ui.settingsOpen = !state.ui.settingsOpen;
+  }
+
   function mapPointer(clientX, clientY) {
     const rect = state.canvas.getBoundingClientRect();
     return {
@@ -1926,7 +1930,7 @@
       const p = mapPointer(e.clientX, e.clientY);
       state.input.pointerDown = true;
       handleTap(p.x, p.y);
-      setBoostHeld(true);
+      if (state.status === 'RUNNING' && state.session.phase !== 'PAD') setBoostHeld(true);
     });
     state.canvas.addEventListener('mouseup', () => { state.input.pointerDown = false; setBoostHeld(false); });
     state.canvas.addEventListener('mouseleave', () => { state.input.pointerDown = false; setBoostHeld(false); });
@@ -1941,7 +1945,7 @@
       const p = mapPointer(t.clientX, t.clientY);
       state.input.pointerDown = true;
       handleTap(p.x, p.y);
-      setBoostHeld(true);
+      if (state.status === 'RUNNING' && state.session.phase !== 'PAD') setBoostHeld(true);
     }, { passive: false });
     state.canvas.addEventListener('touchmove', (e) => {
       const t = e.touches[0];
@@ -1965,7 +1969,7 @@
       if (e.code === 'KeyP') togglePause();
       if (e.code === 'KeyM') toggleMute();
       if (e.code === 'Escape' && state.ui.settingsOpen) state.ui.settingsOpen = false;
-      if (e.code === 'KeyO') state.ui.settingsOpen = !state.ui.settingsOpen;
+      if (e.code === 'KeyO') toggleSettings();
       state.input.konami.push(e.code);
       if (state.input.konami.length > KONAMI.length) state.input.konami.shift();
       if (KONAMI.every((code, idx) => state.input.konami[idx] === code)) {
@@ -2034,5 +2038,6 @@
   };
   window.arcadeToggleMute = toggleMute;
   window.arcadeTogglePause = togglePause;
+  window.arcadeToggleSettings = toggleSettings;
   document.addEventListener('DOMContentLoaded', init);
 }());
