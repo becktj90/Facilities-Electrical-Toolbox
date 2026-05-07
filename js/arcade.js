@@ -731,12 +731,20 @@
 
   function resizeCanvas() {
     if (!state.canvas || !state.ctx) return;
+    const wrapper = state.wrapper || state.canvas.parentElement;
+    const fs = document.fullscreenElement || document.webkitFullscreenElement;
+    const isFullscreen = !!(wrapper && fs === wrapper);
     const dpr = window.devicePixelRatio || 1;
-    const cssW = state.canvas.clientWidth || CW;
+    const maxW = isFullscreen
+      ? Math.max(1, window.innerWidth - 24)
+      : Math.max(1, Math.min((wrapper && wrapper.clientWidth) || state.canvas.clientWidth || CW, CW));
+    const maxH = isFullscreen ? Math.max(1, window.innerHeight - 24) : Infinity;
+    const cssW = Math.max(1, Math.min(maxW, maxH * (CW / CH)));
     const cssH = cssW * (CH / CW);
+    state.canvas.style.width = cssW + 'px';
+    state.canvas.style.height = cssH + 'px';
     state.canvas.width = Math.round(cssW * dpr);
     state.canvas.height = Math.round(cssH * dpr);
-    state.canvas.style.height = cssH + 'px';
     state.canvasScale = dpr * (cssW / CW);
     state.ctx.setTransform(state.canvasScale, 0, 0, state.canvasScale, 0, 0);
   }

@@ -1767,13 +1767,21 @@
   function resizeCanvas() {
     const canvas = S.canvas;
     if (!canvas || !S.ctx) return;
+    const wrapper = S.wrapper || canvas.parentElement;
+    const fs = document.fullscreenElement || document.webkitFullscreenElement;
+    const isFullscreen = !!(wrapper && fs === wrapper);
     const dpr = window.devicePixelRatio || 1;
-    const cssW = canvas.clientWidth || CW;
+    const maxW = isFullscreen
+      ? Math.max(1, window.innerWidth - 24)
+      : Math.max(1, Math.min((wrapper && wrapper.clientWidth) || canvas.clientWidth || CW, CW));
+    const maxH = isFullscreen ? Math.max(1, window.innerHeight - 24) : Infinity;
+    const cssW = Math.max(1, Math.min(maxW, maxH * (CW / CH)));
     const cssH = cssW * (CH / CW);
+    canvas.style.width = cssW + 'px';
+    canvas.style.height = cssH + 'px';
     if (canvas.width !== Math.round(cssW * dpr) || canvas.height !== Math.round(cssH * dpr)) {
       canvas.width = Math.round(cssW * dpr);
       canvas.height = Math.round(cssH * dpr);
-      canvas.style.height = cssH + 'px';
     }
     const scaleX = canvas.width / CW;
     const scaleY = canvas.height / CH;
@@ -1997,6 +2005,12 @@
         return;
       }
 
+      if (S.screen === 'mission_select' && (e.code === 'Enter' || e.code === 'Space')) {
+        e.preventDefault();
+        startMission(firstUnlockedMission());
+        return;
+      }
+
       if (S.screen === 'initials') {
         const { chars, cursor } = S.initialsEntry;
         switch (e.code) {
@@ -2025,6 +2039,11 @@
       const btn = ev.target.closest('[data-action]');
       if (!btn) return;
       if (btn.dataset.action === 'binBlasterReset') resetAll();
+      if (btn.dataset.action === 'binBlasterStart') {
+        if (S.screen === 'mission_select') startMission(firstUnlockedMission());
+        else if (S.screen === 'playing' && S.paused) S.paused = false;
+        else if (S.screen !== 'playing') startMission(S.mission);
+      }
       if (btn.dataset.action === 'binBlasterFullscreen') toggleFullscreen();
       if (btn.dataset.action === 'binBlasterMute') {
         S.muted = !S.muted;
@@ -2035,9 +2054,16 @@
     });
 
     window.addEventListener('resize', resizeCanvas);
+    document.addEventListener('fullscreenchange', resizeCanvas);
+    document.addEventListener('webkitfullscreenchange', resizeCanvas);
   }
 
   // ─── Start mission ────────────────────────────────────────────────────────────
+  function firstUnlockedMission() {
+    const missionIndex = MISSIONS.findIndex(mission => !!S.unlocked[mission.id]);
+    return missionIndex >= 0 ? missionIndex : 0;
+  }
+
   function startMission(id) {
     const mDef = MISSIONS[id];
     S.mission = id;
