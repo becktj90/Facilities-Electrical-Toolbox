@@ -1974,10 +1974,149 @@ window.calcTHD = function () {
   ]);
 };
 
+const SPLASH_SEEN_KEY = 'toolbox-seen-splash';
+const SPLASH_FOCUSABLE_SELECTOR = 'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])';
+const UI_ACTIONS = Object.freeze({
+  shareApp: () => shareApp(),
+  splashClose: () => { if (typeof window.splashClose === 'function') window.splashClose(); },
+  splashEnterToolbox: () => { if (typeof window.splashEnterToolbox === 'function') window.splashEnterToolbox(); },
+  splashEnterGame: () => { if (typeof window.splashEnterGame === 'function') window.splashEnterGame(); }
+});
+let toastHideTimer = 0;
+let toastRemoveTimer = 0;
+
+function showToast(message) {
+  const existing = document.querySelector('.app-toast');
+  if (existing) {
+    clearTimeout(toastHideTimer);
+    clearTimeout(toastRemoveTimer);
+    existing.remove();
+  }
+  const toast = document.createElement('div');
+  toast.className = 'app-toast';
+  toast.textContent = message;
+  document.body.appendChild(toast);
+  setTimeout(() => toast.classList.add('show'), 10);
+  toastHideTimer = window.setTimeout(() => {
+    toast.classList.remove('show');
+    toastRemoveTimer = window.setTimeout(() => toast.remove(), 300);
+  }, 2500);
+}
+window.showToast = showToast;
+
+async function shareApp() {
+  const url = location.origin + location.pathname;
+  const shareData = {
+    title: 'Facilities Electrical Toolbox',
+    text: 'Electrical calculators + a New Glenn launch arcade. Built by a pad rat.',
+    url
+  };
+
+  try {
+    if (navigator.share && (!navigator.canShare || navigator.canShare(shareData))) {
+      await navigator.share(shareData);
+      return;
+    }
+  } catch (err) {
+    if (err && err.name === 'AbortError') return;
+  }
+
+  try {
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      await navigator.clipboard.writeText(url);
+      showToast('Link copied to clipboard');
+      return;
+    }
+  } catch (_) {}
+
+  showToast('Copy this URL: ' + url);
+}
+window.shareApp = shareApp;
+
+function setupSplash() {
+  const storage = (() => {
+    try {
+      return window.localStorage;
+    } catch (_) {
+      return null;
+    }
+  })();
+
+  if (storage && storage.getItem(SPLASH_SEEN_KEY)) return;
+
+  const modal = document.getElementById('splash-modal');
+  if (!modal) return;
+
+  const primaryAction = modal.querySelector('[data-action="splashEnterToolbox"]');
+  const getFocusable = () => Array.from(modal.querySelectorAll(SPLASH_FOCUSABLE_SELECTOR))
+    .filter(element => !element.disabled && element.getAttribute('aria-hidden') !== 'true');
+  const onKeydown = (event) => {
+    if (modal.hidden) return;
+
+    if (event.key === 'Escape') {
+      event.preventDefault();
+      dismiss();
+      return;
+    }
+
+    if (event.key !== 'Tab') return;
+
+    const focusable = getFocusable();
+    if (!focusable.length) return;
+
+    const first = focusable[0];
+    const last = focusable[focusable.length - 1];
+    if (!modal.contains(document.activeElement)) {
+      event.preventDefault();
+      first.focus();
+      return;
+    }
+    if (event.shiftKey && document.activeElement === first) {
+      event.preventDefault();
+      last.focus();
+    } else if (!event.shiftKey && document.activeElement === last) {
+      event.preventDefault();
+      first.focus();
+    }
+  };
+  const dismiss = () => {
+    if (modal.hidden) return;
+    modal.hidden = true;
+    document.removeEventListener('keydown', onKeydown);
+    if (storage) storage.setItem(SPLASH_SEEN_KEY, '1');
+  };
+
+  window.splashClose = dismiss;
+  window.splashEnterToolbox = () => {
+    dismiss();
+    location.hash = '#sec-ohm';
+  };
+  window.splashEnterGame = () => {
+    dismiss();
+    location.hash = '#sec-arcade';
+  };
+
+  modal.hidden = false;
+  document.addEventListener('keydown', onKeydown);
+  const initialFocus = primaryAction || getFocusable()[0];
+  if (initialFocus) initialFocus.focus();
+}
+
 /* ============================================================
    INIT
    ============================================================ */
 document.addEventListener('DOMContentLoaded', () => {
+  document.body.addEventListener('click', (event) => {
+    const control = event.target.closest('[data-action]');
+    if (!control) return;
+
+    const action = control.dataset.action;
+    const handler = action ? UI_ACTIONS[action] : null;
+    if (typeof handler === 'function') handler(event);
+  });
+
+  setupSplash();
+
   let deferredInstallPrompt = null;
   const installBtn = document.getElementById('install-btn');
   if (installBtn) {
