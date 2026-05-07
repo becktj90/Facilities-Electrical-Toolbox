@@ -75,7 +75,7 @@
     powerupsUsed: false,
     grid: [],
     proj: null,
-    launcher: { current: 'GRAY', next: 'GRAY', angle: 0 },
+    launcher: { current: 'GRAY', currentHue: null, next: 'GRAY', nextHue: null, angle: 0 },
     powerTray: [],
     activePup: null,
     falling: [],
@@ -372,14 +372,17 @@
     return pick(colors);
   }
 
-  function makeBlock(typeKey) {
+  function makeBlock(typeKey, rainbowHue) {
     const def = TYPES[typeKey] || TYPES.GRAY;
+    const isRainbow = typeKey === 'RAINBOW';
+    const resolvedRainbowHue = rainbowHue ?? rand(0, 360);
     return {
       type: typeKey,
       hp: def.maxHp || 1,
       label: pick(BLOCK_LABELS),
       cracked: false,
       flashTimer: 0,
+      rainbowHue: isRainbow ? resolvedRainbowHue : null,
     };
   }
 
@@ -403,7 +406,9 @@
 
     const colors = missionColors(mDef);
     S.launcher.current = pick(colors);
+    S.launcher.currentHue = null;
     S.launcher.next = pick(colors);
+    S.launcher.nextHue = null;
     S.launcher.angle = 0;
   }
 
@@ -708,10 +713,13 @@
       x: LAUNCHER_X, y: LAUNCHER_Y - 16,
       vx, vy,
       type: S.launcher.current,
+      rainbowHue: S.launcher.currentHue,
       hp: TYPES[S.launcher.current] ? (TYPES[S.launcher.current].maxHp || 1) : 1,
     };
     S.launcher.current = S.launcher.next;
+    S.launcher.currentHue = S.launcher.nextHue;
     S.launcher.next = randomNextBlock(mDef);
+    S.launcher.nextHue = S.launcher.next === 'RAINBOW' ? rand(0, 360) : null;
     Audio.SFX('fire');
   }
 
@@ -784,7 +792,7 @@
     if (cellY(tr) + BLOCK_H / 2 >= GRID_ZONE_BOTTOM) { triggerLoss(); return; }
 
     const def = TYPES[proj.type];
-    setCell(tr, tc, makeBlock(proj.type));
+    setCell(tr, tc, makeBlock(proj.type, proj.rainbowHue));
     Audio.SFX('land');
 
     // Indestructible blocks placed but don't trigger matches
@@ -862,8 +870,11 @@
 
   function swapBlock() {
     const tmp = S.launcher.current;
+    const tmpHue = S.launcher.currentHue;
     S.launcher.current = S.launcher.next;
+    S.launcher.currentHue = S.launcher.nextHue;
     S.launcher.next = tmp;
+    S.launcher.nextHue = tmpHue;
     Audio.SFX('swap');
   }
 
@@ -994,15 +1005,14 @@
   }
 
   // ─── Block drawing ────────────────────────────────────────────────────────────
-  function drawBlock(ctx, x, y, typeKey, hp, cracked, label, flashT, scale) {
+  function drawBlock(ctx, x, y, typeKey, hp, cracked, label, flashT, scale, rainbowHue) {
     scale = scale || 1;
     const w = BLOCK_W * scale, h = BLOCK_H * scale;
     const def = TYPES[typeKey] || TYPES.GRAY;
-    let color = def.color;
-
-    if (typeKey === 'RAINBOW') {
-      color = `hsl(${(Date.now() / 15) % 360},100%,65%)`;
-    }
+    const resolvedRainbowHue = rainbowHue ?? ((Date.now() / 15) % 360);
+    const color = typeKey === 'RAINBOW'
+      ? `hsl(${resolvedRainbowHue},100%,65%)`
+      : def.color;
 
     ctx.save();
     ctx.translate(x, y);
@@ -1222,7 +1232,7 @@
     ctx.setLineDash([]);
 
     // Current block in cradle
-    drawBlock(ctx, lx, ly - 16, S.launcher.current, 1, false, null, 0, 1);
+    drawBlock(ctx, lx, ly - 16, S.launcher.current, 1, false, null, 0, 1, S.launcher.currentHue);
 
     // Next block preview
     const nx = lx + 68, ny = ly - 4;
@@ -1233,7 +1243,7 @@
     ctx.font = '8px monospace';
     ctx.textAlign = 'center';
     ctx.fillText('NEXT', nx, ny - 28);
-    drawBlock(ctx, nx, ny - 4, S.launcher.next, 1, false, null, 0, 0.72);
+    drawBlock(ctx, nx, ny - 4, S.launcher.next, 1, false, null, 0, 0.72, S.launcher.nextHue);
 
     // Swap hint
     ctx.fillStyle = 'rgba(255,255,255,0.18)';
@@ -1385,7 +1395,7 @@
         const cell = getCell(r, c);
         if (!cell) continue;
         if (cell.flashTimer > 0) cell.flashTimer = Math.max(0, cell.flashTimer - 0.016);
-        drawBlock(ctx, cellX(c, r), cellY(r), cell.type, cell.hp, cell.cracked, cell.label, cell.flashTimer, 1);
+        drawBlock(ctx, cellX(c, r), cellY(r), cell.type, cell.hp, cell.cracked, cell.label, cell.flashTimer, 1, cell.rainbowHue);
       }
     }
   }
@@ -1396,14 +1406,14 @@
       ctx.globalAlpha = Math.max(0, f.alpha);
       ctx.translate(f.x, f.y);
       ctx.rotate(f.rot);
-      drawBlock(ctx, 0, 0, f.block.type, f.block.hp, f.block.cracked, f.block.label, 0, 0.82);
+      drawBlock(ctx, 0, 0, f.block.type, f.block.hp, f.block.cracked, f.block.label, 0, 0.82, f.block.rainbowHue);
       ctx.restore();
     }
   }
 
   function drawProjectile(ctx) {
     if (!S.proj) return;
-    drawBlock(ctx, S.proj.x, S.proj.y, S.proj.type, S.proj.hp, false, null, 0, 1);
+    drawBlock(ctx, S.proj.x, S.proj.y, S.proj.type, S.proj.hp, false, null, 0, 1, S.proj.rainbowHue);
   }
 
   // ─── Mission select ───────────────────────────────────────────────────────────
@@ -1828,11 +1838,6 @@
         }
         return;
       }
-      if (py < GRID_ZONE_BOTTOM) {
-        updateAim(px, py);
-        fireBlock();
-        return;
-      }
       // Power tray clicks
       const pupBaseY = 600;
       for (let i = 0; i < 3; i++) {
@@ -1845,6 +1850,12 @@
       const nx = LAUNCHER_X + 68;
       if (px >= nx - 22 && px < nx + 22 && py >= LAUNCHER_Y - 28 && py < LAUNCHER_Y + 20) {
         swapBlock();
+        return;
+      }
+      const launcherTap = px >= LAUNCHER_X - 78 && px < LAUNCHER_X + 78 && py >= LAUNCHER_Y - 60 && py < LAUNCHER_Y + 44;
+      if (py < GRID_ZONE_BOTTOM || launcherTap) {
+        updateAim(px, py);
+        fireBlock();
       }
       return;
     }
@@ -1930,7 +1941,7 @@
           S.hoveredMission = i; return;
         }
       }
-    } else if (S.screen === 'playing' && !S.paused && py < GRID_ZONE_BOTTOM) {
+    } else if (S.screen === 'playing' && !S.paused) {
       updateAim(px, py);
     }
   }
