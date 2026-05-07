@@ -8,14 +8,31 @@
 /* ============================================================
    NAVIGATION
    ============================================================ */
+const DEFAULT_SECTION_ID = 'sec-ohm';
+
+function getHashSectionId() {
+  if (!location.hash) return '';
+  return location.hash.slice(1).split('?')[0];
+}
+
+function setActiveSection(sectionId) {
+  const fallback = document.getElementById(DEFAULT_SECTION_ID);
+  const target = document.getElementById(sectionId) || fallback;
+  if (!target) return;
+
+  document.querySelectorAll('.nav-btn').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.target === target.id);
+  });
+  document.querySelectorAll('.section').forEach(sec => {
+    sec.classList.toggle('active', sec.id === target.id);
+  });
+}
+
 document.querySelectorAll('.nav-btn').forEach(btn => {
   btn.addEventListener('click', () => {
-    const target = btn.dataset.target;
-    document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
-    document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
-    btn.classList.add('active');
-    const sec = document.getElementById(target);
-    if (sec) sec.classList.add('active');
+    const target = btn.dataset.target || DEFAULT_SECTION_ID;
+    if (location.hash !== '#' + target) location.hash = target;
+    else setActiveSection(target);
   });
 });
 
@@ -64,8 +81,11 @@ function val(id) {
 
 function fmt(n, decimals = 4) {
   if (!isFinite(n)) return '—';
-  if (Math.abs(n) >= 1e6)  return n.toExponential(3);
-  if (Math.abs(n) >= 1000) return n.toLocaleString('en-US', { maximumFractionDigits: 2 });
+  // Engineering-friendly large-number formatting
+  const abs = Math.abs(n);
+  if (abs >= 1e9) return (n / 1e9).toFixed(2) + 'G';
+  if (abs >= 1e6) return (n / 1e6).toFixed(2) + 'M';
+  if (abs >= 1000) return n.toLocaleString('en-US', { maximumFractionDigits: 2 });
   const d = Math.abs(n) < 0.01 ? 6 : decimals;
   return parseFloat(n.toFixed(d)).toString();
 }
@@ -74,6 +94,7 @@ function deg(rad) { return rad * 180 / Math.PI; }
 
 function isPos(...args) { return args.every(v => isFinite(v) && v > 0); }
 function isNum(...args) { return args.every(v => isFinite(v)); }
+const DEFAULT_SC_XR_RATIO = 6.6;
 
 /* ============================================================
    1. OHM'S LAW
@@ -728,15 +749,20 @@ window.calcConduitFill = function () {
    ============================================================ */
 window.calcSC = function () {
   const kVA = val('sc_kva'), Vs = val('sc_vs'), Zp = val('sc_z') / 100;
+  const xrInput = val('sc_xr');
+  const xRatio = isFinite(xrInput) && xrInput > 0 ? xrInput : DEFAULT_SC_XR_RATIO;
   if (!isPos(kVA, Vs, Zp)) return showError('sc_result', 'Enter transformer kVA, secondary voltage (V), and impedance %.');
   const I_base = kVA * 1000 / (Math.sqrt(3) * Vs);
   const I_fault = I_base / Zp;  // simplified (neglects line impedance)
   const I_sym  = I_fault;
-  const I_asym = I_fault * 1.25; // simplified asymmetric factor ~1.25
+  // IEEE asymmetrical factor calculation based on X/R ratio
+  const asymmetricalFactor = Math.sqrt(1 + 2 * Math.exp(-2 * Math.PI / xRatio));
+  const I_asym = I_fault * asymmetricalFactor;
   showResult('sc_result', [
     ['Base Current (I_base)', fmt(I_base, 2) + ' A'],
     ['Available Short Circuit (Symmetrical)', fmt(I_sym, 0) + ' A'],
-    ['Available Short Circuit (Asymmetrical \u00d71.25)', fmt(I_asym, 0) + ' A'],
+    ['Asymmetrical Factor (IEEE, X/R=' + fmt(xRatio, 2) + ')', fmt(asymmetricalFactor, 4)],
+    ['Available Short Circuit (Asymmetrical)', fmt(I_asym, 0) + ' A'],
     ['Note', 'Simplified \u2014 excludes conductor/bus impedance']
   ]);
 };
@@ -744,15 +770,66 @@ window.calcSC = function () {
 /* ============================================================
    14. UNIT CONVERSIONS
    ============================================================ */
+const UNIT_GROUPS = {
+  power: { 'W': 1, 'kW': 1e3, 'MW': 1e6, 'HP': 746, 'BTU/h': 0.29307107 },
+  apparentReactive: { 'VA': 1, 'kVA': 1e3, 'MVA': 1e6, 'VAR': 1, 'kVAR': 1e3 },
+  voltage: { 'V': 1, 'kV': 1e3, 'mV': 1e-3 },
+  current: { 'A': 1, 'mA': 1e-3, 'kA': 1e3 },
+  resistance: { 'Ohm': 1, 'kOhm': 1e3, 'MOhm': 1e6 },
+  capacitance: { 'F': 1, 'mF': 1e-3, 'uF': 1e-6, 'nF': 1e-9, 'pF': 1e-12 },
+  inductance: { 'H': 1, 'mH': 1e-3, 'uH': 1e-6 },
+  frequency: { 'Hz': 1, 'kHz': 1e3, 'MHz': 1e6 },
+  length: { 'ft': 0.3048, 'm': 1, 'in': 0.0254 },
+  illuminance: { 'lux': 1, 'fc': 10.76391 },
+  temperature: { 'degC': 1, 'degF': 1, 'K': 1 },
+  energy: { 'J': 1, 'Wh': 3600, 'kWh': 3.6e6, 'MWh': 3.6e9, 'BTU': 1055.06 }
+};
+
+function findUnitGroup(unit) {
+  return Object.keys(UNIT_GROUPS).find(group => Object.prototype.hasOwnProperty.call(UNIT_GROUPS[group], unit));
+}
+
+function syncUnitToOptions() {
+  const fromSelect = document.getElementById('uc_from');
+  const toSelect = document.getElementById('uc_to');
+  if (!fromSelect || !toSelect) return;
+
+  const fromUnit = fromSelect.value;
+  const fromGroup = findUnitGroup(fromUnit);
+  if (!fromGroup) return;
+
+  const labelMap = {};
+  document.querySelectorAll('#uc_from option').forEach(option => {
+    labelMap[option.value] = option.textContent;
+  });
+
+  const prevTo = toSelect.value;
+  toSelect.innerHTML = '';
+  Object.keys(UNIT_GROUPS[fromGroup]).forEach(unit => {
+    const option = document.createElement('option');
+    option.value = unit;
+    option.textContent = labelMap[unit] || unit;
+    toSelect.appendChild(option);
+  });
+  if (Object.prototype.hasOwnProperty.call(UNIT_GROUPS[fromGroup], prevTo)) {
+    toSelect.value = prevTo;
+  }
+}
+
 window.convertUnits = function () {
   const val_in = parseFloat(document.getElementById('uc_val').value);
   const from = document.getElementById('uc_from').value;
   const to   = document.getElementById('uc_to').value;
   if (!isFinite(val_in)) return showError('uc_result', 'Enter a value to convert.');
 
+  const fromGroup = findUnitGroup(from);
+  const toGroup = findUnitGroup(to);
+  if (!fromGroup || !toGroup || fromGroup !== toGroup) {
+    return showError('uc_result', 'Select compatible units from the same category.');
+  }
+
   /* Temperature: special handling (non-multiplicative) */
-  if (from === 'degC' || from === 'degF' || from === 'K' ||
-      to   === 'degC' || to   === 'degF' || to   === 'K') {
+  if (fromGroup === 'temperature') {
     let tempC;
     if (from === 'degC') tempC = val_in;
     else if (from === 'degF') tempC = (val_in - 32) * 5 / 9;
@@ -769,28 +846,7 @@ window.convertUnits = function () {
     ]);
   }
 
-  const toBase = {
-    'W':   1, 'kW': 1e3, 'MW': 1e6,
-    'HP':  746, 'BTU/h': 0.29307107,
-    'V':   1, 'kV': 1e3, 'mV': 1e-3,
-    'A':   1, 'mA': 1e-3, 'kA': 1e3,
-    'Ohm': 1, 'kOhm': 1e3, 'MOhm': 1e6,
-    'F':   1, 'mF': 1e-3, 'uF': 1e-6, 'nF': 1e-9, 'pF': 1e-12,
-    'H':   1, 'mH': 1e-3, 'uH': 1e-6,
-    'Hz':  1, 'kHz': 1e3, 'MHz': 1e6,
-    'VA':  1, 'kVA': 1e3, 'MVA': 1e6,
-    'VAR': 1, 'kVAR': 1e3,
-    'ft':  0.3048, 'm': 1, 'in': 0.0254,
-    'AWG_CM': 1,
-    /* Illuminance (base: lux) */
-    'lux': 1, 'fc': 10.76391,
-    /* Energy (base: joules) */
-    'J': 1, 'Wh': 3600, 'kWh': 3.6e6, 'MWh': 3.6e9, 'BTU': 1055.06,
-  };
-
-  if (!(from in toBase) || !(to in toBase))
-    return showError('uc_result', 'Select compatible units.');
-
+  const toBase = UNIT_GROUPS[fromGroup];
   const inBase = val_in * toBase[from];
   const result = inBase / toBase[to];
   showResult('uc_result', [
@@ -1922,8 +1978,59 @@ window.calcTHD = function () {
    INIT
    ============================================================ */
 document.addEventListener('DOMContentLoaded', () => {
-  // activate first nav button
-  document.querySelector('.nav-btn').click();
+  window.addEventListener('hashchange', () => {
+    setActiveSection(getHashSectionId() || DEFAULT_SECTION_ID);
+  });
+  setActiveSection(getHashSectionId() || DEFAULT_SECTION_ID);
+
+  const navSearch = document.getElementById('nav-search');
+  if (navSearch) {
+    navSearch.addEventListener('input', () => {
+      const q = navSearch.value.trim().toLowerCase();
+      document.querySelectorAll('.sidebar-section').forEach(section => {
+        let visible = 0;
+        section.querySelectorAll('.nav-btn').forEach(btn => {
+          const haystack = (btn.textContent + ' ' + (btn.dataset.keywords || '')).toLowerCase();
+          const show = !q || haystack.includes(q);
+          btn.style.display = show ? '' : 'none';
+          if (show) visible += 1;
+        });
+        const title = section.querySelector('.sidebar-section-title');
+        if (title) title.style.display = visible ? '' : 'none';
+        section.style.display = visible ? '' : 'none';
+      });
+    });
+
+    document.addEventListener('keydown', (event) => {
+      const activeTag = document.activeElement ? document.activeElement.tagName : '';
+      const isEditableElement = /INPUT|TEXTAREA|SELECT/.test(activeTag) || (document.activeElement && document.activeElement.isContentEditable);
+      if (event.key === '/' && !event.metaKey && !event.ctrlKey && !event.altKey && !isEditableElement) {
+        event.preventDefault();
+        navSearch.focus();
+      }
+    });
+  }
+
+  const ucFrom = document.getElementById('uc_from');
+  if (ucFrom) {
+    ucFrom.addEventListener('change', syncUnitToOptions);
+    syncUnitToOptions();
+  }
+
+  document.querySelectorAll('input[type="number"]').forEach(input => {
+    input.setAttribute('inputmode', 'decimal');
+  });
+
+  document.querySelectorAll('.section').forEach(section => {
+    section.querySelectorAll('input, select, textarea').forEach(field => {
+      const clear = () => {
+        section.querySelectorAll('.result.show').forEach(result => result.classList.remove('show'));
+      };
+      field.addEventListener('input', clear);
+      field.addEventListener('change', clear);
+    });
+  });
+
   // activate first tab in each tab-group
   document.querySelectorAll('.tab-group').forEach(g => {
     const first = g.querySelector('.tab-btn');
