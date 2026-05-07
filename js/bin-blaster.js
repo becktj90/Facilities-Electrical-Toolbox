@@ -1766,12 +1766,14 @@
 
   function resizeCanvas() {
     const canvas = S.canvas;
-    if (!canvas) return;
+    if (!canvas || !S.ctx) return;
     const dpr = window.devicePixelRatio || 1;
-    const w = canvas.clientWidth, h = canvas.clientHeight;
-    if (canvas.width !== Math.round(w * dpr) || canvas.height !== Math.round(h * dpr)) {
-      canvas.width = Math.round(w * dpr);
-      canvas.height = Math.round(h * dpr);
+    const cssW = canvas.clientWidth || CW;
+    const cssH = cssW * (CH / CW);
+    if (canvas.width !== Math.round(cssW * dpr) || canvas.height !== Math.round(cssH * dpr)) {
+      canvas.width = Math.round(cssW * dpr);
+      canvas.height = Math.round(cssH * dpr);
+      canvas.style.height = cssH + 'px';
     }
     const scaleX = canvas.width / CW;
     const scaleY = canvas.height / CH;
