@@ -1205,6 +1205,16 @@ window.calcNEC = function () {
   const FARADAY_FRAMES         = TARGET_FPS * 5;  // 5 s at target frame rate
   const POWERUP_SPAWN_INTERVAL = 250;             // frames between power-up spawns
   const ALT_PER_PIXEL          = 4.8;             // synthetic ascent scaling (m/px)
+  const MAX_GATOR_PROB         = 0.22;
+  const BASE_GATOR_PROB        = 0.08;
+  const GATOR_PROB_INCREASE    = 0.002;
+  const MIN_ALT_RATE           = 0.6;
+  const CLIMB_ALT_FACTOR       = 0.02;
+  const SPEED_ALT_FACTOR       = 0.75;
+  const BURN_LNG_RATE          = 0.08;
+  const COAST_LNG_RATE         = 0.015;
+  const BURN_LOX_RATE          = 0.12;
+  const COAST_LOX_RATE         = 0.02;
 
   // Dynamic difficulty helpers
   function currentGap() {
@@ -1364,7 +1374,7 @@ window.calcNEC = function () {
       topH: gapY,
       botY: gapY + gap,
       passed: false,
-      hasGator: score > 10 && Math.random() < Math.min(0.22, 0.08 + score * 0.002),
+      hasGator: score > 10 && Math.random() < Math.min(MAX_GATOR_PROB, BASE_GATOR_PROB + score * GATOR_PROB_INCREASE),
       gatorTop: Math.random() < 0.5
     });
   }
@@ -1456,13 +1466,14 @@ window.calcNEC = function () {
 
     // Telemetry
     const climbPx = Math.max(0, CH * 0.62 - rocket.y);
-    telemetry.altitude += Math.max(0.6, (climbPx * ALT_PER_PIXEL * 0.02) + (speedMult * 0.75));
     telemetry.velocity = Math.max(0, (-rocket.vy * 34) + speedMult * 8);
     const altKm = telemetry.altitude / 1000;
     const rho = Math.max(0.018, Math.exp(-altKm / 8.5));
     telemetry.q = 0.5 * rho * telemetry.velocity * telemetry.velocity / 1000; // kPa
-    telemetry.lng = Math.max(0, telemetry.lng - (rocket.burnFrames > 0 ? 0.08 : 0.015));
-    telemetry.lox = Math.max(0, telemetry.lox - (rocket.burnFrames > 0 ? 0.12 : 0.02));
+    const burning = rocket.burnFrames > 0;
+    telemetry.altitude += Math.max(MIN_ALT_RATE, (climbPx * ALT_PER_PIXEL * CLIMB_ALT_FACTOR) + (speedMult * SPEED_ALT_FACTOR));
+    telemetry.lng = Math.max(0, telemetry.lng - (burning ? BURN_LNG_RATE : COAST_LNG_RATE));
+    telemetry.lox = Math.max(0, telemetry.lox - (burning ? BURN_LOX_RATE : COAST_LOX_RATE));
     telemetry.milestone = missionMilestone(telemetry.altitude);
 
     // Boundary collision
