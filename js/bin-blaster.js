@@ -513,6 +513,7 @@
 
       // LOX chain expansion
       const loxExtra = [];
+      const loxExtraSet = new Set(toClear.map(x => `${x.row},${x.col}`));
       for (const { row: r, col: c } of toClear) {
         const cell = getCell(r, c);
         if (!cell || cell.type !== 'LOX') continue;
@@ -525,8 +526,9 @@
             const nbDef = TYPES[nb.type];
             if (nbDef && (nbDef.indestructible || nbDef.immune)) continue;
             const key = `${nr},${nc}`;
-            if (!toClear.some(x => x.row === nr && x.col === nc) && !loxExtra.some(x => x.row === nr && x.col === nc)) {
+            if (!loxExtraSet.has(key)) {
               loxExtra.push({ row: nr, col: nc });
+              loxExtraSet.add(key);
             }
           }
         }
@@ -645,10 +647,11 @@
     if (!S.hiScores[key]) S.hiScores[key] = [];
     const list = S.hiScores[key];
     if (list.length < 10 || score > (list[list.length - 1] || { score: 0 }).score) {
-      S.initialsEntry = { score, missionId, chars: ['A', 'A', 'A'], cursor: 0 };
-      // Delay showing initials screen so win/loss screen shows first
+      S.initialsEntry = { score, missionId, chars: ['A', 'A', 'A'], cursor: 0, entryId: null };
+      // Capture screen state now to avoid acting on a later screen transition
+      const screenAtCheck = S.screen;
       setTimeout(() => {
-        if (S.screen === 'win' || S.screen === 'loss') S.screen = 'initials';
+        if (S.screen === screenAtCheck) S.screen = 'initials';
       }, 3500);
     }
   }
@@ -658,7 +661,9 @@
     const name = chars.join('');
     const key = String(missionId);
     if (!S.hiScores[key]) S.hiScores[key] = [];
-    S.hiScores[key].push({ name, score });
+    const entryId = Date.now() + Math.random();
+    S.initialsEntry.entryId = entryId;
+    S.hiScores[key].push({ name, score, id: entryId });
     S.hiScores[key].sort((a, b) => b.score - a.score);
     if (S.hiScores[key].length > 10) S.hiScores[key].length = 10;
     saveState();
@@ -676,6 +681,7 @@
     const cols = maxCol(0);
     const colors = missionColors(mDef);
     for (let c = 0; c < cols; c++) {
+      // ~78% fill density produces well-balanced new rows
       S.grid[0][c] = Math.random() < 0.78 ? makeBlock(randomBlockType(mDef)) : null;
     }
     Audio.SFX('drop_row');
@@ -1562,8 +1568,9 @@
     if (t > 3) {
       const nextId = S.mission + 1;
       const hasNext = nextId < MISSIONS.length && S.unlocked[nextId];
+      const retryWidth = 100;
       if (hasNext) drawButton(ctx, CW / 2 - 74, CH - 82, 140, 32, 'NEXT MISSION', '#33ff88', '#001800');
-      drawButton(ctx, hasNext ? CW / 2 + 74 : CW / 2 - 50, CH - 82, hasNext ? 100 : 100, 32, 'RETRY', '#d4a936', '#181200');
+      drawButton(ctx, hasNext ? CW / 2 + 74 : CW / 2 - 50, CH - 82, retryWidth, 32, 'RETRY', '#d4a936', '#181200');
       drawButton(ctx, CW / 2 - 74, CH - 46, 250, 28, 'MISSION SELECT', 'rgba(200,220,255,0.5)', '#101418');
     }
     ctx.textAlign = 'left';
@@ -1664,7 +1671,7 @@
     for (let i = 0; i < Math.min(10, list.length); i++) {
       const entry = list[i];
       const y = 94 + i * 28;
-      const isNew = entry.name === S.initialsEntry.chars.join('') && entry.score === S.initialsEntry.score;
+      const isNew = S.initialsEntry.entryId != null && entry.id === S.initialsEntry.entryId;
       ctx.fillStyle = isNew ? 'rgba(0,180,80,0.14)' : (i % 2 === 0 ? 'rgba(38,44,58,0.55)' : 'rgba(28,34,46,0.55)');
       ctx.fillRect(28, y - 16, CW - 56, 24);
       ctx.fillStyle = isNew ? '#33ff88' : (i === 0 ? '#d4a936' : 'rgba(255,255,255,0.68)');
