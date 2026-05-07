@@ -1874,6 +1874,48 @@ window.calcNEC = function () {
     ctx.fill();
     ctx.strokeStyle = '#9dc2d8';
     ctx.stroke();
+
+    // Tiny concrete bin blocks (decorative only)
+    const blockY = baseY - 17;
+    function drawConcreteBlock(x, y, w, h) {
+      ctx.fillStyle = '#7f868b';
+      ctx.fillRect(x, y, w, h);
+      ctx.strokeStyle = '#b7bec3';
+      ctx.strokeRect(x, y, w, h);
+      ctx.strokeStyle = 'rgba(215,220,224,0.35)';
+      ctx.beginPath();
+      ctx.moveTo(x + 2, y + 2);
+      ctx.lineTo(x + w - 2, y + 2);
+      ctx.stroke();
+      ctx.fillStyle = '#5f666c';
+      ctx.fillRect(x + 2, y + h - 4, w - 4, 2);
+    }
+    const leftPile = [16, 30, 44, 58, 72, 86];
+    for (let i = 0; i < leftPile.length; i++) {
+      const x = leftPile[i];
+      const y = blockY - (i % 2 === 0 ? 0 : 4);
+      drawConcreteBlock(x, y, 12, 8);
+    }
+    const rightPile = [CW - 28, CW - 42, CW - 56, CW - 70, CW - 84];
+    for (let i = 0; i < rightPile.length; i++) {
+      const x = rightPile[i];
+      const y = blockY - (i % 2 === 0 ? 0 : 4);
+      drawConcreteBlock(x, y, 12, 8);
+    }
+
+    // Easter eggs: tiny pad mascot + utility cart
+    ctx.fillStyle = '#ffcf5d';
+    ctx.beginPath();
+    ctx.arc(CW / 2 + 118, baseY - 8, 3.2, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = '#2f8f2f';
+    ctx.fillRect(CW / 2 + 114, baseY - 5, 8, 3);
+    ctx.fillStyle = '#87a3b5';
+    ctx.fillRect(CW / 2 - 166, baseY - 10, 12, 5);
+    ctx.fillRect(CW / 2 - 163, baseY - 14, 6, 4);
+    ctx.fillStyle = '#1a2228';
+    ctx.fillRect(CW / 2 - 166, baseY - 5, 3, 3);
+    ctx.fillRect(CW / 2 - 157, baseY - 5, 3, 3);
     ctx.restore();
   }
 
@@ -1963,61 +2005,81 @@ window.calcNEC = function () {
     ctx.shadowColor = '#5abcf0';
     ctx.shadowBlur  = 12;
 
-    ctx.fillStyle = '#002a52';
+    // Booster grid fins
+    ctx.fillStyle = '#1f242c';
     ctx.beginPath();
-    ctx.moveTo(-12, 20);
-    ctx.lineTo(-20, 30);
-    ctx.lineTo(-12, 30);
+    ctx.moveTo(-12, 4);
+    ctx.lineTo(-19, 8);
+    ctx.lineTo(-12, 12);
     ctx.closePath();
     ctx.fill();
     ctx.beginPath();
-    ctx.moveTo(12, 20);
-    ctx.lineTo(20, 30);
-    ctx.lineTo(12, 30);
+    ctx.moveTo(12, 4);
+    ctx.lineTo(19, 8);
+    ctx.lineTo(12, 12);
     ctx.closePath();
     ctx.fill();
 
     ctx.shadowBlur = 6;
-    ctx.fillStyle = '#004b8d';
-    ctx.fillRect(-12, -10, 24, 38);
-    ctx.fillStyle = '#003468';
-    ctx.fillRect(-12, -10, 24, 4);
-    ctx.fillRect(-12, 22, 24, 4);
-    ctx.fillStyle = '#1a6fad';
-    ctx.fillRect(-10, -6, 20, 3);
+    // White New Glenn-inspired body + black interstage
+    ctx.fillStyle = '#f2f6fb';
+    ctx.fillRect(-11, -6, 22, 33);
+    ctx.fillStyle = '#151a23';
+    ctx.fillRect(-11, 19, 22, 8);
+    ctx.fillStyle = '#2f6ea3';
+    ctx.fillRect(-10, -2, 20, 2);
+    ctx.fillRect(-10, 2, 20, 2);
 
-    ctx.fillStyle = '#c8daf0';
-    ctx.fillRect(-9, -20, 18, 14);
-    ctx.fillStyle = '#ddeeff';
+    // Fairing
+    ctx.fillStyle = '#f7fbff';
+    ctx.fillRect(-9, -22, 18, 16);
+    ctx.fillStyle = '#d7e6f5';
     ctx.beginPath();
-    ctx.moveTo(-9, -20);
-    ctx.lineTo(0, -33);
-    ctx.lineTo(9, -20);
+    ctx.moveTo(-9, -22);
+    ctx.lineTo(0, -35);
+    ctx.lineTo(9, -22);
     ctx.closePath();
     ctx.fill();
-    ctx.fillStyle = '#ffffff';
-    ctx.fillRect(-2, -28, 4, 3);
-
-    ctx.fillStyle = '#004b8d';
-    ctx.fillRect(-11, -3, 22, 4);
-    ctx.fillStyle = '#5abcf0';
-    ctx.fillRect(-11, -6, 22, 2);
-    ctx.fillRect(-11, 1, 22, 2);
-
     ctx.fillStyle = '#111826';
-    ctx.fillRect(-10, 28, 20, 6);
-    ctx.fillStyle = '#5a6880';
-    ctx.beginPath();
-    ctx.moveTo(-9, 28); ctx.lineTo(-14, 38); ctx.lineTo(-6, 38); ctx.lineTo(-5, 28); ctx.closePath(); ctx.fill();
-    ctx.beginPath();
-    ctx.moveTo(-3, 28); ctx.lineTo(-6, 40); ctx.lineTo(6, 40); ctx.lineTo(3, 28); ctx.closePath(); ctx.fill();
-    ctx.beginPath();
-    ctx.moveTo(9, 28); ctx.lineTo(14, 38); ctx.lineTo(6, 38); ctx.lineTo(5, 28); ctx.closePath(); ctx.fill();
+    ctx.fillRect(-9, -17, 18, 2);
+    ctx.fillStyle = '#70c2ff';
+    ctx.fillRect(-8, -15, 16, 1);
 
-    ctx.fillStyle = '#08081a';
-    ctx.fillRect(-12, 35, 4, 3);
-    ctx.fillRect(-2, 36, 4, 3);
-    ctx.fillRect(8, 35, 4, 3);
+    // Landing leg hints
+    ctx.fillStyle = '#566270';
+    ctx.beginPath();
+    ctx.moveTo(-9, 26); ctx.lineTo(-15, 37); ctx.lineTo(-8, 37); ctx.lineTo(-6, 26); ctx.closePath(); ctx.fill();
+    ctx.beginPath();
+    ctx.moveTo(9, 26); ctx.lineTo(15, 37); ctx.lineTo(8, 37); ctx.lineTo(6, 26); ctx.closePath(); ctx.fill();
+
+    // Engine section + 7 BE-4 nozzles
+    ctx.fillStyle = '#131923';
+    ctx.fillRect(-11, 27, 22, 6);
+    const enginePts = [
+      [-6, 36], [0, 36], [6, 36],
+      [-3, 39], [3, 39],
+      [-9, 39], [9, 39]
+    ];
+    for (const p of enginePts) {
+      ctx.fillStyle = '#59687a';
+      ctx.beginPath();
+      ctx.ellipse(p[0], p[1], 2.3, 1.5, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = '#0b0e13';
+      ctx.beginPath();
+      ctx.ellipse(p[0], p[1], 1.2, 0.8, 0, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    // Easter egg decals
+    ctx.fillStyle = '#64c8ff';
+    ctx.font = 'bold 6px "Share Tech Mono",monospace';
+    ctx.textAlign = 'center';
+    ctx.fillText('BG', 0, 10);
+    if (Math.floor(Date.now() / 400) % 7 === 0) {
+      ctx.fillStyle = '#ffcf5d';
+      ctx.fillText('★', 0, -9);
+    }
     ctx.restore();
   }
 
