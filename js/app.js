@@ -94,6 +94,7 @@ function deg(rad) { return rad * 180 / Math.PI; }
 
 function isPos(...args) { return args.every(v => isFinite(v) && v > 0); }
 function isNum(...args) { return args.every(v => isFinite(v)); }
+const DEFAULT_SC_XR_RATIO = 6.6;
 
 /* ============================================================
    1. OHM'S LAW
@@ -749,7 +750,7 @@ window.calcConduitFill = function () {
 window.calcSC = function () {
   const kVA = val('sc_kva'), Vs = val('sc_vs'), Zp = val('sc_z') / 100;
   const xrInput = val('sc_xr');
-  const XR = isFinite(xrInput) && xrInput > 0 ? xrInput : 6.6;
+  const XR = isFinite(xrInput) && xrInput > 0 ? xrInput : DEFAULT_SC_XR_RATIO;
   if (!isPos(kVA, Vs, Zp)) return showError('sc_result', 'Enter transformer kVA, secondary voltage (V), and impedance %.');
   const I_base = kVA * 1000 / (Math.sqrt(3) * Vs);
   const I_fault = I_base / Zp;  // simplified (neglects line impedance)
@@ -2002,8 +2003,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     document.addEventListener('keydown', (event) => {
       const activeTag = document.activeElement ? document.activeElement.tagName : '';
-      const isTypingTarget = /INPUT|TEXTAREA|SELECT/.test(activeTag) || (document.activeElement && document.activeElement.isContentEditable);
-      if (event.key === '/' && !event.metaKey && !event.ctrlKey && !event.altKey && !isTypingTarget) {
+      const isEditableElement = /INPUT|TEXTAREA|SELECT/.test(activeTag) || (document.activeElement && document.activeElement.isContentEditable);
+      if (event.key === '/' && !event.metaKey && !event.ctrlKey && !event.altKey && !isEditableElement) {
         event.preventDefault();
         navSearch.focus();
       }
