@@ -12,6 +12,8 @@
     reducedFlashes: false,
     haptics: true,
     muted: false,
+    difficulty: 'CADET',
+    engineerPanel: false,
     hiScore: 0,
     missionCount: 0,
     bestFlight: null,
@@ -29,8 +31,33 @@
     'BE-3U burns hydrogen. The plume is nearly invisible in daylight.',
     'The rocket is named for John Glenn — first American in orbit, 1962.',
     "It's 9 miles from the factory to the pad. Driving to work, basically.",
-    'Gradatim ferociter — step by step, ferociously.'
+    'Gradatim ferociter — step by step, ferociously.',
+    'BE-4 thrust: 640,000 lbf at sea level. New Glenn has seven of them.',
+    'BE-3U vacuum thrust: 200,000 lbf each. Two of them on upper stage.',
+    'New Glenn payload: 13 t to GTO, 45 t to LEO.',
+    'NG-1 reached orbit on first try, January 16, 2025.',
+    'NG-2 landed the booster on Jacklyn — reusable orbital rocket history.',
+    'The fairing volume is twice that of a 5-meter class fairing.',
+    'LC-36 lightning towers are 600 feet tall.',
+    'Booster lands ~620 miles (1,000 km) downrange in the Atlantic.',
+    'It took 10+ years from program announcement to first orbital flight.',
+    'BE-4 burns methane — cleaner than kerosene and easier to reuse.'
   ];
+  const DIFFICULTY = {
+    KID: { spawnMul: 0.25, hitboxScale: 0.45, graceFrames: 180, qStressGain: 0.04, qStressDecay: 0.20, landingTolerance: 28, secoBand: 280, allowFail: false },
+    CADET: { spawnMul: 0.45, hitboxScale: 0.55, graceFrames: 120, qStressGain: 0.06, qStressDecay: 0.16, landingTolerance: 18, secoBand: 180, allowFail: true },
+    ENGINEER: { spawnMul: 1.0, hitboxScale: 0.7, graceFrames: 60, qStressGain: 0.16, qStressDecay: 0.08, landingTolerance: 10, secoBand: 100, allowFail: true }
+  };
+  const MISSION_CAPTIONS = {
+    PAD: 'This is LC-36 — Blue Origin’s launch pad in Florida.',
+    ASCENT: 'The rocket leans east as it climbs — that is a gravity turn.',
+    MAX_Q: 'Max-Q now: the air pushes hardest. Easy on the stick.',
+    COAST: 'Engines off. First stage is done and heading home.',
+    STAGE_SEP: 'Stages separate: booster down, upper stage keeps climbing.',
+    UPPER_ASCENT: 'Hydrogen engines now — real flames are nearly invisible.',
+    ORBIT_INSERT: 'Add just enough speed for orbit: not too much, not too little.',
+    PAYLOAD_DEPLOY: 'Mission accomplished! The payload is on its way.'
+  };
   const RADIO = {
     PAD: 'Pad systems nominal.',
     ASCENT: 'You are go for launch.',
@@ -80,7 +107,9 @@
       try {
         const raw = localStorage.getItem(STORAGE_KEY);
         if (!raw) return { ...DEFAULT_SETTINGS };
-        return { ...DEFAULT_SETTINGS, ...JSON.parse(raw) };
+        const merged = { ...DEFAULT_SETTINGS, ...JSON.parse(raw) };
+        if (!DIFFICULTY[merged.difficulty]) merged.difficulty = 'CADET';
+        return merged;
       } catch (err) {
         return { ...DEFAULT_SETTINGS };
       }
@@ -262,6 +291,7 @@
         case 'liftoff_horn': tone(220, 0.35, 'triangle', 0.06, 620); break;
         case 'tortoise': tone(80, 0.11, 'sawtooth', 0.04, 74); break;
         case 'success': tone(392, 0.12, 'triangle', 0.04); tone(523.25, 0.22, 'triangle', 0.03); break;
+        case 'boop': tone(520, 0.06, 'sine', 0.02); tone(680, 0.08, 'triangle', 0.018); break;
       }
     }
 
@@ -446,6 +476,12 @@
         countdownMark: 10,
         systems: [],
         tip: LOADING_TIPS[Math.floor(Math.random() * LOADING_TIPS.length)],
+        padPollTimer: 0,
+        tutorialTimer: 0,
+        tutorialSeen: false,
+        phaseCaption: '',
+        phaseCaptionTimer: 0,
+        difficultyButtons: [],
         tortoiseMoved: 0,
         lastPhase: 'READY',
         flash: 0,
@@ -459,6 +495,7 @@
         missionName: `NG-${settings.missionCount + 1}`,
         totalElapsed: 0,
         phaseElapsed: 0,
+        phaseGrace: 0,
         phase: 'PAD',
         ascentGrace: 2.5,
         score: 0,
@@ -481,7 +518,7 @@
       booster: { x: CW / 2, y: 130, vx: 0, vy: 4.2, burn: 0, alive: true, reentryBurnDone: false, landingBurnDone: false, decalVisible: false, touchdown: false, touchdownVy: 0 },
       obstacles: [],
       upperHazards: [],
-      effects: { fairingSplit: 0, stageSepPuff: 0, splitView: false, rudTimer: 0, quickMessage: '' },
+      effects: { fairingSplit: 0, stageSepPuff: 0, splitView: false, rudTimer: 0, quickMessage: '', delugeTimer: 0, liftoffShake: 0, shockRing: 0 },
       easter: { binLabels: BLOCK_LABELS[Math.floor(Math.random() * BLOCK_LABELS.length)], bezosMode: false },
       buttons: { mute: null, pause: null }
     };
@@ -507,6 +544,24 @@
   function setRadio(message, duration) {
     state.ui.radio = message;
     state.ui.radioTimer = duration || 2.5;
+  }
+
+  function currentDifficulty() {
+    return DIFFICULTY[state.settings.difficulty] || DIFFICULTY.CADET;
+  }
+
+  function showPhaseCaption(phase) {
+    if (state.settings.difficulty === 'ENGINEER') return;
+    const message = MISSION_CAPTIONS[phase];
+    if (!message) return;
+    state.ui.phaseCaption = message;
+    state.ui.phaseCaptionTimer = 4;
+  }
+
+  function rocketHitboxFor(x, y, upper) {
+    const hb = currentDifficulty().hitboxScale;
+    if (upper) return { x: x - 10 * hb, y: y - 24 * hb, w: 20 * hb, h: 48 * hb };
+    return { x: x - 11 * hb, y: y - 26 * hb, w: 22 * hb, h: 52 * hb };
   }
 
   function updateButtons() {
@@ -553,8 +608,8 @@
   }
 
   function freshSystems() {
-    const labels = ['LOX LOAD', 'LNG LOAD', 'FTS ARMED', 'TVC NOMINAL'];
-    return labels.map((label, i) => ({ label, ok: false, x: 46 + (i % 2) * 164, y: 314 + Math.floor(i / 2) * 52, w: 148, h: 36 }));
+    const labels = ['LOX LOAD', 'LNG LOAD', 'FTS ARMED', 'TVC NOMINAL', 'RANGE GREEN'];
+    return labels.map((label, i) => ({ label, ok: false, x: 46 + (i % 2) * 164, y: 300 + Math.floor(i / 2) * 52, w: 148, h: 36 }));
   }
 
   function resetSession() {
@@ -565,10 +620,16 @@
     state.ui.radio = 'Gradatim ferociter.';
     state.ui.radioTimer = 3;
     state.ui.countdownStarted = false;
-    state.ui.countdown = 10;
-    state.ui.countdownMark = 10;
+    state.ui.countdown = 5;
+    state.ui.countdownMark = 5;
     state.ui.systems = freshSystems();
     state.ui.tip = LOADING_TIPS[Math.floor(Math.random() * LOADING_TIPS.length)];
+    state.ui.padPollTimer = 0;
+    state.ui.tutorialTimer = 0;
+    state.ui.tutorialSeen = false;
+    state.ui.phaseCaption = '';
+    state.ui.phaseCaptionTimer = 0;
+    state.ui.difficultyButtons = [];
     state.ui.tortoiseMoved = 0;
     state.ui.flash = 0;
     state.ui.missionPatch = null;
@@ -580,6 +641,7 @@
       missionName: `NG-${state.settings.missionCount + 1}`,
       totalElapsed: 0,
       phaseElapsed: 0,
+      phaseGrace: 0,
       phase: 'PAD',
       ascentGrace: 2.5,
       score: 0,
@@ -602,7 +664,7 @@
     state.booster = { x: CW / 2, y: 130, vx: 0, vy: 4.2, burn: 0, alive: true, reentryBurnDone: false, landingBurnDone: false, decalVisible: false, touchdown: false, touchdownVy: 0 };
     state.obstacles = [];
     state.upperHazards = [];
-    state.effects = { fairingSplit: 0, stageSepPuff: 0, splitView: false, rudTimer: 0, quickMessage: '' };
+    state.effects = { fairingSplit: 0, stageSepPuff: 0, splitView: false, rudTimer: 0, quickMessage: '', delugeTimer: 0, liftoffShake: 0, shockRing: 0 };
     state.easter.binLabels = BLOCK_LABELS[Math.floor(Math.random() * BLOCK_LABELS.length)];
     Audio.setMood('idle', state.settings);
     state.effects.quickMessage = '';
@@ -639,6 +701,27 @@
     state.telemetry.tPlus = formatMissionTime(actual);
     state.telemetry.lng = clamp(100 - (state.session.totalElapsed / 60) * 72 - state.upper.targetLock * 4, 3, 100);
     state.telemetry.lox = clamp(100 - (state.session.totalElapsed / 60) * 82 - state.upper.targetLock * 5, 2, 100);
+    const alt = Math.max(0, state.telemetry.altitude);
+    const velocity = Math.max(0, state.telemetry.velocity);
+    const temp = Math.max(216.65, 288.15 - 0.0065 * alt);
+    const rho = 1.225 * Math.exp(-alt / 8500);
+    const speedOfSound = Math.sqrt(1.4 * 287.05 * temp);
+    const mach = speedOfSound > 0 ? velocity / speedOfSound : 0;
+    const qPa = 0.5 * rho * velocity * velocity;
+    const thrustN = 7 * 640000 * 4.44822;
+    const dryMass = 220000;
+    const propMass = ((state.telemetry.lox + state.telemetry.lng) / 200) * 1150000;
+    const mass = dryMass + propMass;
+    const twr = (mass > 0 ? thrustN / (mass * 9.80665) : 0);
+    const g0Isp = state.session.totalElapsed < PHASES.STAGE_SEP.end ? 310 : 445;
+    const deltaV = g0Isp * 9.80665 * Math.log(Math.max(1.001, mass / Math.max(dryMass, dryMass + propMass * 0.25)));
+    state.telemetry.engineering = {
+      density: rho,
+      mach,
+      qKpa: qPa / 1000,
+      twr,
+      deltaV
+    };
     state.session.maxAltitude = Math.max(state.session.maxAltitude, state.telemetry.altitude);
     state.session.maxVelocity = Math.max(state.session.maxVelocity, state.telemetry.velocity);
     state.session.maxQ = Math.max(state.session.maxQ, state.telemetry.q);
@@ -648,7 +731,9 @@
     resetSession();
     state.status = 'RUNNING';
     state.session.phase = 'PAD';
+    state.ui.padPollTimer = 0;
     state.ui.radio = 'Range is green. Fuel farm says hi.';
+    showPhaseCaption('PAD');
     Audio.setMood('pad', state.settings);
     Audio.play('ui_click', state.settings);
   }
@@ -739,14 +824,21 @@
   function spawnAtmosphericObstacle() {
     const types = state.session.phase === 'ASCENT' ? ['bird', 'bird', 'drone', 'balloon'] : ['drone', 'balloon'];
     const type = types[Math.floor(Math.random() * types.length)];
+    let x = rand(42, CW - 42);
+    for (let i = 0; i < 8; i++) {
+      const blocked = state.obstacles.some(o => o.y > -20 && o.y < CH + 20 && Math.abs(o.x - x) < 60);
+      if (!blocked) break;
+      x = rand(42, CW - 42);
+    }
+    const speedRamp = clamp(state.session.phaseElapsed / 6, 0.4, 1.0);
     state.obstacles.push({
       type,
-      x: rand(42, CW - 42),
+      x,
       y: -30,
       w: type === 'balloon' ? 24 : type === 'drone' ? 30 : 22,
       h: type === 'balloon' ? 36 : type === 'drone' ? 18 : 16,
       vx: rand(-0.8, 0.8),
-      vy: rand(2.4, 3.9),
+      vy: rand(2.4, 3.9) * speedRamp,
       whooshed: false
     });
   }
@@ -769,7 +861,9 @@
     let axis = 0;
     if (state.input.left) axis -= 1;
     if (state.input.right) axis += 1;
-    axis += clamp((state.input.pointerX - state.rocket.x) / 110, -1, 1) * (state.input.pointerDown ? 0.85 : 0);
+    const dx = state.input.pointerX - state.rocket.x;
+    const pointerAxis = Math.abs(dx) <= 12 ? 0 : clamp(dx / 110, -1, 1);
+    axis += pointerAxis * (state.input.pointerDown ? 0.85 : 0);
     return clamp(axis, -1, 1);
   }
 
@@ -780,11 +874,11 @@
     state.rocket.vx *= 0.88;
     state.rocket.vx = clamp(state.rocket.vx, -4.2, 4.2);
     state.rocket.x = clamp(state.rocket.x + state.rocket.vx * step, 28, CW - 28);
-    const gravity = lowGravity ? 0.05 : 0.18;
+    const gravity = lowGravity ? 0.05 : 0.15;
     state.rocket.vy += gravity * step;
     state.rocket.vy *= lowGravity ? 0.992 : 0.986;
     if (state.input.boostHeld) {
-      state.rocket.vy = Math.max(lowGravity ? -3.2 : -5.8, state.rocket.vy - (lowGravity ? 0.18 : 0.24) * step);
+      state.rocket.vy = Math.max(lowGravity ? -3.2 : -7.2, state.rocket.vy - (lowGravity ? 0.18 : 0.26) * step);
       state.rocket.burn = Math.max(state.rocket.burn, 0.08);
       spawnExhaust(lowGravity ? 'be3u' : 'be4', state.rocket.x, state.rocket.y + 28, lowGravity ? 0.7 : 1.1, state.effects.splitView ? 'upper' : 'main');
     }
@@ -821,6 +915,30 @@
 
   function triggerRud(messageKey) {
     if (state.status === 'RUD' || state.status === 'GAMEOVER') return;
+    if (!currentDifficulty().allowFail) {
+      Particles.burst(24, () => ({
+        kind: 'smoke',
+        section: state.effects.splitView ? 'upper' : 'main',
+        x: state.effects.splitView ? state.upper.x : state.rocket.x,
+        y: state.effects.splitView ? state.upper.y : state.rocket.y,
+        vx: rand(-1.2, 1.2),
+        vy: rand(-0.6, 0.9),
+        life: 0.7,
+        decay: 0.05,
+        size: rand(2, 6),
+        grow: 0.05,
+        alpha: 0.5,
+        color: '210,245,255'
+      }));
+      state.rocket.x = CW / 2;
+      state.rocket.y = CH * 0.55;
+      state.rocket.vx = 0;
+      state.rocket.vy = -1.2;
+      state.session.phaseGrace = Math.max(state.session.phaseGrace, 1);
+      showOverlayMessage('Whoops! Try again — the rocket is fine.', 1.8);
+      Audio.play('boop', state.settings);
+      return;
+    }
     state.status = 'RUD';
     state.effects.rudTimer = 1.5;
     state.effects.quickMessage = messageKey;
@@ -893,9 +1011,15 @@
     if (state.session.phase === 'UPPER_ASCENT') ratePhase('UPPER_ASCENT', state.upperHazards.length < 2 ? 'GOLD' : 'SILVER');
     state.session.phase = nextPhase;
     state.session.phaseElapsed = 0;
+    state.session.phaseGrace = currentDifficulty().graceFrames / BASE_FPS;
+    showPhaseCaption(nextPhase);
     switch (nextPhase) {
       case 'ASCENT':
         setRadio(RADIO.ASCENT, 2.2);
+        state.ui.tutorialTimer = state.ui.tutorialSeen ? 0 : 2;
+        state.effects.liftoffShake = 2;
+        state.effects.delugeTimer = Math.max(state.effects.delugeTimer, 3);
+        state.effects.shockRing = 1;
         Audio.setMood('ascent', state.settings);
         break;
       case 'MAX_Q':
@@ -934,7 +1058,11 @@
     state.session.phaseElapsed += dt;
     if (state.ui.radioTimer > 0) state.ui.radioTimer -= dt;
     if (state.ui.overlayTimer > 0) state.ui.overlayTimer -= dt;
+    if (state.ui.phaseCaptionTimer > 0) state.ui.phaseCaptionTimer -= dt;
     if (state.ui.flash > 0) state.ui.flash = Math.max(0, state.ui.flash - dt * 1.8);
+    if (state.session.phaseGrace > 0) state.session.phaseGrace = Math.max(0, state.session.phaseGrace - dt);
+    if (state.effects.delugeTimer > 0) state.effects.delugeTimer = Math.max(0, state.effects.delugeTimer - dt);
+    if (state.effects.shockRing > 0) state.effects.shockRing = Math.max(0, state.effects.shockRing - dt * 1.6);
     if (state.shake.duration > 0) {
       state.shake.duration = Math.max(0, state.shake.duration - dt);
       if (state.shake.duration === 0) state.shake.intensity = 0;
@@ -966,11 +1094,25 @@
     state.rocket.y = CH - 154 + Math.sin((performance.now() || 0) / 160) * 0.9;
     state.rocket.x = CW / 2;
     if (Math.random() < 0.4) spawnExhaust('be4', state.rocket.x, state.rocket.y + 34, 0.45, 'main');
+    state.ui.padPollTimer += dt;
+    const flipsDone = Math.floor(state.ui.padPollTimer / 0.25);
+    state.ui.systems.forEach((s, i) => {
+      const shouldGo = i < flipsDone;
+      if (shouldGo && !s.ok) Audio.play('ui_click', state.settings);
+      s.ok = shouldGo || s.ok;
+    });
     const allGreen = state.ui.systems.every(s => s.ok);
+    if (allGreen && !state.ui.countdownStarted) {
+      state.ui.countdownStarted = true;
+      state.ui.countdown = 5;
+      state.ui.countdownMark = 5;
+      Audio.play('success', state.settings);
+    }
     if (state.ui.countdownStarted) {
       state.session.totalElapsed = clamp(state.session.totalElapsed + dt, 0, PHASES.PAD.end);
-      Audio.updateRumble(0.3 + (10 - state.ui.countdown) * 0.04, state.settings);
-      state.ui.countdown -= dt * 2;
+      Audio.updateRumble(0.3 + (5 - state.ui.countdown) * 0.06, state.settings);
+      if (state.ui.countdown <= 3 && state.effects.delugeTimer <= 0) state.effects.delugeTimer = Math.max(state.effects.delugeTimer, state.ui.countdown + 3);
+      state.ui.countdown -= dt;
       const nextMark = Math.max(0, Math.ceil(state.ui.countdown));
       if (nextMark < state.ui.countdownMark) {
         state.ui.countdownMark = nextMark;
@@ -990,16 +1132,47 @@
 
   function updateAscent(dt) {
     const step = dt * BASE_FPS;
+    const mode = currentDifficulty();
     state.session.totalElapsed += dt;
     updateSky(dt, 0.6);
     applyRocketControl(dt, false);
+    if (state.ui.tutorialTimer > 0) {
+      state.ui.tutorialTimer = Math.max(0, state.ui.tutorialTimer - dt);
+      if (state.input.boostHeld || state.input.left || state.input.right || (state.input.pointerDown && Math.abs(state.input.pointerX - state.rocket.x) > 12)) {
+        state.ui.tutorialTimer = 0;
+        state.ui.tutorialSeen = true;
+      }
+    }
     if (state.input.boostHeld) {
       addShake(1.2, 0.1);
       Audio.updateRumble(0.55, state.settings);
     } else {
       Audio.updateRumble(0.35, state.settings);
     }
-    if (Math.random() < 0.06 * step / 3) spawnAtmosphericObstacle();
+    const spawnRate = 0.025 * mode.spawnMul;
+    if (state.session.phaseElapsed > 1.5 && state.ui.tutorialTimer <= 0) {
+      if (Math.random() < spawnRate * step) spawnAtmosphericObstacle();
+    }
+    if (state.effects.liftoffShake > 0) {
+      state.effects.liftoffShake = Math.max(0, state.effects.liftoffShake - dt);
+      addShake(3.2, 0.08);
+    }
+    if (state.effects.delugeTimer > 0 && Math.random() < 0.9) {
+      Particles.burst(5, () => ({
+        kind: 'smoke',
+        section: 'main',
+        x: CW / 2 + rand(-30, 30),
+        y: CH - 58 + rand(-8, 5),
+        vx: rand(-2.5, 2.5),
+        vy: rand(-2.4, -0.5),
+        life: 0.7,
+        decay: rand(0.05, 0.08),
+        size: rand(2, 5),
+        grow: 0.04,
+        alpha: 0.5,
+        color: '235,245,255'
+      }));
+    }
     for (let i = state.obstacles.length - 1; i >= 0; i--) {
       const o = state.obstacles[i];
       o.y += o.vy * step;
@@ -1010,7 +1183,7 @@
         o.whooshed = true;
         Audio.play('whoosh', state.settings);
       }
-      if (nearCollision({ x: state.rocket.x - 11, y: state.rocket.y - 26, w: 22, h: 52 }, { x: o.x - o.w / 2, y: o.y - o.h / 2, w: o.w, h: o.h })) {
+      if (state.session.phaseGrace <= 0 && nearCollision(rocketHitboxFor(state.rocket.x, state.rocket.y, false), { x: o.x - o.w / 2, y: o.y - o.h / 2, w: o.w, h: o.h })) {
         triggerRud('ascent');
         return;
       }
@@ -1019,19 +1192,19 @@
   }
 
   function updateMaxQ(dt) {
+    const mode = currentDifficulty();
     state.session.totalElapsed += dt;
     updateSky(dt, 0.75);
     applyRocketControl(dt, false);
     Audio.updateRumble(0.58, state.settings);
     const axis = playerInputAxis();
     const sign = axis > 0.2 ? 1 : axis < -0.2 ? -1 : 0;
-    if (sign && state.session.recentSteerSign && sign !== state.session.recentSteerSign) {
-      state.session.structuralStress += 0.16 + Math.abs(state.rocket.vx) * 0.03;
+    if (state.session.phaseGrace <= 0 && sign && state.session.recentSteerSign && sign !== state.session.recentSteerSign) {
+      state.session.structuralStress += mode.qStressGain + Math.abs(state.rocket.vx) * 0.02;
       state.session.lastSteerChange = state.session.totalElapsed;
       addShake(1.4, 0.15);
-    } else {
-      state.session.structuralStress = Math.max(0, state.session.structuralStress - dt * 0.08);
     }
+    state.session.structuralStress = Math.max(0, state.session.structuralStress - dt * mode.qStressDecay);
     state.session.recentSteerSign = sign || state.session.recentSteerSign;
     if (state.session.structuralStress >= 1) {
       triggerRud('maxq');
@@ -1096,8 +1269,9 @@
     if (splitT >= 48 && !state.booster.touchdown) {
       state.booster.touchdown = true;
       state.booster.touchdownVy = Math.abs(state.booster.vy * 60);
-      const centered = Math.abs(state.booster.x - CW / 2) <= 10;
-      const soft = state.booster.touchdownVy < 32;
+      const tol = currentDifficulty().landingTolerance;
+      const centered = Math.abs(state.booster.x - CW / 2) <= tol;
+      const soft = state.booster.touchdownVy < (tol * 2.4);
       if (centered && soft && state.booster.reentryBurnDone && state.booster.landingBurnDone) {
         state.session.boosterRecovered = true;
         Audio.play('landing_touchdown', state.settings);
@@ -1133,7 +1307,7 @@
       h.x += h.vx;
       h.y += h.vy;
       if (h.y > 325 || h.x < -40 || h.x > CW + 40) state.upperHazards.splice(i, 1);
-      if (nearCollision({ x: state.upper.x - 10, y: state.upper.y - 24, w: 20, h: 48 }, { x: h.x - h.w / 2, y: h.y - h.h / 2, w: h.w, h: h.h })) {
+      if (state.session.phaseGrace <= 0 && nearCollision(rocketHitboxFor(state.upper.x, state.upper.y, true), { x: h.x - h.w / 2, y: h.y - h.h / 2, w: h.w, h: h.h })) {
         triggerRud('orbit');
         return;
       }
@@ -1143,6 +1317,7 @@
   }
 
   function updateOrbitInsert(dt) {
+    const mode = currentDifficulty();
     state.session.totalElapsed += dt;
     updateSky(dt, 0.08);
     state.upper.targetBand = 0.5 + Math.sin(state.session.phaseElapsed * 2.2) * 0.22;
@@ -1153,12 +1328,15 @@
     else state.upper.targetLock = Math.max(0, state.upper.targetLock - dt * 0.55);
     spawnExhaust('be3u', state.upper.x, state.upper.y + 24, 0.65 + state.upper.throttle * 0.5, 'upper');
     if (state.session.phaseElapsed >= 5.8) {
-      if (state.upper.targetLock >= 3.2) state.session.orbitStatus = 'nominal';
-      else if (state.upper.throttle < state.upper.targetBand - 0.12) state.session.orbitStatus = 'low';
+      const error = Math.abs(state.telemetry.velocity - 7800);
+      if (error <= mode.secoBand) state.session.orbitStatus = 'nominal';
+      else if (state.telemetry.velocity < 7800) state.session.orbitStatus = 'low';
       else {
         state.session.orbitStatus = 'depleted';
-        triggerRud('offorbit');
-        return;
+        if (mode.allowFail) {
+          triggerRud('offorbit');
+          return;
+        }
       }
       transitionPhase('PAYLOAD_DEPLOY');
     }
@@ -1191,7 +1369,7 @@
     for (let i = state.upperHazards.length - 1; i >= 0; i--) {
       const h = state.upperHazards[i];
       h.y += h.vy * 1.2;
-      if (nearCollision({ x: state.rocket.x - 10, y: state.rocket.y - 24, w: 20, h: 48 }, { x: h.x - h.w / 2, y: h.y - h.h / 2, w: h.w, h: h.h })) {
+      if (state.session.phaseGrace <= 0 && nearCollision(rocketHitboxFor(state.rocket.x, state.rocket.y, true), { x: h.x - h.w / 2, y: h.y - h.h / 2, w: h.w, h: h.h })) {
         triggerRud('orbit');
         return;
       }
@@ -1280,17 +1458,98 @@
 
   function drawLaunchPad(ctx) {
     const baseY = CH - 54;
+    const blink = Math.floor((performance.now() || 0) / 500) % 2 === 0;
+    const leftTowerX = 40;
+    const rightTowerX = CW - 40;
+    const towerTopY = CH - 380;
+    const strongbackTilt = state.session.phase === 'ASCENT' ? clamp(state.session.phaseElapsed / 1.1, 0, 1) * 0.55 : 0;
+
+    ctx.fillStyle = '#1b2328';
+    ctx.fillRect(CW - 110, baseY - 186, 102, 128);
     ctx.fillStyle = '#11191d';
     ctx.fillRect(0, baseY, CW, 90);
+    ctx.fillStyle = '#2f3c45';
+    ctx.fillRect(0, CH - 18, CW, 8);
+    ctx.fillStyle = '#3e4c55';
+    ctx.fillRect(0, CH - 10, CW, 3);
+    ctx.strokeStyle = 'rgba(180,200,210,0.55)';
+    ctx.beginPath();
+    for (let x = 0; x <= CW; x += 12) {
+      ctx.moveTo(x, CH - 8);
+      ctx.lineTo(x + 8, CH - 4);
+    }
+    ctx.stroke();
+
+    // Tank farm
+    const tanks = [
+      { x: 70, y: baseY - 132, w: 24, h: 78, label: 'LOX' },
+      { x: 100, y: baseY - 118, w: 20, h: 64, label: 'LNG' },
+      { x: 126, y: baseY - 106, w: 16, h: 52, label: 'HE' },
+      { x: 148, y: baseY - 96, w: 14, h: 42, label: 'HE' }
+    ];
+    tanks.forEach((tank, idx) => {
+      ctx.fillStyle = '#e8f2f8';
+      ctx.fillRect(tank.x, tank.y, tank.w, tank.h);
+      ctx.fillRect(tank.x + 2, tank.y - 8, tank.w - 4, 8);
+      ctx.fillStyle = '#18303d';
+      ctx.font = '7px "Share Tech Mono", monospace';
+      ctx.fillText(tank.label, tank.x + 2, tank.y + tank.h / 2);
+      if (idx === 0 && Math.random() < 0.35) {
+        Particles.spawn({ kind: 'smoke', section: 'main', x: tank.x + tank.w / 2 + rand(-2, 2), y: tank.y - 6, vx: rand(-0.2, 0.2), vy: rand(-0.5, -0.1), life: 0.4, decay: 0.04, size: 2, grow: 0.03, alpha: 0.35, color: '210,245,255' });
+      }
+    });
+
+    // Lightning towers + catenary
+    [leftTowerX, rightTowerX].forEach((x) => {
+      ctx.strokeStyle = '#dce6ef';
+      ctx.beginPath();
+      ctx.moveTo(x - 6, baseY);
+      ctx.lineTo(x, towerTopY);
+      ctx.lineTo(x + 6, baseY);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(x - 6, baseY - 120); ctx.lineTo(x + 6, baseY - 120);
+      ctx.moveTo(x - 4, baseY - 220); ctx.lineTo(x + 4, baseY - 220);
+      ctx.moveTo(x - 2, baseY - 300); ctx.lineTo(x + 2, baseY - 300);
+      ctx.stroke();
+      ctx.fillStyle = blink ? '#ff4d4d' : '#5a1a1a';
+      ctx.beginPath();
+      ctx.arc(x, towerTopY - 4, 3, 0, Math.PI * 2);
+      ctx.fill();
+    });
+    ctx.strokeStyle = 'rgba(210,225,235,0.8)';
+    ctx.beginPath();
+    ctx.moveTo(leftTowerX, towerTopY - 4);
+    ctx.quadraticCurveTo(CW / 2, towerTopY + 14, rightTowerX, towerTopY - 4);
+    ctx.stroke();
+
+    // Water tower
+    ctx.fillStyle = '#e9f1f6';
+    ctx.fillRect(CW - 96, CH - 248, 14, 140);
+    ctx.fillRect(CW - 108, CH - 262, 38, 18);
+    ctx.fillStyle = '#214150';
+    ctx.font = '8px "Share Tech Mono", monospace';
+    ctx.fillText('H₂O', CW - 103, CH - 248);
+
+    // Launch mount + trench
     ctx.fillStyle = '#2d3a43';
     ctx.fillRect(CW / 2 - 118, baseY - 14, 236, 14);
-    ctx.fillStyle = '#41525d';
-    ctx.fillRect(CW / 2 - 22, baseY - 196, 44, 182);
+    ctx.fillStyle = '#36434b';
+    ctx.fillRect(CW / 2 - 28, baseY - 30, 56, 16);
+    ctx.fillStyle = '#0d1216';
+    ctx.fillRect(CW / 2 - 34, baseY - 8, 68, 8);
+
+    // Strongback / T-E
+    ctx.save();
+    ctx.translate(CW / 2 + 34, baseY - 14);
+    ctx.rotate(strongbackTilt);
     ctx.fillStyle = '#647884';
-    ctx.fillRect(CW / 2 + 52, baseY - 214, 12, 200);
-    ctx.fillRect(CW / 2 + 40, baseY - 214, 36, 10);
+    ctx.fillRect(-3, -200, 12, 186);
+    ctx.fillRect(-6, -204, 18, 10);
     ctx.fillStyle = '#54656f';
-    for (let i = 0; i < 12; i++) ctx.fillRect(CW / 2 + 52, baseY - 200 + i * 15, 12, 3);
+    for (let i = 0; i < 12; i++) ctx.fillRect(-3, -190 + i * 15, 12, 3);
+    [34, 74, 110, 146].forEach((h) => ctx.fillRect(-20, -h, 20, 2));
+    ctx.restore();
 
     const labels = state.easter.binLabels;
     const stacks = [28, 48, 68, CW - 42, CW - 62, CW - 82];
@@ -1315,12 +1574,12 @@
 
     if (state.ui.countdownStarted) {
       const t = state.ui.countdown;
-      if (t < 8.5 && t > 8) {
+      if (t < 4.5 && t > 4.0) {
         ctx.fillStyle = '#9ab2bf';
-        ctx.fillRect(CW / 2 - 166 + (8.5 - t) * 80, baseY - 10, 14, 6);
-        ctx.fillRect(CW / 2 - 162 + (8.5 - t) * 80, baseY - 15, 6, 5);
+        ctx.fillRect(CW / 2 - 166 + (4.5 - t) * 80, baseY - 10, 14, 6);
+        ctx.fillRect(CW / 2 - 162 + (4.5 - t) * 80, baseY - 15, 6, 5);
       }
-      if (t < 15 && t > 5) {
+      if (t < 3.5 && t > 2.6) {
         ctx.strokeStyle = '#ffcf5d';
         ctx.beginPath();
         ctx.moveTo(CW / 2 + 126, baseY - 12);
@@ -1333,9 +1592,39 @@
         ctx.fillText('Last person leaving the pad.', CW / 2 + 70, baseY - 30);
       }
     }
+
+    // Deluge and trench steam
+    if (state.effects.delugeTimer > 0) {
+      Particles.burst(5, () => ({
+        kind: 'smoke',
+        section: 'main',
+        x: CW / 2 + rand(-26, 26),
+        y: baseY - 16 + rand(-4, 4),
+        vx: rand(-1.4, 1.4),
+        vy: rand(-2.5, -0.8),
+        life: 0.6,
+        decay: 0.06,
+        size: rand(2, 5),
+        grow: 0.04,
+        alpha: 0.45,
+        color: '240,250,255'
+      }));
+    }
   }
 
   function drawObstacle(ctx, o) {
+    if (state.settings.difficulty !== 'ENGINEER') {
+      const closing = state.rocket.y > o.y ? (state.rocket.y - o.y) / Math.max(0.001, o.vy * BASE_FPS) : 9;
+      if (closing <= 1.05 && Math.abs(o.x - state.rocket.x) < Math.max(24, o.w * 0.9)) {
+        ctx.fillStyle = 'rgba(255,220,90,0.8)';
+        ctx.beginPath();
+        ctx.moveTo(o.x, 8);
+        ctx.lineTo(o.x - 8, 18);
+        ctx.lineTo(o.x + 8, 18);
+        ctx.closePath();
+        ctx.fill();
+      }
+    }
     ctx.save();
     ctx.translate(o.x, o.y);
     if (o.type === 'bird') {
@@ -1465,22 +1754,31 @@
 
   function drawHud(ctx) {
     ctx.save();
-    ctx.fillStyle = '#ffb300';
-    ctx.font = 'bold 12px "Share Tech Mono", monospace';
-    ctx.fillText(`${currentPhaseLabel()}  │  ${state.session.missionName}`, 10, 20);
     ctx.fillStyle = '#8ce0ff';
-    ctx.fillText(state.telemetry.tPlus, CW - 112, 20);
+    ctx.font = 'bold 18px "Share Tech Mono", monospace';
+    ctx.fillText(state.telemetry.tPlus, 10, 22);
+    ctx.fillStyle = '#ffb300';
+    ctx.font = 'bold 11px "Share Tech Mono", monospace';
+    ctx.fillText(`${currentPhaseLabel()}  │  ${state.session.missionName}`, 10, 38);
+    const phaseOrder = ['PAD', 'ASCENT', 'MAX_Q', 'COAST', 'STAGE_SEP', 'UPPER_ASCENT', 'ORBIT_INSERT', 'PAYLOAD_DEPLOY'];
+    const activeIdx = phaseOrder.indexOf(state.session.phase);
+    phaseOrder.forEach((p, i) => {
+      ctx.fillStyle = i <= activeIdx ? '#33ff33' : 'rgba(120,140,150,0.6)';
+      ctx.beginPath();
+      ctx.arc(230 + i * 20, 16, 4, 0, Math.PI * 2);
+      ctx.fill();
+    });
     ctx.fillStyle = '#33ff33';
     ctx.font = '10px "Share Tech Mono", monospace';
-    ctx.fillText(`ALT ${(state.telemetry.altitude / 1000).toFixed(1)} km`, 10, 40);
-    ctx.fillText(`VEL ${Math.round(state.telemetry.velocity)} m/s`, 10, 54);
-    ctx.fillText(`Q ${state.telemetry.q.toFixed(1)} kPa`, 10, 68);
-    ctx.fillText(`LNG ${state.telemetry.lng.toFixed(1)}%`, 170, 40);
-    ctx.fillText(`LOX ${state.telemetry.lox.toFixed(1)}%`, 170, 54);
-    ctx.fillText(`MAX-Q STRESS ${(state.session.structuralStress * 100).toFixed(0)}%`, 170, 68);
+    ctx.fillText(`ALT ${(state.telemetry.altitude / 1000).toFixed(1)} km`, 10, 54);
+    ctx.fillText(`VEL ${Math.round(state.telemetry.velocity)} m/s`, 10, 68);
+    ctx.fillText(`Q ${state.telemetry.q.toFixed(1)} kPa`, 10, 82);
+    ctx.fillText(`LNG ${state.telemetry.lng.toFixed(1)}%`, 170, 54);
+    ctx.fillText(`LOX ${state.telemetry.lox.toFixed(1)}%`, 170, 68);
+    ctx.fillText(`STRESS ${(state.session.structuralStress * 100).toFixed(0)}%`, 170, 82);
     ctx.fillStyle = '#ffcf5d';
     ctx.font = '10px "Share Tech Mono", monospace';
-    ctx.fillText(state.ui.radio, 10, 88);
+    ctx.fillText(state.ui.radio, 10, 102);
     if (state.ui.overlayTimer > 0) {
       ctx.fillStyle = '#ffcf5d';
       ctx.fillRect(36, CH - 54, CW - 72, 22);
@@ -1490,11 +1788,13 @@
     }
     if (state.session.phase === 'MAX_Q') {
       ctx.strokeStyle = '#ff5d5d';
-      ctx.strokeRect(171, 78, 120, 10);
+      ctx.strokeRect(171, 90, 120, 10);
       ctx.fillStyle = '#ff5d5d';
-      ctx.fillRect(171, 78, 120 * clamp(state.session.structuralStress, 0, 1), 10);
+      ctx.fillRect(171, 90, 120 * clamp(state.session.structuralStress, 0, 1), 10);
+      ctx.fillStyle = 'rgba(255,220,90,0.45)';
+      ctx.fillRect(171 + 120 * 0.72, 90, 120 * 0.28, 10);
       ctx.fillStyle = '#ff9d5d';
-      ctx.fillText('THROTTLE BUCKET — RIDE IT OUT', 170, 102);
+      ctx.fillText('Easy on the stick — ride it out.', 170, 114);
     }
     if (state.session.phase === 'ORBIT_INSERT') {
       ctx.strokeStyle = '#8ce0ff';
@@ -1504,6 +1804,54 @@
       ctx.fillRect(CW - 36, targetY - 7, 14, 14);
       ctx.fillStyle = '#ffcf5d';
       ctx.fillRect(CW - 35, 112 + (1 - state.upper.throttle) * 120, 12, 6);
+    }
+    if (state.settings.difficulty === 'ENGINEER' && state.settings.engineerPanel) {
+      const eng = state.telemetry.engineering || {};
+      ctx.fillStyle = 'rgba(0,0,0,0.35)';
+      ctx.fillRect(CW - 170, 120, 160, 106);
+      ctx.strokeStyle = '#8ce0ff';
+      ctx.strokeRect(CW - 170, 120, 160, 106);
+      ctx.fillStyle = '#8ce0ff';
+      ctx.fillText(`ΔV ${(eng.deltaV || 0).toFixed(0)} m/s`, CW - 164, 136);
+      ctx.fillText(`Mach ${(eng.mach || 0).toFixed(2)}`, CW - 164, 150);
+      ctx.fillText(`ρ ${(eng.density || 0).toFixed(3)} kg/m³`, CW - 164, 164);
+      ctx.fillText(`T/W ${(eng.twr || 0).toFixed(2)}`, CW - 164, 178);
+      ctx.fillText(`q ${(eng.qKpa || 0).toFixed(1)} kPa`, CW - 164, 192);
+      ctx.strokeStyle = 'rgba(140,224,255,0.35)';
+      ctx.beginPath();
+      ctx.moveTo(CW - 164, 212);
+      ctx.lineTo(CW - 20, 212 - clamp((eng.qKpa || 0) * 0.15, 0, 36));
+      ctx.stroke();
+    }
+    if (state.session.phaseGrace > 0) {
+      const pulse = 0.45 + Math.sin((performance.now() || 0) / 150) * 0.2;
+      ctx.strokeStyle = `rgba(120,255,170,${pulse})`;
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.arc(state.rocket.x, state.rocket.y, 26, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.fillStyle = '#9df6bf';
+      ctx.fillText('GRACE', state.rocket.x - 14, state.rocket.y - 32);
+    }
+    if (state.ui.tutorialTimer > 0 && state.session.phase === 'ASCENT') {
+      ctx.fillStyle = 'rgba(0,0,0,0.4)';
+      ctx.fillRect(58, CH - 112, CW - 116, 32);
+      ctx.strokeStyle = '#ffcf5d';
+      ctx.strokeRect(58, CH - 112, CW - 116, 32);
+      ctx.fillStyle = '#ffcf5d';
+      ctx.textAlign = 'center';
+      ctx.fillText('Hold BOOST to climb. ◀▶ to steer.', CW / 2, CH - 92);
+      ctx.textAlign = 'left';
+    }
+    if (state.ui.phaseCaptionTimer > 0 && state.ui.phaseCaption) {
+      ctx.fillStyle = 'rgba(0,0,0,0.45)';
+      ctx.fillRect(24, 116, CW - 48, 28);
+      ctx.strokeStyle = '#8ce0ff';
+      ctx.strokeRect(24, 116, CW - 48, 28);
+      ctx.fillStyle = '#8ce0ff';
+      ctx.textAlign = 'center';
+      ctx.fillText(state.ui.phaseCaption, CW / 2, 134);
+      ctx.textAlign = 'left';
     }
     ctx.restore();
   }
@@ -1561,10 +1909,22 @@
     ctx.strokeRect(86, 254, CW - 172, 42);
     ctx.font = 'bold 16px "Share Tech Mono", monospace';
     ctx.fillText('TAP OR PRESS SPACE TO BEGIN PAD OPS', CW / 2, 281);
+    state.ui.difficultyButtons = [
+      { mode: 'KID', x: 80, y: 302, w: 78, h: 24 },
+      { mode: 'CADET', x: 171, y: 302, w: 78, h: 24 },
+      { mode: 'ENGINEER', x: 262, y: 302, w: 78, h: 24 }
+    ];
+    state.ui.difficultyButtons.forEach((btn) => {
+      const active = state.settings.difficulty === btn.mode;
+      ctx.strokeStyle = active ? '#33ff33' : '#8aa2b0';
+      ctx.strokeRect(btn.x, btn.y, btn.w, btn.h);
+      ctx.fillStyle = active ? '#33ff33' : '#8aa2b0';
+      ctx.fillText(btn.mode, btn.x + btn.w / 2, btn.y + 16);
+    });
     ctx.fillStyle = '#33ff33';
     ctx.font = '11px "Share Tech Mono", monospace';
-    ctx.fillText('Tap systems green, survive Max-Q, recover the booster, hit orbit, deploy payload.', CW / 2, 336);
-    ctx.fillText('Konami code unlocks Bezos Mode. That is the entire joke.', CW / 2, 356);
+    ctx.fillText('Auto-poll pad, survive Max-Q, recover booster, hit orbit, deploy payload.', CW / 2, 346);
+    ctx.fillText('Konami code unlocks Bezos Mode. That is the entire joke.', CW / 2, 366);
     if (state.settings.bestFlight) ctx.fillText(`Mission Record: ${state.settings.bestFlight.name} | ${state.settings.bestFlight.medal}`, CW / 2, 386);
     ctx.fillText('P pause | M mute | Settings in pause menu', CW / 2, 408);
   }
@@ -1577,9 +1937,9 @@
     ctx.strokeRect(18, 236, CW - 36, 214);
     ctx.fillStyle = '#33ff33';
     ctx.font = '18px "VT323", monospace';
-    ctx.fillText('GO / NO-GO POLL', 34, 260);
+    ctx.fillText('AUTO GO / NO-GO POLL', 34, 260);
     ctx.font = '10px "Share Tech Mono", monospace';
-    ctx.fillText('Tap each system to confirm green. Then hit BOOST for T-10 ignition.', 34, 278);
+    ctx.fillText('Systems auto-flip green. Tap anywhere to jump to T-1 liftoff.', 34, 278);
     state.ui.systems.forEach(sys => {
       ctx.strokeStyle = sys.ok ? '#33ff33' : '#56666f';
       ctx.strokeRect(sys.x, sys.y, sys.w, sys.h);
@@ -1587,7 +1947,7 @@
       ctx.fillText(`${sys.label} ${sys.ok ? '✅' : '—'}`, sys.x + 10, sys.y + 22);
     });
     ctx.fillStyle = state.ui.systems.every(s => s.ok) ? '#ffcf5d' : '#8aa2b0';
-    ctx.fillText(state.ui.countdownStarted ? `IGNITION STARTED — T-${Math.max(0, Math.ceil(state.ui.countdown))}` : 'BOOST = ARM IGNITION', 34, 428);
+    ctx.fillText(state.ui.countdownStarted ? `IGNITION STARTED — T-${Math.max(0, Math.ceil(state.ui.countdown))}` : 'AUTOMATED POLL IN PROGRESS', 34, 446);
     ctx.restore();
   }
 
@@ -1620,11 +1980,12 @@
       ['Music', state.settings.music],
       ['Reduced motion', state.settings.reducedMotion],
       ['Reduced flashes', state.settings.reducedFlashes],
-      ['Haptics', state.settings.haptics]
+      ['Haptics', state.settings.haptics],
+      ['Engineer panel', state.settings.engineerPanel]
     ];
-    state.ui.settingRows = rows.map((row, idx) => ({ x: 66, y: 194 + idx * 34, w: 288, h: 24, key: row[0] }));
+    state.ui.settingRows = rows.map((row, idx) => ({ x: 66, y: 194 + idx * 30, w: 288, h: 24, key: row[0] }));
     rows.forEach((row, idx) => {
-      const y = 212 + idx * 34;
+      const y = 212 + idx * 30;
       ctx.fillStyle = '#8ce0ff';
       ctx.font = '11px "Share Tech Mono", monospace';
       ctx.fillText(row[0], 70, y);
@@ -1632,7 +1993,8 @@
       ctx.fillText(row[1] ? 'ON' : 'OFF', 290, y);
     });
     ctx.fillStyle = '#ffcf5d';
-    ctx.fillText('Tap a row to toggle. RESET RECORD is in the side panel.', 70, 372);
+    ctx.fillText(`Difficulty: ${state.settings.difficulty}`, 70, 356);
+    ctx.fillText('Tap a row to toggle. RESET RECORD is in the side panel.', 70, 374);
     ctx.restore();
   }
 
@@ -1744,7 +2106,19 @@
         Particles.draw(ctx, 'main');
         state.obstacles.forEach(o => drawObstacle(ctx, o));
         drawVaporCone(ctx);
+        if (state.effects.shockRing > 0) {
+          const r = (1 - state.effects.shockRing) * 170;
+          ctx.strokeStyle = `rgba(245,250,255,${state.effects.shockRing})`;
+          ctx.lineWidth = 2;
+          ctx.beginPath();
+          ctx.arc(CW / 2, CH - 54, r, 0, Math.PI * 2);
+          ctx.stroke();
+        }
         if (state.status !== 'RUD') drawRocket(ctx, state.rocket.x, state.rocket.y, state.rocket.tilt, 'main', { fairingGone: state.rocket.fairingGone });
+        if (state.session.phase === 'ASCENT' && state.session.phaseElapsed < 1) {
+          ctx.fillStyle = 'rgba(255,210,120,0.35)';
+          for (let i = 0; i < 6; i++) ctx.fillRect(CW / 2 - 18 + i * 6, CH - 28 + i, 3, 28);
+        }
         if (state.session.phase === 'STAGE_SEP') {
           drawRocket(ctx, CW / 2, CH * 0.30, 0, 'upper', { fairingGone: false });
           drawRocket(ctx, CW / 2, CH * 0.30 + (state.session.phaseElapsed * 46), 0.05, 'booster', { fairingGone: true });
@@ -1756,6 +2130,11 @@
         }
       }
       drawHud(ctx);
+      if (state.session.phase === 'STAGE_SEP' || (state.session.phase === 'UPPER_ASCENT' && !state.rocket.fairingGone) || state.session.phase === 'ORBIT_INSERT') {
+        ctx.fillStyle = '#8ce0ff';
+        ctx.font = '10px "Share Tech Mono", monospace';
+        ctx.fillText('[SKIP]', CW - 52, CH - 10);
+      }
       if (state.session.phase === 'PAD') drawPadOverlay(ctx);
     }
 
@@ -1820,6 +2199,7 @@
         if (row.key === 'Reduced motion') state.settings.reducedMotion = !state.settings.reducedMotion;
         if (row.key === 'Reduced flashes') state.settings.reducedFlashes = !state.settings.reducedFlashes;
         if (row.key === 'Haptics') state.settings.haptics = !state.settings.haptics;
+        if (row.key === 'Engineer panel') state.settings.engineerPanel = !state.settings.engineerPanel;
         saveSettings();
         Audio.setMute(state.settings);
         Audio.setMood(state.session.phase === 'MAX_Q' ? 'maxq' : state.status === 'READY' ? 'idle' : 'ascent', state.settings);
@@ -1831,6 +2211,7 @@
 
   function handleTap(x, y) {
     state.input.pointerX = x;
+    if (state.ui.phaseCaptionTimer > 0) state.ui.phaseCaptionTimer = 0;
     if (state.ui.settingsOpen && toggleSettingByRow(y)) {
       Audio.play('ui_click', state.settings);
       return;
@@ -1845,6 +2226,14 @@
       }
     }
     if (state.status === 'READY') {
+      for (const btn of state.ui.difficultyButtons || []) {
+        if (x >= btn.x && x <= btn.x + btn.w && y >= btn.y && y <= btn.y + btn.h) {
+          state.settings.difficulty = btn.mode;
+          saveSettings();
+          Audio.play('ui_click', state.settings);
+          return;
+        }
+      }
       startPadOps();
       return;
     }
@@ -1864,20 +2253,31 @@
         Audio.play('tortoise', state.settings);
         return;
       }
-      for (const sys of state.ui.systems) {
-        if (x >= sys.x && x <= sys.x + sys.w && y >= sys.y && y <= sys.y + sys.h) {
-          sys.ok = true;
-          Audio.play('ui_click', state.settings);
-          return;
-        }
-      }
-      if (state.ui.systems.every(s => s.ok) && !state.ui.countdownStarted) {
+      if (!state.ui.countdownStarted) {
+        state.ui.systems.forEach(s => { s.ok = true; });
         state.ui.countdownStarted = true;
-        state.ui.countdown = 10;
-        state.ui.countdownMark = 10;
+        state.ui.countdown = 1;
+        state.ui.countdownMark = 1;
+        Audio.play('success', state.settings);
+        return;
+      }
+      if (state.ui.countdownStarted) {
+        state.ui.countdown = Math.min(state.ui.countdown, 1);
         Audio.play('ui_click', state.settings);
         return;
       }
+    }
+    if (state.status === 'RUNNING' && x > CW - 64 && y > CH - 24) {
+      if (state.session.phase === 'STAGE_SEP') {
+        state.session.totalElapsed = PHASES.STAGE_SEP.end;
+        transitionPhase('UPPER_ASCENT');
+      } else if (state.session.phase === 'UPPER_ASCENT' && !state.rocket.fairingGone) {
+        state.rocket.fairingGone = true;
+        state.effects.fairingSplit = 0.8;
+      } else if (state.session.phase === 'ORBIT_INSERT') {
+        state.session.phaseElapsed = 5.8;
+      }
+      Audio.play('ui_click', state.settings);
     }
   }
 
@@ -1992,6 +2392,7 @@
       setTimeout(() => {
         if (!isSectionActive()) pauseGame(true);
         else if (state.status === 'PAUSED_AUTO' && !document.hidden) resumeGame();
+        else if (state.status === 'READY') startPadOps();
       }, 0);
     });
     bindTouchButtons();
