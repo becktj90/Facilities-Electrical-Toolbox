@@ -381,7 +381,7 @@
       label: pick(BLOCK_LABELS),
       cracked: false,
       flashTimer: 0,
-      rainbowHue: isRainbow ? (rainbowHue == null ? rand(0, 360) : rainbowHue) : null,
+      rainbowHue: isRainbow ? ((rainbowHue === null || rainbowHue === undefined) ? rand(0, 360) : rainbowHue) : null,
     };
   }
 
@@ -1009,7 +1009,7 @@
     const w = BLOCK_W * scale, h = BLOCK_H * scale;
     const def = TYPES[typeKey] || TYPES.GRAY;
     const color = typeKey === 'RAINBOW'
-      ? `hsl(${rainbowHue == null ? (Date.now() / 60) % 360 : rainbowHue},100%,65%)`
+      ? `hsl(${(rainbowHue === null || rainbowHue === undefined) ? (Date.now() / 60) % 360 : rainbowHue},100%,65%)`
       : def.color;
 
     ctx.save();
