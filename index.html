@@ -2713,7 +2713,11 @@
           <div class="card-body" style="text-align:center">
             <div id="arcade-fs-wrapper" style="position:relative;display:inline-block;width:100%">
               <canvas id="arcadeCanvas" width="420" height="640" style="display:block;margin:0 auto;border:2px solid var(--green);box-shadow:var(--glow-md);cursor:pointer;max-width:100%"></canvas>
-              <button onclick="arcadeFullscreen()" title="Toggle fullscreen" style="position:absolute;top:4px;right:4px;background:rgba(0,0,0,0.75);color:var(--green);border:1px solid var(--green);font-family:var(--font-mono);font-size:0.68rem;padding:2px 7px;cursor:pointer;z-index:10">&#x26F6; FS</button>
+              <div style="position:absolute;top:4px;right:4px;display:flex;gap:4px;z-index:10">
+                <button id="arcade-mute-btn" onclick="arcadeToggleMute()" title="Toggle mute" style="background:rgba(0,0,0,0.75);color:var(--green);border:1px solid var(--green);font-family:var(--font-mono);font-size:0.68rem;padding:2px 7px;cursor:pointer">🔊</button>
+                <button id="arcade-pause-btn" onclick="arcadeTogglePause()" title="Pause mission" style="background:rgba(0,0,0,0.75);color:var(--green);border:1px solid var(--green);font-family:var(--font-mono);font-size:0.68rem;padding:2px 7px;cursor:pointer">⏸</button>
+                <button onclick="arcadeFullscreen()" title="Toggle fullscreen" style="background:rgba(0,0,0,0.75);color:var(--green);border:1px solid var(--green);font-family:var(--font-mono);font-size:0.68rem;padding:2px 7px;cursor:pointer">&#x26F6; FS</button>
+              </div>
             </div>
 
             <!-- On-screen touch controls (great for mobile, useful on desktop too) -->
@@ -3852,5 +3856,6 @@
 
 <script src="https://cdn.jsdelivr.net/npm/javascript-lp-solver/prod/solver.js"></script>
 <script src="js/app.js"></script>
+<script src="js/arcade.js"></script>
 </body>
 </html>
