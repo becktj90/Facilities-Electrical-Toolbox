@@ -80,7 +80,7 @@
     BOOSTER_LANDING: { label: 'BOOSTER RECOVERY', start: 34, end: 48 },
     ORBIT_INSERT: { label: 'ORBIT INSERT', start: 51, end: 57 },
     PAYLOAD_DEPLOY: { label: 'PAYLOAD DEPLOY', start: 57, end: 61 },
-    EXTENDED: { label: 'EXTENDED MISSION', start: 60, end: Infinity }
+    EXTENDED: { label: 'EXTENDED MISSION', start: 61, end: Infinity }
   };
   const MAIN_TIMELINE = [
     { t: 0, actual: -30, altitude: 0, velocity: 0, q: 0 },
@@ -101,6 +101,9 @@
     { t: 48, altitude: 0, velocity: -16 }
   ];
   const KONAMI = ['ArrowUp', 'ArrowUp', 'ArrowDown', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'ArrowLeft', 'ArrowRight', 'KeyB', 'KeyA'];
+  const PAD_POLL_FLIP_SEC = 0.5;
+  const PAD_SKY_ALTITUDE_THRESHOLD = 18000;
+  const OBSTACLE_WARNING_TIME = 1.5;
 
   const Settings = {
     load() {
@@ -821,6 +824,10 @@
     state.world.padGone = state.world.scrollY > CH + 180;
   }
 
+  function padPollDurationSeconds() {
+    return state.ui.systems.length * PAD_POLL_FLIP_SEC;
+  }
+
   function spawnExhaust(kind, x, y, strength, section) {
     const count = state.settings.reducedMotion ? 3 : 10;
     Particles.burst(count, () => ({
@@ -1182,7 +1189,7 @@
     state.rocket.x = CW / 2;
     if (Math.random() < 0.4) spawnExhaust('be4', state.rocket.x, state.rocket.y + 34, 0.45, 'main');
     state.ui.padPollTimer += dt;
-    const flipsDone = Math.floor(state.ui.padPollTimer / 0.5);
+    const flipsDone = Math.floor(state.ui.padPollTimer / PAD_POLL_FLIP_SEC);
     state.ui.systems.forEach((s, i) => {
       const shouldGo = i < flipsDone;
       if (shouldGo && !s.ok) Audio.play('ui_click', state.settings);
@@ -1320,7 +1327,7 @@
     state.session.structuralStress = Math.max(0, state.session.structuralStress - dt * mode.qStressDecay);
     if (state.settings.difficulty === 'CADET') state.session.structuralStress = Math.min(state.session.structuralStress, 0.45);
     state.session.recentSteerSign = sign || state.session.recentSteerSign;
-    if (state.session.structuralStress >= (state.settings.difficulty === 'CADET' ? 99 : 1)) {
+    if (state.settings.difficulty !== 'CADET' && state.session.structuralStress >= 1) {
       triggerRud('maxq');
       return;
     }
@@ -1500,7 +1507,7 @@
   }
 
   function drawBackground(ctx, altitude, panel) {
-    const isPadSky = altitude < 18000 && !state.world.padGone;
+    const isPadSky = altitude < PAD_SKY_ALTITUDE_THRESHOLD && !state.world.padGone;
     const bg = ctx.createLinearGradient(0, panel ? panel.y : 0, 0, panel ? panel.y + panel.h : CH);
     if (isPadSky) {
       bg.addColorStop(0, '#1a1a3a');
@@ -1737,7 +1744,7 @@
     if (state.settings.difficulty !== 'ENGINEER') {
       const closingRate = Math.max(0.001, (o.vy + state.world.cameraVy) * BASE_FPS);
       const closing = state.rocket.y > o.y ? (state.rocket.y - o.y) / closingRate : 9;
-      if (closing <= 1.5 && Math.abs(o.x - state.rocket.x) < Math.max(24, o.w * 0.9)) {
+      if (closing <= OBSTACLE_WARNING_TIME && Math.abs(o.x - state.rocket.x) < Math.max(24, o.w * 0.9)) {
         ctx.fillStyle = 'rgba(255,220,90,0.8)';
         ctx.beginPath();
         ctx.moveTo(o.x, 8);
@@ -1804,11 +1811,11 @@
       ctx.fillRect(-11, -22, 6, 3);
       ctx.fillRect(5, -22, 6, 3);
     }
-    const bodyGrad = ctx.createLinearGradient(-10, -10, 10, 24);
-    bodyGrad.addColorStop(0, '#d9b188');
-    bodyGrad.addColorStop(0.32, '#c89968');
-    bodyGrad.addColorStop(1, '#b48358');
-    ctx.fillStyle = bodyGrad;
+    const rocketBodyGrad = ctx.createLinearGradient(-10, -10, 10, 24);
+    rocketBodyGrad.addColorStop(0, '#d9b188');
+    rocketBodyGrad.addColorStop(0.32, '#c89968');
+    rocketBodyGrad.addColorStop(1, '#b48358');
+    ctx.fillStyle = rocketBodyGrad;
     ctx.fillRect(-11, -8, 22, 38);
     ctx.fillStyle = 'rgba(255,240,220,0.18)';
     ctx.fillRect(-10, -8, 5, 38);
@@ -2077,6 +2084,7 @@
   }
 
   function drawPadOverlay(ctx) {
+    const pollSeconds = padPollDurationSeconds().toFixed(1);
     ctx.save();
     ctx.fillStyle = 'rgba(0,0,0,0.2)';
     ctx.fillRect(18, 236, CW - 36, 214);
@@ -2086,7 +2094,7 @@
     ctx.font = '18px "VT323", monospace';
     ctx.fillText('AUTO GO / NO-GO POLL', 34, 260);
     ctx.font = '10px "Share Tech Mono", monospace';
-    ctx.fillText('Systems auto-flip green in 2.5s. Tap once to skip directly to liftoff.', 34, 278);
+    ctx.fillText(`Systems auto-flip green in ${pollSeconds}s. Tap once to skip directly to liftoff.`, 34, 278);
     state.ui.systems.forEach(sys => {
       ctx.strokeStyle = sys.ok ? '#33ff33' : '#56666f';
       ctx.strokeRect(sys.x, sys.y, sys.w, sys.h);
