@@ -123,11 +123,22 @@
   ];
   const KONAMI = ['ArrowUp', 'ArrowUp', 'ArrowDown', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'ArrowLeft', 'ArrowRight', 'KeyB', 'KeyA'];
   const PAD_POLL_FLIP_SEC = 0.5;
-  const ASCENT_SPAWN_INTERVAL_MULTIPLIER = 5; // ~5x timeline expansion from v3.0, so spawns are spaced similarly per phase.
+  const ASCENT_SPAWN_INTERVAL_MULTIPLIER = 3; // Denser spawn pacing to keep ascent play more arcade challenging.
+  const ASCENT_INITIAL_SPAWN_AT = 1.5;
+  const ASCENT_INITIAL_OBSTACLE_TARGET = 8;
+  const ASCENT_MAX_OBSTACLE_TARGET = 13;
   const BIN_LABEL_OFFSET_X = -7; // Centers 5px stencil text on 18px block width.
   const BIN_LABEL_OFFSET_Y = -2; // Lifts stencil text above the top face for tiny stenciled readability.
   const PAD_SKY_ALTITUDE_THRESHOLD = 18000;
   const OBSTACLE_WARNING_TIME = 1.5;
+  const NO_THRUST_FAIL_SEC = 1.8;
+  const MAX_NO_THRUST_TIME_SEC = 4;
+  const NO_THRUST_DROP_RATE = 24;
+  const MAX_NO_THRUST_DROP = 90;
+  const NO_THRUST_TUMBLE_FREQ = 17;
+  const NO_THRUST_TUMBLE_GAIN = 0.09;
+  const MAX_NO_THRUST_TUMBLE = 0.34;
+  const MAX_ROCKET_TILT = 0.8;
   const MAX_PARTICLES = 600;
   const VOICE_POOL_SIZE = 8;
   const PAD_SPRITE_H = 480;
@@ -645,11 +656,12 @@
         maxVelocity: 0,
         maxQ: 0,
         structuralStress: 0,
+        noThrustTime: 0,
         recentSteerSign: 0,
         lastSteerChange: -10,
-        ascentObstacleTarget: 5,
+        ascentObstacleTarget: ASCENT_INITIAL_OBSTACLE_TARGET,
         ascentObstacleCount: 0,
-        nextAscentSpawnAt: 3,
+        nextAscentSpawnAt: ASCENT_INITIAL_SPAWN_AT,
         upperObstacleTarget: 2,
         upperObstacleCount: 0,
         nextUpperSpawnAt: 1.5,
@@ -840,11 +852,12 @@
       maxVelocity: 0,
       maxQ: 0,
       structuralStress: 0,
+      noThrustTime: 0,
       recentSteerSign: 0,
       lastSteerChange: -10,
-      ascentObstacleTarget: 5,
+      ascentObstacleTarget: ASCENT_INITIAL_OBSTACLE_TARGET,
       ascentObstacleCount: 0,
-      nextAscentSpawnAt: 3,
+      nextAscentSpawnAt: ASCENT_INITIAL_SPAWN_AT,
       upperObstacleTarget: 2,
       upperObstacleCount: 0,
       nextUpperSpawnAt: 1.5,
@@ -1118,7 +1131,7 @@
     const type = types[Math.floor(Math.random() * types.length)];
     let x = rand(42, CW - 42);
     for (let i = 0; i < 8; i++) {
-      const blocked = state.obstacles.some(o => o.y > -20 && o.y < CH + 20 && Math.abs(o.x - x) < 60);
+      const blocked = state.obstacles.some(o => o.y > -20 && o.y < CH + 20 && Math.abs(o.x - x) < 48);
       if (!blocked) break;
       x = rand(42, CW - 42);
     }
@@ -1173,11 +1186,26 @@
       state.rocket.burn = Math.max(state.rocket.burn, 0.08);
       spawnExhaust(lowGravity ? 'be3u' : 'be4', state.rocket.x, state.rocket.y + 28, lowGravity ? 0.7 : 1.1, state.effects.splitView ? 'upper' : 'main');
     }
-    const anchorY = CH * 0.55 + (lowGravity ? -8 : 0);
+    const noThrustDrop = !lowGravity ? clamp((state.session.noThrustTime || 0) * NO_THRUST_DROP_RATE, 0, MAX_NO_THRUST_DROP) : 0;
+    const anchorY = CH * 0.55 + (lowGravity ? -8 : noThrustDrop);
     const bob = clamp(state.rocket.vy * 1.2, -7, 7);
     state.rocket.y = approach(state.rocket.y, anchorY + bob, 0.9 * step);
-    state.rocket.tilt = clamp(state.rocket.vx * 0.1, -0.34, 0.34);
+    const tumble = !state.input.boostHeld && !lowGravity ? Math.sin(state.session.phaseElapsed * NO_THRUST_TUMBLE_FREQ) * clamp((state.session.noThrustTime || 0) * NO_THRUST_TUMBLE_GAIN, 0, MAX_NO_THRUST_TUMBLE) : 0;
+    state.rocket.tilt = clamp(state.rocket.vx * 0.1 + tumble, -MAX_ROCKET_TILT, MAX_ROCKET_TILT);
     if (state.rocket.burn > 0) state.rocket.burn = Math.max(0, state.rocket.burn - dt);
+  }
+
+  function updateNoThrustLoss(dt, failKey) {
+    if (state.input.boostHeld) {
+      state.session.noThrustTime = 0;
+      return false;
+    }
+    state.session.noThrustTime = Math.min(MAX_NO_THRUST_TIME_SEC, (state.session.noThrustTime || 0) + dt);
+    if (state.session.phaseGrace <= 0 && state.session.noThrustTime >= NO_THRUST_FAIL_SEC) {
+      triggerRud(failKey);
+      return true;
+    }
+    return false;
   }
 
   function updateSky(dt, speed) {
@@ -1395,9 +1423,10 @@
         state.effects.liftoffShake = 2;
         state.effects.delugeTimer = Math.max(state.effects.delugeTimer, 3);
         state.effects.shockRing = 1;
-        state.session.ascentObstacleTarget = Math.floor(rand(4, 7));
+        state.session.ascentObstacleTarget = Math.floor(rand(ASCENT_INITIAL_OBSTACLE_TARGET, ASCENT_MAX_OBSTACLE_TARGET));
         state.session.ascentObstacleCount = 0;
-        state.session.nextAscentSpawnAt = 3;
+        state.session.nextAscentSpawnAt = ASCENT_INITIAL_SPAWN_AT;
+        state.session.noThrustTime = 0;
         state.session.obstacleStreak = 0;
         Audio.setMood('ascent', state.settings);
         break;
@@ -1573,6 +1602,7 @@
     } else {
       Audio.updateRumble(0.35, state.settings);
     }
+    if (updateNoThrustLoss(dt, 'ascent')) return;
     if (state.session.phaseElapsed > 3 && state.ui.tutorialTimer <= 0) {
       if (state.session.ascentObstacleCount < state.session.ascentObstacleTarget && state.session.phaseElapsed >= state.session.nextAscentSpawnAt) {
         spawnAtmosphericObstacle();
@@ -1654,6 +1684,7 @@
       addShake(1.4, 0.15);
     }
     state.session.structuralStress = Math.max(0, state.session.structuralStress - dt * mode.qStressDecay);
+    if (updateNoThrustLoss(dt, 'maxq')) return;
     if (state.settings.difficulty === 'CADET') state.session.structuralStress = Math.min(state.session.structuralStress, 0.45);
     state.session.recentSteerSign = sign || state.session.recentSteerSign;
     if (state.session.phaseElapsed > 2.5 && Math.random() < 0.018 * Math.max(0.2, mode.spawnMul)) spawnAtmosphericObstacle();
@@ -1670,6 +1701,7 @@
     updateSky(dt, 0.24 + state.world.cameraVy * 0.5);
     applyRocketControl(dt, false);
     Audio.updateRumble(0.35, state.settings);
+    if (updateNoThrustLoss(dt, 'ascent')) return;
     if (Math.random() < 0.013 * Math.max(0.2, mode.spawnMul)) spawnAtmosphericObstacle();
     if (state.session.totalElapsed >= PHASES.SUPERSONIC.end) transitionPhase('STAGE_SEP');
   }
