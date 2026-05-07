@@ -616,7 +616,7 @@ function handlePrint() {
 }
 
 function escapeAttr(value) {
-  return escapeHtml(value).replace(/"/g, '&quot;');
+  return escapeHtml(value);
 }
 
 function escapeHtml(value) {

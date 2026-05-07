@@ -543,7 +543,7 @@ textarea {
 
   body {
     margin: 0;
-    /* Preserve the clean schedule grid and header fills in the printed cardstock output. */
+    /* Preserve preview-matching grid lines and header fills when printing the half-sheet schedule. */
     print-color-adjust: exact;
     -webkit-print-color-adjust: exact;
   }
