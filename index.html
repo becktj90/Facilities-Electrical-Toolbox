@@ -2703,23 +2703,23 @@
          ════════════════════════════════════════ -->
     <section id="sec-arcade" class="section">
       <div class="section-header">
-        <h2>&#128640; New Glenn Runner &#8212; Arcade</h2>
-        <p>Pilot New Glenn vertically from LC-36 through cloud layers and concrete bin-block hazards. SPACE / TAP to thrust.</p>
+        <h2>&#128640; New Glenn Runner &#8212; Vertical Launch Arcade</h2>
+        <p>Launch New Glenn straight up from LC-36, ride the blast-off plume off the pad, and steer through descending bin-block hazards as ascent speed builds.</p>
       </div>
       <div class="card-grid">
 
         <div class="card" style="grid-column:1/-1">
-          <div class="card-title">&#128640; New Glenn Runner &mdash; LC-36 Launch Simulation</div>
+          <div class="card-title">&#128640; New Glenn Runner &mdash; LC-36 Vertical Launch Simulation</div>
           <div class="card-body" style="text-align:center">
             <div id="arcade-fs-wrapper" style="position:relative;display:inline-block;width:100%">
-              <canvas id="arcadeCanvas" width="600" height="350" style="display:block;margin:0 auto;border:2px solid var(--green);box-shadow:var(--glow-md);cursor:pointer;max-width:100%"></canvas>
+              <canvas id="arcadeCanvas" width="420" height="640" style="display:block;margin:0 auto;border:2px solid var(--green);box-shadow:var(--glow-md);cursor:pointer;max-width:100%"></canvas>
               <button onclick="arcadeFullscreen()" title="Toggle fullscreen" style="position:absolute;top:4px;right:4px;background:rgba(0,0,0,0.75);color:var(--green);border:1px solid var(--green);font-family:var(--font-mono);font-size:0.68rem;padding:2px 7px;cursor:pointer;z-index:10">&#x26F6; FS</button>
             </div>
             <div style="margin-top:8px;font-family:var(--font-mono);font-size:0.78rem;color:var(--green-mid)">
-              SPACE / CLICK / TAP to thrust &nbsp;|&nbsp; Hold stable ascent through bin-block obstacles &nbsp;|&nbsp; Music plays in-game
+              SPACE / CLICK / TAP = launch + boost &nbsp;|&nbsp; A / D or &#8592; / &#8594; steer &nbsp;|&nbsp; Tap where you want to drift on touch devices
             </div>
             <div class="note" style="text-align:left">
-              &#9432; Live HUD shows velocity, altitude, dynamic pressure, LNG/LOX levels, and mission milestones from liftoff through payload deployment.
+              &#9432; A launch-hold blast-off sequence kicks off each run, then the live HUD tracks velocity, altitude, dynamic pressure, LNG/LOX levels, and mission milestones through ascent.
             </div>
           </div>
         </div>
@@ -2736,13 +2736,13 @@
           <div class="card-title">How to Play</div>
           <div class="card-body">
             <div class="formula-box">
-              SPACE / CLICK / TAP = Thrust up<br>
-              Avoid concrete bin blocks and occasional alligators<br>
-              Collect EMI shields for temporary protection<br>
-              Each gap cleared = +1 mission phase<br>
-              Starts at LC-36 pre-launch &mdash; easy first level<br>
-              Clouds and speed increase over time<br><br>
-              LIFTOFF &#8594; MAX-Q &#8594; STAGE SEP &#8594; ORBIT<br>
+              SPACE / CLICK / TAP = start countdown and boost upward<br>
+              A / D or &#8592; / &#8594; = steer left and right through the gap<br>
+              Collect EMI shields for one protected impact<br>
+              Each barrier cleared = +1 mission phase<br>
+              Starts on the LC-36 pad with ignition smoke and hold-down release<br>
+              Descent rate of hazards and cloud flow increase over time<br><br>
+              ENGINE START &#8594; LIFTOFF &#8594; MAX-Q &#8594; ORBIT<br>
               ...PAYLOAD DEPLOYMENT = LEGEND STATUS
             </div>
           </div>
