@@ -750,18 +750,18 @@ window.calcConduitFill = function () {
 window.calcSC = function () {
   const kVA = val('sc_kva'), Vs = val('sc_vs'), Zp = val('sc_z') / 100;
   const xrInput = val('sc_xr');
-  const XR = isFinite(xrInput) && xrInput > 0 ? xrInput : DEFAULT_SC_XR_RATIO;
+  const xRatio = isFinite(xrInput) && xrInput > 0 ? xrInput : DEFAULT_SC_XR_RATIO;
   if (!isPos(kVA, Vs, Zp)) return showError('sc_result', 'Enter transformer kVA, secondary voltage (V), and impedance %.');
   const I_base = kVA * 1000 / (Math.sqrt(3) * Vs);
   const I_fault = I_base / Zp;  // simplified (neglects line impedance)
   const I_sym  = I_fault;
   // IEEE asymmetrical factor calculation based on X/R ratio
-  const K = Math.sqrt(1 + 2 * Math.exp(-2 * Math.PI / XR));
-  const I_asym = I_fault * K;
+  const asymmetricalFactor = Math.sqrt(1 + 2 * Math.exp(-2 * Math.PI / xRatio));
+  const I_asym = I_fault * asymmetricalFactor;
   showResult('sc_result', [
     ['Base Current (I_base)', fmt(I_base, 2) + ' A'],
     ['Available Short Circuit (Symmetrical)', fmt(I_sym, 0) + ' A'],
-    ['Asymmetrical Factor (IEEE, X/R=' + fmt(XR, 2) + ')', fmt(K, 4)],
+    ['Asymmetrical Factor (IEEE, X/R=' + fmt(xRatio, 2) + ')', fmt(asymmetricalFactor, 4)],
     ['Available Short Circuit (Asymmetrical)', fmt(I_asym, 0) + ' A'],
     ['Note', 'Simplified \u2014 excludes conductor/bus impedance']
   ]);
