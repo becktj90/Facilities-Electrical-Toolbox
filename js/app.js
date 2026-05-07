@@ -1176,23 +1176,17 @@ window.calcNEC = function () {
   'use strict';
 
   const SCORE_LABELS = [
-    { min: 0,   label: 'LC-36 PRE-LAUNCH'               },
-    { min: 3,   label: 'LAUNCH COMMIT'                   },
-    { min: 5,   label: 'IGNITION SEQ'                    },
-    { min: 8,   label: 'LIFTOFF \u2014 NG-1'            },
-    { min: 12,  label: 'TOWER CLEAR'                     },
-    { min: 17,  label: 'MAX-Q'                           },
-    { min: 23,  label: 'MACH 1'                          },
-    { min: 30,  label: 'MECO \u2014 STAGE SEP'          },
-    { min: 38,  label: 'FAIRING DEPLOY'                  },
-    { min: 47,  label: 'GTO INSERTION'                   },
-    { min: 57,  label: 'SECO'                            },
-    { min: 68,  label: 'BOOSTER REENTRY'                 },
-    { min: 80,  label: 'LANDING BURN'                    },
-    { min: 93,  label: 'BOOSTER RECOVERY'                },
-    { min: 107, label: 'MISSION SUCCESS'                 },
-    { min: 122, label: 'NEW GLENN LEGEND'                },
-    { min: 138, label: 'NEW GLENN ACE \u2605 LEGENDARY \u2605' }
+    { min: 0,   label: 'LC-36 PAD OPERATIONS'      },
+    { min: 3,   label: 'ENGINE CHILLDOWN'          },
+    { min: 6,   label: 'LIFTOFF \u2014 NEW GLENN' },
+    { min: 10,  label: 'TOWER CLEAR'               },
+    { min: 15,  label: 'MAX-Q'                     },
+    { min: 22,  label: 'STAGE SEPARATION'          },
+    { min: 30,  label: 'ORBIT REACHED'             },
+    { min: 38,  label: 'PAYLOAD DEPLOYMENT'        },
+    { min: 50,  label: 'BOOSTER RETURN GUIDANCE'   },
+    { min: 62,  label: 'MISSION SUCCESS'           },
+    { min: 78,  label: 'NEW GLENN LEGEND \u2605'  }
   ];
 
   function scoreLabel(n) {
@@ -1205,25 +1199,30 @@ window.calcNEC = function () {
   const GRAVITY                = 0.30;
   const THRUST                 = -5.0;
   const OBS_W                  = 32;
-  const GAP_480V_START         = 165;             // gap widens at start, shrinks as score rises
-  const GAP_480V_MIN           = 105;
-  const GAP_23KV_START         = 120;
-  const GAP_23KV_MIN           = 78;
-  const ARC_DIST               = 20;
+  const GAP_START              = 182;             // easier opening level
+  const GAP_MIN                = 102;
   const TARGET_FPS             = 60;
   const FARADAY_FRAMES         = TARGET_FPS * 5;  // 5 s at target frame rate
   const POWERUP_SPAWN_INTERVAL = 250;             // frames between power-up spawns
+  const ALT_PER_PIXEL          = 4.8;             // synthetic ascent scaling (m/px)
+  const MAX_GATOR_PROB         = 0.22;
+  const BASE_GATOR_PROB        = 0.08;
+  const GATOR_PROB_INCREASE    = 0.002;
+  const MIN_ALT_RATE           = 0.6;
+  const CLIMB_ALT_FACTOR       = 0.02;
+  const SPEED_ALT_FACTOR       = 0.75;
+  const BURN_LNG_RATE          = 0.08;
+  const COAST_LNG_RATE         = 0.015;
+  const BURN_LOX_RATE          = 0.12;
+  const COAST_LOX_RATE         = 0.02;
 
   // Dynamic difficulty helpers
-  function currentGap(voltage) {
-    const shrink = Math.min(score * 1.8, 60);
-    return voltage === '23kV'
-      ? Math.max(GAP_23KV_MIN, GAP_23KV_START - shrink)
-      : Math.max(GAP_480V_MIN, GAP_480V_START - shrink);
+  function currentGap() {
+    const shrink = Math.min(score * 1.55, 74);
+    return Math.max(GAP_MIN, GAP_START - shrink);
   }
-  function spawn23kVProb() {
-    if (score < 8) return 0;
-    return Math.min(0.45, (score - 8) * 0.028);
+  function missionMilestone(altitudeMeters) {
+    return scoreLabel(Math.floor(altitudeMeters / 600));
   }
 
   // ── Music system (Web Audio API chiptune) ──
@@ -1296,8 +1295,9 @@ window.calcNEC = function () {
 
   let canvas, ctx;
   let state;             // 'READY' | 'PLAYING' | 'GAMEOVER'
-  let rocket, obstacles, particles, stars, powerups;
-  let score, hiScore, frame, speedMult, faradayCageTimer, lightningFlash;
+  let rocket, obstacles, particles, stars, clouds, powerups;
+  let telemetry;
+  let score, hiScore, frame, speedMult, faradayCageTimer;
 
   function init() {
     canvas = document.getElementById('arcadeCanvas');
@@ -1307,6 +1307,7 @@ window.calcNEC = function () {
     hiScore = parseInt(localStorage.getItem('rocketRiderHi') || '0', 10);
     updateHiDisplay();
     buildStars();
+    buildClouds();
     resetGame();
 
     canvas.addEventListener('click',      handleInput);
@@ -1325,7 +1326,7 @@ window.calcNEC = function () {
 
   function handleInput() {
     if      (state === 'READY')    { state = 'PLAYING'; startMusic(); }
-    else if (state === 'PLAYING')  { rocket.vy = THRUST; }
+    else if (state === 'PLAYING')  { rocket.vy = THRUST; rocket.burnFrames = 8; }
     else if (state === 'GAMEOVER') { resetGame(); state = 'READY'; }
   }
 
@@ -1338,24 +1339,44 @@ window.calcNEC = function () {
     }
   }
 
+  function buildClouds() {
+    clouds = [];
+    for (let i = 0; i < 14; i++) {
+      clouds.push({
+        x: Math.random() * (CW + 80) - 40,
+        y: Math.random() * CH,
+        w: 55 + Math.random() * 55,
+        h: 16 + Math.random() * 14,
+        a: 0.08 + Math.random() * 0.16,
+        spd: 0.35 + Math.random() * 0.65
+      });
+    }
+  }
+
   function resetGame() {
-    rocket           = { x: 90, y: CH / 2, vy: 0, w: 28, h: 14 };
+    rocket           = { x: 90, y: CH / 2, vy: 0, w: 28, h: 14, burnFrames: 0 };
     obstacles        = [];
     particles        = [];
     powerups         = [];
+    telemetry        = { altitude: 0, velocity: 0, q: 0, lng: 100, lox: 100, milestone: scoreLabel(0) };
     score            = 0;
     frame            = 0;
     speedMult        = 1;
     faradayCageTimer = 0;
-    lightningFlash   = null;
     state            = state === 'GAMEOVER' ? 'GAMEOVER' : 'READY';
   }
 
   function spawnObs() {
-    const voltage = Math.random() < spawn23kVProb() ? '23kV' : '480V';
-    const gap     = currentGap(voltage);
+    const gap     = currentGap();
     const gapY    = Math.random() * (CH - gap - 80) + 40;
-    obstacles.push({ x: CW + 4, topH: gapY, botY: gapY + gap, passed: false, voltage });
+    obstacles.push({
+      x: CW + 4,
+      topH: gapY,
+      botY: gapY + gap,
+      passed: false,
+      hasGator: score > 10 && Math.random() < Math.min(MAX_GATOR_PROB, BASE_GATOR_PROB + score * GATOR_PROB_INCREASE),
+      gatorTop: Math.random() < 0.5
+    });
   }
 
   function spawnPowerup() {
@@ -1384,7 +1405,9 @@ window.calcNEC = function () {
 
     // Physics
     rocket.vy += GRAVITY;
+    rocket.vy *= 0.992;
     rocket.y  += rocket.vy;
+    if (rocket.burnFrames > 0) rocket.burnFrames--;
 
     // Exhaust particles
     if (frame % 2 === 0) {
@@ -1434,26 +1457,27 @@ window.calcNEC = function () {
 
     // Scroll stars
     for (const s of stars) { s.x -= s.spd * speedMult; if (s.x < 0) s.x = CW; }
+    for (const c of clouds) {
+      c.y += c.spd * speedMult * 0.28;
+      c.x -= 0.3 * speedMult;
+      if (c.y - c.h > CH) c.y = -c.h;
+      if (c.x + c.w < -8) c.x = CW + 8;
+    }
+
+    // Telemetry
+    const climbPx = Math.max(0, CH * 0.62 - rocket.y);
+    telemetry.velocity = Math.max(0, (-rocket.vy * 34) + speedMult * 8);
+    const altKm = telemetry.altitude / 1000;
+    const rho = Math.max(0.018, Math.exp(-altKm / 8.5));
+    telemetry.q = 0.5 * rho * telemetry.velocity * telemetry.velocity / 1000; // kPa
+    const burning = rocket.burnFrames > 0;
+    telemetry.altitude += Math.max(MIN_ALT_RATE, (climbPx * ALT_PER_PIXEL * CLIMB_ALT_FACTOR) + (speedMult * SPEED_ALT_FACTOR));
+    telemetry.lng = Math.max(0, telemetry.lng - (burning ? BURN_LNG_RATE : COAST_LNG_RATE));
+    telemetry.lox = Math.max(0, telemetry.lox - (burning ? BURN_LOX_RATE : COAST_LOX_RATE));
+    telemetry.milestone = missionMilestone(telemetry.altitude);
 
     // Boundary collision
     if (rocket.y - rocket.h / 2 < 0 || rocket.y + rocket.h / 2 > CH) { endGame(); return; }
-
-    // Arc proximity check for 23kV barriers (skip if Faraday cage is active)
-    lightningFlash = null;
-    if (faradayCageTimer <= 0) {
-      for (const o of obstacles) {
-        if (o.voltage !== '23kV') continue;
-        const inXRange = rocket.x > o.x - ARC_DIST && rocket.x < o.x + OBS_W + ARC_DIST;
-        const nearTop  = inXRange && rocket.y < o.topH + ARC_DIST;
-        const nearBot  = inXRange && rocket.y > o.botY - ARC_DIST;
-        if (nearTop || nearBot) {
-          const ay = nearTop ? o.topH : o.botY;
-          lightningFlash = { x1: o.x + OBS_W / 2, y1: ay, x2: rocket.x, y2: rocket.y };
-          endGame();
-          return;
-        }
-      }
-    }
 
     // Obstacle collision (shrunk hitbox for fairness)
     const hx = rocket.x - rocket.w / 2 + 4, hy = rocket.y - rocket.h / 2 + 3;
@@ -1461,6 +1485,13 @@ window.calcNEC = function () {
     for (const o of obstacles) {
       if (hx + hw > o.x + 2 && hx < o.x + OBS_W - 2) {
         if (hy < o.topH || hy + hh > o.botY) { endGame(); return; }
+      }
+      if (o.hasGator) {
+        const gy = o.gatorTop ? o.topH - 8 : o.botY + 8;
+        const gx = o.x + OBS_W * 0.5;
+        const nearX = Math.abs(rocket.x - gx) < 15;
+        const nearY = Math.abs(rocket.y - gy) < 12;
+        if (nearX && nearY) { endGame(); return; }
       }
     }
   }
@@ -1497,6 +1528,12 @@ window.calcNEC = function () {
       ctx.fill();
     }
 
+    // Clouds
+    for (const c of clouds) drawCloud(c);
+
+    // Launch pad scene in early ascent
+    if (score < 10) drawLaunchPad();
+
     // Exhaust particles (amber glow)
     for (const p of particles) {
       const a = p.life * 0.85;
@@ -1521,67 +1558,90 @@ window.calcNEC = function () {
       if (faradayCageTimer > 0) drawFaradayCage(rocket.x, rocket.y);
     }
 
-    // Lightning arc (visible on impact frame and game-over screen)
-    if (lightningFlash) drawLightning(lightningFlash.x1, lightningFlash.y1, lightningFlash.x2, lightningFlash.y2);
-
     // Overlays
     if      (state === 'READY')    drawReady();
     else if (state === 'PLAYING')  drawHUD();
     else if (state === 'GAMEOVER') drawGameOver();
   }
 
-  function drawObs(o) {
-    const is23kV = o.voltage === '23kV';
+  function drawCloud(c) {
     ctx.save();
+    ctx.fillStyle = 'rgba(180,220,245,' + c.a + ')';
+    ctx.beginPath();
+    ctx.ellipse(c.x, c.y, c.w * 0.38, c.h * 0.5, 0, 0, Math.PI * 2);
+    ctx.ellipse(c.x + c.w * 0.22, c.y + 2, c.w * 0.34, c.h * 0.45, 0, 0, Math.PI * 2);
+    ctx.ellipse(c.x - c.w * 0.24, c.y + 3, c.w * 0.28, c.h * 0.4, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+  }
 
-    // Panel body colours based on voltage level
-    if (is23kV) {
-      ctx.fillStyle   = '#150505';
-      ctx.strokeStyle = '#ff3300';
-      ctx.shadowColor = '#ff3300';
-    } else {
-      ctx.fillStyle   = '#15110a';
-      ctx.strokeStyle = '#ffcc00';
-      ctx.shadowColor = '#ffcc00';
+  function drawLaunchPad() {
+    ctx.save();
+    const y = CH - 34;
+    ctx.fillStyle = '#112015';
+    ctx.fillRect(0, y, CW, CH - y);
+
+    // Main pad
+    ctx.fillStyle = '#2e3940';
+    ctx.fillRect(44, y - 8, 122, 8);
+    ctx.fillStyle = '#4a5a64';
+    ctx.fillRect(74, y - 22, 62, 14);
+    ctx.strokeStyle = '#7f929f';
+    ctx.strokeRect(74, y - 22, 62, 14);
+
+    // Side towers
+    ctx.fillStyle = '#5a6a75';
+    ctx.fillRect(60, y - 68, 10, 60);
+    ctx.fillRect(138, y - 68, 10, 60);
+    ctx.strokeStyle = '#a6bac6';
+    ctx.lineWidth = 1;
+    for (let i = 0; i < 6; i++) {
+      const yy = y - 65 + i * 10;
+      ctx.beginPath();
+      ctx.moveTo(60, yy); ctx.lineTo(70, yy); ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(138, yy); ctx.lineTo(148, yy); ctx.stroke();
     }
+
+    // Water tower
+    ctx.fillStyle = '#4c6170';
+    ctx.fillRect(20, y - 62, 8, 56);
+    ctx.fillRect(38, y - 62, 8, 56);
+    ctx.fillRect(20, y - 62, 26, 4);
+    ctx.beginPath();
+    ctx.ellipse(33, y - 70, 15, 9, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.strokeStyle = '#9dc2d8';
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  function drawObs(o) {
+    ctx.save();
     ctx.lineWidth  = 2;
-    ctx.shadowBlur = 6;
+    ctx.shadowBlur = 4;
+    ctx.shadowColor = '#9aa4aa';
+    ctx.fillStyle = '#5b646c';
+    ctx.strokeStyle = '#9ea8af';
 
     ctx.fillRect(o.x, 0, OBS_W, o.topH);
     ctx.strokeRect(o.x, 0, OBS_W, o.topH);
     ctx.fillRect(o.x, o.botY, OBS_W, CH - o.botY);
     ctx.strokeRect(o.x, o.botY, OBS_W, CH - o.botY);
 
-    // Electric field glow for 23 kV barriers
-    if (is23kV) {
-      const glowPulse = 0.35 + 0.25 * Math.sin(Date.now() / 120);
-      ctx.strokeStyle = 'rgba(255,80,0,' + glowPulse + ')';
-      ctx.shadowBlur  = 20;
-      ctx.lineWidth   = 6;
-      ctx.strokeRect(o.x, 0, OBS_W, o.topH);
-      ctx.strokeRect(o.x, o.botY, OBS_W, CH - o.botY);
+    // Concrete seams
+    ctx.shadowBlur = 0;
+    ctx.strokeStyle = 'rgba(180,190,198,0.35)';
+    for (let i = 1; i < 4; i++) {
+      const sx = o.x + i * (OBS_W / 4);
+      ctx.beginPath(); ctx.moveTo(sx, 0); ctx.lineTo(sx, o.topH); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(sx, o.botY); ctx.lineTo(sx, CH); ctx.stroke();
     }
 
-    // Hazard bolt icons
-    ctx.shadowBlur = 12;
-    ctx.fillStyle  = is23kV ? '#ff6633' : '#ffcc00';
-    ctx.font       = '14px sans-serif';
-    ctx.textAlign  = 'center';
-    if (o.topH > 22)       ctx.fillText('\u26a1', o.x + OBS_W / 2, o.topH - 6);
-    if (CH - o.botY > 22)  ctx.fillText('\u26a1', o.x + OBS_W / 2, o.botY + 18);
-
-    // Voltage label
-    ctx.shadowBlur = 8;
-    ctx.fillStyle  = is23kV ? '#ff3300' : '#ffcc00';
-    ctx.font       = '9px "Share Tech Mono",monospace';
-    if (o.topH > 30)       ctx.fillText(o.voltage, o.x + OBS_W / 2, o.topH - 20);
-    if (CH - o.botY > 30)  ctx.fillText(o.voltage, o.x + OBS_W / 2, o.botY + 30);
-
     // Gap indicator lines
-    ctx.shadowBlur  = 0;
-    ctx.strokeStyle = is23kV ? 'rgba(255,80,0,0.3)' : 'rgba(255,204,0,0.25)';
+    ctx.strokeStyle = 'rgba(170,220,255,0.25)';
     ctx.lineWidth   = 1;
-    ctx.setLineDash([4, 4]);
+    ctx.setLineDash([5, 4]);
     ctx.beginPath();
     ctx.moveTo(o.x, o.topH);
     ctx.lineTo(o.x + OBS_W, o.topH);
@@ -1591,26 +1651,20 @@ window.calcNEC = function () {
     ctx.lineTo(o.x + OBS_W, o.botY);
     ctx.stroke();
     ctx.setLineDash([]);
-    ctx.restore();
-  }
 
-  function drawLightning(x1, y1, x2, y2) {
-    const segments = 8;
-    ctx.save();
-    ctx.strokeStyle = '#ffff33';
-    ctx.shadowColor = '#ffff33';
-    ctx.shadowBlur  = 18;
-    ctx.lineWidth   = 2;
-    ctx.beginPath();
-    ctx.moveTo(x1, y1);
-    for (let i = 1; i < segments; i++) {
-      const t  = i / segments;
-      const jx = x1 + (x2 - x1) * t + (Math.random() - 0.5) * 28;
-      const jy = y1 + (y2 - y1) * t + (Math.random() - 0.5) * 28;
-      ctx.lineTo(jx, jy);
+    // Occasional alligator
+    if (o.hasGator) {
+      const gy = o.gatorTop ? o.topH - 8 : o.botY + 8;
+      const gx = o.x + OBS_W / 2;
+      ctx.fillStyle = '#2d6836';
+      ctx.shadowBlur = 8;
+      ctx.shadowColor = '#2d6836';
+      ctx.fillRect(gx - 9, gy - 3, 18, 6);
+      ctx.fillStyle = '#95c55f';
+      ctx.fillRect(gx + 7, gy - 2, 4, 4);
+      ctx.fillStyle = '#113e1e';
+      ctx.fillRect(gx - 5, gy - 2, 2, 2);
     }
-    ctx.lineTo(x2, y2);
-    ctx.stroke();
     ctx.restore();
   }
 
@@ -1764,11 +1818,21 @@ window.calcNEC = function () {
     ctx.font        = '11px "Share Tech Mono",monospace';
     ctx.fillText('LC-36 \u2502 NEW GLENN \u2502 BE-4\u00d77', CW - 8, 22);
     ctx.textAlign   = 'left';
+    ctx.shadowColor = '#33ff33';
+    ctx.fillStyle = '#33ff33';
+    ctx.font = '10px "Share Tech Mono",monospace';
+    ctx.fillText('ALT ' + Math.round(telemetry.altitude).toLocaleString() + ' m', 10, 40);
+    ctx.fillText('VEL ' + telemetry.velocity.toFixed(1) + ' m/s', 10, 54);
+    ctx.fillText('Q ' + telemetry.q.toFixed(2) + ' kPa', 10, 68);
+    ctx.fillStyle = '#99e7ff';
+    ctx.fillText('LNG ' + telemetry.lng.toFixed(1) + '%', 170, 40);
+    ctx.fillText('LOX ' + telemetry.lox.toFixed(1) + '%', 170, 54);
+    ctx.fillText('MILESTONE: ' + telemetry.milestone, 170, 68);
     if (faradayCageTimer > 0) {
       const secs = (faradayCageTimer / TARGET_FPS).toFixed(1);
       ctx.fillStyle   = '#64c8ff';
       ctx.shadowColor = '#64c8ff';
-      ctx.fillText('\u26f6 EMI SHIELD ACTIVE: ' + secs + 's', 10, 40);
+      ctx.fillText('\u26f6 EMI SHIELD ACTIVE: ' + secs + 's', 10, 84);
     }
     ctx.restore();
   }
@@ -1789,21 +1853,22 @@ window.calcNEC = function () {
     ctx.fillStyle   = '#5abcf0';
     ctx.font = '11px "Share Tech Mono",monospace';
     ctx.fillText('BLUE ORIGIN  \u2502  LAUNCH COMPLEX 36  \u2502  CAPE CANAVERAL SFS, FL', CW / 2, CH / 2 - 36);
-    ctx.fillText('VEHICLE: NEW GLENN  \u2502  PROPULSION: 7\u00d7 BE-4 (LNG/LOX)', CW / 2, CH / 2 - 20);
+    ctx.fillText('VEHICLE: NEW GLENN  \u2502  7\u00d7 BE-4  \u2502  LNG / LOX', CW / 2, CH / 2 - 20);
 
     const blink = Math.floor(Date.now() / 550) % 2 === 0;
     if (blink) {
       ctx.shadowColor = '#ffb300'; ctx.shadowBlur = 10;
       ctx.fillStyle   = '#ffb300';
       ctx.font = '15px "Share Tech Mono",monospace';
-      ctx.fillText('PRESS SPACE or TAP TO LAUNCH', CW / 2, CH / 2 + 8);
+       ctx.fillText('PRESS SPACE or TAP TO LAUNCH', CW / 2, CH / 2 + 8);
     }
 
     ctx.shadowColor = '#33ff33'; ctx.shadowBlur = 4;
     ctx.fillStyle   = '#22cc22';
-    ctx.font = '12px "Share Tech Mono",monospace';
+    ctx.font = '11px "Share Tech Mono",monospace';
+    ctx.fillText('AVOID CONCRETE BIN BLOCKS + ALLIGATORS, CLIMB TO ORBIT.', CW / 2, CH / 2 + 24);
     ctx.fillText('MISSION RECORD: ' + (hiScore > 0 ? scoreLabel(hiScore) + ' (' + hiScore + ')' : 'NO PRIOR MISSIONS'),
-                 CW / 2, CH / 2 + 36);
+                 CW / 2, CH / 2 + 40);
     ctx.restore();
   }
 
@@ -1818,22 +1883,18 @@ window.calcNEC = function () {
     ctx.font = '32px "VT323",monospace';
     ctx.fillText('ANOMALY DETECTED', CW / 2, CH / 2 - 44);
 
-    if (lightningFlash) {
-      ctx.shadowColor = '#ffff33'; ctx.shadowBlur = 12;
-      ctx.fillStyle   = '#ffff33';
-      ctx.font = '12px "Share Tech Mono",monospace';
-      ctx.fillText('\u26a1 23kV ARC FLASH \u2014 RANGE SAFETY ABORT \u26a1', CW / 2, CH / 2 - 22);
-    } else {
-      ctx.shadowColor = '#ff3300'; ctx.shadowBlur = 4;
-      ctx.fillStyle   = '#ff8866';
-      ctx.font = '11px "Share Tech Mono",monospace';
-      ctx.fillText('FLIGHT TERMINATION SYSTEM ACTIVATED', CW / 2, CH / 2 - 22);
-    }
+    ctx.shadowColor = '#ff3300'; ctx.shadowBlur = 4;
+    ctx.fillStyle   = '#ff8866';
+    ctx.font = '11px "Share Tech Mono",monospace';
+    ctx.fillText('VEHICLE CONTACT WITH OBSTACLE \u2014 FLIGHT TERMINATED', CW / 2, CH / 2 - 22);
 
     ctx.shadowColor = '#33ff33'; ctx.shadowBlur = 8;
     ctx.fillStyle   = '#33ff33';
     ctx.font = '15px "Share Tech Mono",monospace';
     ctx.fillText('Mission Phase: ' + scoreLabel(score) + '  (#' + score + ')', CW / 2, CH / 2 + 4);
+    ctx.font = '10px "Share Tech Mono",monospace';
+    ctx.fillText('ALT ' + Math.round(telemetry.altitude).toLocaleString() + ' m \u2502 PAYLOAD STATUS: ' + telemetry.milestone,
+      CW / 2, CH / 2 + 18);
 
     if (score >= hiScore && score > 0) {
       ctx.shadowColor = '#ffb300'; ctx.shadowBlur = 12;
