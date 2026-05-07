@@ -3,6 +3,12 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#33ff33">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Toolbox">
+  <link rel="apple-touch-icon" href="icons/icon-192.png">
   <title>Facilities Electrical Toolbox</title>
   <link rel="stylesheet" href="css/styles.css">
 </head>
@@ -21,7 +27,8 @@
     </div>
     <div class="header-status">
       SYS: <span class="status-ok">ONLINE</span><br>
-      MEM: <span class="status-ok">OK</span>
+      MEM: <span class="status-ok">OK</span><br>
+      <button id="install-btn" style="display:none">📲 Install</button>
     </div>
   </div>
 </header>
