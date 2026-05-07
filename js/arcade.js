@@ -124,6 +124,8 @@
   const KONAMI = ['ArrowUp', 'ArrowUp', 'ArrowDown', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'ArrowLeft', 'ArrowRight', 'KeyB', 'KeyA'];
   const PAD_POLL_FLIP_SEC = 0.5;
   const ASCENT_SPAWN_INTERVAL_MULTIPLIER = 3; // Denser spawn pacing to keep ascent play more arcade challenging.
+  const ASCENT_INITIAL_SPAWN_AT = 1.5;
+  const ASCENT_INITIAL_OBSTACLE_TARGET = 8;
   const BIN_LABEL_OFFSET_X = -7; // Centers 5px stencil text on 18px block width.
   const BIN_LABEL_OFFSET_Y = -2; // Lifts stencil text above the top face for tiny stenciled readability.
   const PAD_SKY_ALTITUDE_THRESHOLD = 18000;
@@ -135,6 +137,7 @@
   const NO_THRUST_TUMBLE_FREQ = 17;
   const NO_THRUST_TUMBLE_GAIN = 0.09;
   const MAX_NO_THRUST_TUMBLE = 0.34;
+  const MAX_ROCKET_TILT = 0.8;
   const MAX_PARTICLES = 600;
   const VOICE_POOL_SIZE = 8;
   const PAD_SPRITE_H = 480;
@@ -655,9 +658,9 @@
         noThrustTime: 0,
         recentSteerSign: 0,
         lastSteerChange: -10,
-        ascentObstacleTarget: 9,
+        ascentObstacleTarget: ASCENT_INITIAL_OBSTACLE_TARGET,
         ascentObstacleCount: 0,
-        nextAscentSpawnAt: 1.5,
+        nextAscentSpawnAt: ASCENT_INITIAL_SPAWN_AT,
         upperObstacleTarget: 2,
         upperObstacleCount: 0,
         nextUpperSpawnAt: 1.5,
@@ -851,9 +854,9 @@
       noThrustTime: 0,
       recentSteerSign: 0,
       lastSteerChange: -10,
-      ascentObstacleTarget: 5,
+      ascentObstacleTarget: ASCENT_INITIAL_OBSTACLE_TARGET,
       ascentObstacleCount: 0,
-      nextAscentSpawnAt: 3,
+      nextAscentSpawnAt: ASCENT_INITIAL_SPAWN_AT,
       upperObstacleTarget: 2,
       upperObstacleCount: 0,
       nextUpperSpawnAt: 1.5,
@@ -1187,7 +1190,7 @@
     const bob = clamp(state.rocket.vy * 1.2, -7, 7);
     state.rocket.y = approach(state.rocket.y, anchorY + bob, 0.9 * step);
     const tumble = !state.input.boostHeld && !lowGravity ? Math.sin(state.session.phaseElapsed * NO_THRUST_TUMBLE_FREQ) * clamp((state.session.noThrustTime || 0) * NO_THRUST_TUMBLE_GAIN, 0, MAX_NO_THRUST_TUMBLE) : 0;
-    state.rocket.tilt = clamp(state.rocket.vx * 0.1 + tumble, -0.8, 0.8);
+    state.rocket.tilt = clamp(state.rocket.vx * 0.1 + tumble, -MAX_ROCKET_TILT, MAX_ROCKET_TILT);
     if (state.rocket.burn > 0) state.rocket.burn = Math.max(0, state.rocket.burn - dt);
   }
 
@@ -1419,9 +1422,9 @@
         state.effects.liftoffShake = 2;
         state.effects.delugeTimer = Math.max(state.effects.delugeTimer, 3);
         state.effects.shockRing = 1;
-        state.session.ascentObstacleTarget = Math.floor(rand(8, 13));
+        state.session.ascentObstacleTarget = Math.floor(rand(ASCENT_INITIAL_OBSTACLE_TARGET, 13));
         state.session.ascentObstacleCount = 0;
-        state.session.nextAscentSpawnAt = 1.5;
+        state.session.nextAscentSpawnAt = ASCENT_INITIAL_SPAWN_AT;
         state.session.noThrustTime = 0;
         state.session.obstacleStreak = 0;
         Audio.setMood('ascent', state.settings);
