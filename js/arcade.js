@@ -47,9 +47,9 @@
     'BE-4 burns methane — cleaner than kerosene and easier to reuse.'
   ];
   const DIFFICULTY = {
-    KID: { spawnMul: 0.25, hitboxScale: 0.45, graceFrames: 180, qStressGain: 0.04, qStressDecay: 0.20, landingTolerance: 28, secoBand: 280, allowFail: false },
-    CADET: { spawnMul: 0.20, hitboxScale: 0.40, graceFrames: 180, qStressGain: 0.03, qStressDecay: 0.30, landingTolerance: 32, secoBand: 320, allowFail: true },
-    PAD_RAT: { spawnMul: 1.0, hitboxScale: 0.7, graceFrames: 60, qStressGain: 0.16, qStressDecay: 0.08, landingTolerance: 10, secoBand: 100, allowFail: true }
+    KID:     { spawnMul: 0.25, hitboxScale: 0.45, graceFrames: 180, qStressGain: 0.04, qStressDecay: 0.20, landingTolerance: 28, secoBand: 280, allowFail: false, gimbalSlewRate: 0.028, gimbalDriftBias: 0 },
+    CADET:   { spawnMul: 0.55, hitboxScale: 0.55, graceFrames: 90,  qStressGain: 0.08, qStressDecay: 0.18, landingTolerance: 18, secoBand: 200, allowFail: true,  gimbalSlewRate: 0.016, gimbalDriftBias: 0.0003 },
+    PAD_RAT: { spawnMul: 1.0,  hitboxScale: 0.7,  graceFrames: 45,  qStressGain: 0.16, qStressDecay: 0.07, landingTolerance: 10, secoBand: 100, allowFail: true,  gimbalSlewRate: 0.009, gimbalDriftBias: 0.0008 }
   };
   const MISSION_CAPTIONS = {
     PAD: 'Pad ops complete. Countdown at T-3 and all systems are green.',
@@ -123,17 +123,17 @@
   ];
   const KONAMI = ['ArrowUp', 'ArrowUp', 'ArrowDown', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'ArrowLeft', 'ArrowRight', 'KeyB', 'KeyA'];
   const PAD_POLL_FLIP_SEC = 0.5;
-  const ASCENT_SPAWN_INTERVAL_MULTIPLIER = 3; // Denser spawn pacing to keep ascent play more arcade challenging.
+  const ASCENT_SPAWN_INTERVAL_MULTIPLIER = 1.6; // Denser spawn pacing; lower = more frequent obstacles.
   const ASCENT_INITIAL_SPAWN_AT = 1.5;
-  const ASCENT_INITIAL_OBSTACLE_TARGET = 8;
-  const ASCENT_MAX_OBSTACLE_TARGET = 13;
+  const ASCENT_INITIAL_OBSTACLE_TARGET = 22;
+  const ASCENT_MAX_OBSTACLE_TARGET = 35;
   const BIN_LABEL_OFFSET_X = -7; // Centers 5px stencil text on 18px block width.
   const BIN_LABEL_OFFSET_Y = -2; // Lifts stencil text above the top face for tiny stenciled readability.
   const PAD_SKY_ALTITUDE_THRESHOLD = 18000;
   const OBSTACLE_WARNING_TIME = 1.5;
-  const NO_THRUST_FAIL_SEC = 1.8;
-  const MAX_NO_THRUST_TIME_SEC = 4;
-  const NO_THRUST_DROP_RATE = 24;
+  const NO_THRUST_FAIL_SEC = 1.0;
+  const MAX_NO_THRUST_TIME_SEC = 2;
+  const NO_THRUST_DROP_RATE = 28;
   const MAX_NO_THRUST_DROP = 90;
   const NO_THRUST_TUMBLE_FREQ = 17;
   const NO_THRUST_TUMBLE_GAIN = 0.09;
@@ -164,6 +164,40 @@
   const SIDE_THRUSTER_AXIS_THRESHOLD = 0.24;
   const SIDE_THRUSTER_SPAWN_CHANCE_SPACE = 0.25;
   const SIDE_THRUSTER_SPAWN_CHANCE_ATMO = 0.38;
+  // Gimbal thrust-vector control
+  const MAX_GIMBAL_ANGLE = 0.22;           // ~12.6° max TVC deflection
+  const LATERAL_GIMBAL_SCALE = 1.5;        // multiplier: gimbal-angle → lateral force
+  const MAX_GIMBAL_DRIFT = 0.055;          // max passive gimbal drift magnitude
+  const GIMBAL_DRIFT_DECAY_RATE = 0.88;    // per-frame decay when actively steering
+  const GIMBAL_DRIFT_AXIS_THRESHOLD = 0.15;// axis magnitude below which drift accumulates
+  const GIMBAL_TILT_MULTIPLIER = 3.5;      // gimbal angle to visual tilt scaling
+  const VELOCITY_TILT_DAMPEN = 0.25;       // dampen velocity contribution to tilt
+  const UNPOWERED_LATERAL_AUTHORITY = 0.22;// lateral authority without main engine thrust
+  const THRUST_GROWTH_RATE = 0.009;        // thrust scale growth per second (propellant burn)
+  const MAX_THRUST_SCALE = 1.45;           // max thrust multiplier as vehicle lightens
+  // Wind gust forces (acts on lateral velocity during atmospheric flight)
+  const WIND_GUST_FORCE_ATMO = 0.028;
+  const WIND_GUST_FORCE_MAXQ = 0.10;
+  const WIND_FREQ_PRIMARY = 2.4;
+  const WIND_FREQ_SECONDARY = 7.1;
+  const WIND_PHASE_OFFSET = 1.8;
+  const WIND_SECONDARY_SCALE = 0.45;
+  // Obstacle spawn tuning
+  const LIGHTNING_VY_MIN = 4.5;
+  const LIGHTNING_VY_MAX = 7.0;
+  const OBSTACLE_VY_MIN = 2.0;
+  const OBSTACLE_VY_MAX = 3.5;
+  const OBSTACLE_HOMING_STRENGTH = 0.006;  // how strongly obstacles drift toward the rocket
+  const PAIRED_OBSTACLE_SPAWN_CHANCE = 0.25;
+  const PAIRED_OBSTACLE_MIN_OFFSET = 40;
+  const PAIRED_OBSTACLE_MAX_OFFSET = 70;
+  const OBSTACLE_EDGE_MARGIN = 36;
+  // Max-Q stress tuning
+  const GIMBAL_STRESS_THRESHOLD_FACTOR = 0.2;  // fraction of MAX_GIMBAL_ANGLE for stress sign
+  const VELOCITY_STRESS_MULTIPLIER = 0.025;
+  const CONTINUOUS_STRESS_GIMBAL_THRESHOLD = 0.65; // fraction of max before continuous stress
+  const CONTINUOUS_STRESS_MULTIPLIER = 0.35;
+  const GIMBAL_DANGER_THRESHOLD = 0.78;    // fraction of MAX_GIMBAL_ANGLE for HUD danger color
   const CLOUD_SHADOW_ALPHA_FACTOR = 0.35;
   const VELOCITY_TILT_FACTOR = 0.15;
   const INPUT_TILT_FACTOR = 0.08;
@@ -698,7 +732,7 @@
       },
       world: { scrollY: 0, cameraVy: 0, padGone: false },
       telemetry: { altitude: 0, velocity: 0, q: 0, actualTime: -30, lng: 100, lox: 100, tPlus: 'T-00:30' },
-      rocket: { x: CW / 2, y: CH * 0.55, vx: 0, vy: 0, tilt: 0, burn: 0, plume: 'be4', fairingGone: false, explosion: 0 },
+      rocket: { x: CW / 2, y: CH * 0.55, vx: 0, vy: 0, tilt: 0, burn: 0, plume: 'be4', fairingGone: false, explosion: 0, gimbalAngle: 0, gimbalDrift: 0 },
       upper: { x: CW / 2, y: 142, vx: 0, vy: 0, throttle: 0.45, targetBand: 0.5, targetLock: 0, deployAngle: 0, released: false },
       booster: { x: CW / 2, y: 130, vx: 0, vy: 4.2, burn: 0, alive: true, reentryBurnDone: false, landingBurnDone: false, decalVisible: false, touchdown: false, touchdownVy: 0 },
       obstacles: [],
@@ -894,7 +928,7 @@
     };
     state.world = { scrollY: 0, cameraVy: 0, padGone: false };
     state.telemetry = { altitude: 0, velocity: 0, q: 0, actualTime: -30, lng: 100, lox: 100, tPlus: 'T-00:30' };
-    state.rocket = { x: CW / 2, y: CH * 0.55, vx: 0, vy: 0, tilt: 0, burn: 0, plume: 'be4', fairingGone: false, explosion: 0 };
+    state.rocket = { x: CW / 2, y: CH * 0.55, vx: 0, vy: 0, tilt: 0, burn: 0, plume: 'be4', fairingGone: false, explosion: 0, gimbalAngle: 0, gimbalDrift: 0 };
     state.upper = { x: CW / 2, y: 142, vx: 0, vy: 0, throttle: 0.45, targetBand: 0.5, targetLock: 0, deployAngle: 0, released: false };
     state.booster = { x: CW / 2, y: 130, vx: 0, vy: 4.2, burn: 0, alive: true, reentryBurnDone: false, landingBurnDone: false, decalVisible: false, touchdown: false, touchdownVy: 0 };
     state.obstacles = [];
@@ -958,6 +992,8 @@
     state.rocket.y = CH * 0.55;
     state.rocket.vx = 0;
     state.rocket.vy = 0;
+    state.rocket.gimbalAngle = 0;
+    state.rocket.gimbalDrift = 0;
     state.obstacles = [];
     state.upperHazards = [];
     state.ui.continueTimer = 0;
@@ -1151,32 +1187,53 @@
   function spawnAtmosphericObstacle() {
     const alt = state.telemetry.altitude;
     let types;
-    if (alt < 2000) types = ['bird', 'bird', 'bird'];
-    else if (alt < 15000) types = ['balloon', 'balloon', 'bird'];
-    else if (alt >= 30000 && alt <= 50000) types = ['ice', 'ice', 'balloon'];
+    if (alt < 2000) types = ['bird', 'bird', 'bird', 'lightning'];
+    else if (alt < 8000) types = ['bird', 'balloon', 'balloon', 'lightning', 'lightning'];
+    else if (alt < 15000) types = ['balloon', 'balloon', 'bird', 'ice', 'lightning'];
+    else if (alt >= 30000 && alt <= 50000) types = ['ice', 'ice', 'balloon', 'debris'];
     else if (alt >= 100000) types = ['debris', 'debris', 'ice'];
-    else types = ['balloon', 'ice'];
+    else types = ['balloon', 'ice', 'debris'];
     const type = types[Math.floor(Math.random() * types.length)];
-    let x = rand(42, CW - 42);
-    for (let i = 0; i < 8; i++) {
-      const blocked = state.obstacles.some(o => o.y > -20 && o.y < CH + 20 && Math.abs(o.x - x) < 48);
+    let x = rand(36, CW - 36);
+    // Lightning spawns close to the rocket's current x to force a reaction.
+    if (type === 'lightning') x = clamp(state.rocket.x + rand(-60, 60), 36, CW - 36);
+    for (let i = 0; i < 6; i++) {
+      const minGap = type === 'lightning' ? 30 : 44;
+      const blocked = state.obstacles.some(o => o.y > -20 && o.y < CH + 20 && Math.abs(o.x - x) < minGap);
       if (!blocked) break;
-      x = rand(42, CW - 42);
+      x = rand(36, CW - 36);
     }
+    const baseVy = type === 'lightning' ? rand(LIGHTNING_VY_MIN, LIGHTNING_VY_MAX) : rand(OBSTACLE_VY_MIN, OBSTACLE_VY_MAX);
+    // Slight homing: obstacles drift toward the rocket to increase pressure.
+    const homeVx = (state.rocket.x - x) * OBSTACLE_HOMING_STRENGTH;
     state.obstacles.push({
       type,
       x,
       y: -30,
-      w: type === 'balloon' ? 20 : type === 'ice' ? 28 : type === 'debris' ? 18 : 20,
-      h: type === 'balloon' ? 28 : type === 'ice' ? 14 : type === 'debris' ? 12 : 14,
-      vx: rand(-0.8, 0.8),
-      vy: rand(1.0, 1.5),
+      w: type === 'balloon' ? 22 : type === 'ice' ? 28 : type === 'debris' ? 18 : type === 'lightning' ? 10 : 20,
+      h: type === 'balloon' ? 30 : type === 'ice' ? 14 : type === 'debris' ? 12 : type === 'lightning' ? 40 : 14,
+      vx: rand(-0.6, 0.6) + homeVx,
+      vy: baseVy,
       whooshed: false
     });
+    // On harder difficulties occasionally spawn a paired obstacle nearby to force a harder dodge.
+    if (state.settings.difficulty !== 'KID' && Math.random() < PAIRED_OBSTACLE_SPAWN_CHANCE && type !== 'lightning') {
+      const pairedX = clamp(x + rand(PAIRED_OBSTACLE_MIN_OFFSET, PAIRED_OBSTACLE_MAX_OFFSET) * (Math.random() < 0.5 ? 1 : -1), OBSTACLE_EDGE_MARGIN, CW - OBSTACLE_EDGE_MARGIN);
+      state.obstacles.push({
+        type,
+        x: pairedX,
+        y: -30 + rand(-18, 18),
+        w: type === 'balloon' ? 22 : type === 'ice' ? 28 : type === 'debris' ? 18 : 20,
+        h: type === 'balloon' ? 30 : type === 'ice' ? 14 : type === 'debris' ? 12 : 14,
+        vx: rand(-0.6, 0.6),
+        vy: baseVy * rand(0.88, 1.12),
+        whooshed: false
+      });
+    }
   }
 
   function spawnUpperHazard() {
-    const names = state.telemetry.altitude >= 100000 ? ['debris', 'sat', 'micro'] : ['sat', 'micro'];
+    const names = state.telemetry.altitude >= 100000 ? ['debris', 'sat', 'micro', 'debris'] : ['sat', 'micro', 'sat'];
     const type = names[Math.floor(Math.random() * names.length)];
     state.upperHazards.push({
       type,
@@ -1184,8 +1241,8 @@
       y: -18,
       w: type === 'sat' ? 34 : 18,
       h: type === 'sat' ? 18 : 10,
-      vx: rand(-1.3, 1.3),
-      vy: rand(1.4, 2.2)
+      vx: rand(-1.8, 1.8),
+      vy: rand(2.0, 3.2)
     });
   }
 
@@ -1202,10 +1259,44 @@
   function applyRocketControl(dt, lowGravity) {
     const step = dt * BASE_FPS;
     const axis = playerInputAxis();
+    const mode = currentDifficulty();
+
+    // === GIMBAL THRUST-VECTOR CONTROL ===
+    // Player input sets gimbal target; actual gimbal slews slowly (limited actuator rate).
+    const gimbalTarget = axis * MAX_GIMBAL_ANGLE;
+    const slewRate = mode.gimbalSlewRate * step;
+    state.rocket.gimbalAngle = approach(state.rocket.gimbalAngle, gimbalTarget, slewRate);
+    // Passive gimbal drift — rocket wanders off-axis when player is not actively correcting.
+    if (Math.abs(axis) < GIMBAL_DRIFT_AXIS_THRESHOLD) {
+      state.rocket.gimbalDrift = clamp(
+        state.rocket.gimbalDrift + (Math.random() - 0.5) * mode.gimbalDriftBias,
+        -MAX_GIMBAL_DRIFT, MAX_GIMBAL_DRIFT
+      );
+      state.rocket.gimbalAngle += state.rocket.gimbalDrift * step;
+    } else {
+      state.rocket.gimbalDrift *= GIMBAL_DRIFT_DECAY_RATE; // decay when player is actively steering
+    }
+    state.rocket.gimbalAngle = clamp(state.rocket.gimbalAngle, -MAX_GIMBAL_ANGLE, MAX_GIMBAL_ANGLE);
+
+    // === LATERAL PHYSICS ===
     const lateralAccel = lowGravity ? LATERAL_ACCEL_SPACE : LATERAL_ACCEL_ATMO;
-    state.rocket.vx += axis * lateralAccel * step;
+    if (state.input.boostHeld) {
+      // With thrust: gimbal angle determines lateral force via thrust vectoring.
+      state.rocket.vx += Math.sin(state.rocket.gimbalAngle) * lateralAccel * LATERAL_GIMBAL_SCALE * step;
+    } else if (!lowGravity) {
+      // Without thrust in atmosphere: minimal aerodynamic authority only.
+      state.rocket.vx += axis * lateralAccel * UNPOWERED_LATERAL_AUTHORITY * step;
+    }
+    // Atmospheric wind gusts (sinusoidal multi-frequency — harder to predict).
+    if (!lowGravity && state.session.phase !== 'STAGE_SEP') {
+      const windBase = state.session.phase === 'MAX_Q' ? WIND_GUST_FORCE_MAXQ : WIND_GUST_FORCE_ATMO;
+      const t = state.session.totalElapsed;
+      state.rocket.vx += (Math.sin(t * WIND_FREQ_PRIMARY) * windBase + Math.sin(t * WIND_FREQ_SECONDARY + WIND_PHASE_OFFSET) * windBase * WIND_SECONDARY_SCALE) * step;
+    }
     state.rocket.vx *= lowGravity ? LATERAL_DAMPING_SPACE : LATERAL_DAMPING_ATMO;
     state.rocket.vx = clamp(state.rocket.vx, -MAX_LATERAL_VELOCITY, MAX_LATERAL_VELOCITY);
+
+    // === VERTICAL PHYSICS ===
     const gravity = lowGravity ? GRAVITY_SPACE : GRAVITY_ATMO;
     state.rocket.vy += gravity * step;
     const thrustlessDropAccel = !state.input.boostHeld && !lowGravity
@@ -1214,13 +1305,15 @@
     state.rocket.vy += thrustlessDropAccel * step;
     if (state.input.boostHeld) {
       const thrust = lowGravity ? MAIN_THRUST_SPACE : MAIN_THRUST_ATMO;
-      state.rocket.vy = Math.max(lowGravity ? MAX_UPWARD_VELOCITY_SPACE : MAX_UPWARD_VELOCITY_ATMO, state.rocket.vy - thrust * step);
-      state.rocket.vx += axis * (lowGravity ? LATERAL_THRUST_SPACE : LATERAL_THRUST_ATMO) * step;
+      // Thrust builds as propellant burns — lighter rocket accelerates faster (realistic TWR growth).
+      const thrustScale = lowGravity ? 1.0 : clamp(1.0 + state.session.phaseElapsed * THRUST_GROWTH_RATE, 1.0, MAX_THRUST_SCALE);
+      const vertThrust = Math.cos(state.rocket.gimbalAngle) * thrust * thrustScale;
+      state.rocket.vy = Math.max(lowGravity ? MAX_UPWARD_VELOCITY_SPACE : MAX_UPWARD_VELOCITY_ATMO, state.rocket.vy - vertThrust * step);
       state.rocket.burn = Math.max(state.rocket.burn, MAIN_BURN_MIN);
       spawnExhaust(lowGravity ? 'be3u' : 'be4', state.rocket.x, state.rocket.y + 28, lowGravity ? 0.7 : 1.1, state.effects.splitView ? 'upper' : 'main');
     }
-    if (Math.abs(axis) > SIDE_THRUSTER_AXIS_THRESHOLD && Math.random() < (lowGravity ? SIDE_THRUSTER_SPAWN_CHANCE_SPACE : SIDE_THRUSTER_SPAWN_CHANCE_ATMO)) {
-      spawnExhaust('be3u', state.rocket.x - Math.sign(axis) * 12, state.rocket.y + 8, lowGravity ? 0.24 : 0.34, state.effects.splitView ? 'upper' : 'main');
+    if (Math.abs(state.rocket.gimbalAngle) > MAX_GIMBAL_ANGLE * 0.5 && Math.random() < (lowGravity ? SIDE_THRUSTER_SPAWN_CHANCE_SPACE : SIDE_THRUSTER_SPAWN_CHANCE_ATMO)) {
+      spawnExhaust('be3u', state.rocket.x - Math.sign(state.rocket.gimbalAngle) * 12, state.rocket.y + 8, lowGravity ? 0.24 : 0.34, state.effects.splitView ? 'upper' : 'main');
     }
     state.rocket.vy *= lowGravity ? VERTICAL_DAMPING_SPACE : VERTICAL_DAMPING_ATMO;
     state.rocket.x = clamp(state.rocket.x + state.rocket.vx * step, 28, CW - 28);
@@ -1228,8 +1321,9 @@
     if (state.rocket.y <= ROCKET_Y_MIN + ROCKET_BOUNDARY_EPSILON || state.rocket.y >= ROCKET_Y_MAX - ROCKET_BOUNDARY_EPSILON) {
       state.rocket.vy *= ROCKET_BOUNDARY_DAMPING;
     }
+    // Tilt primarily follows gimbal angle (gives visual feedback of TVC state).
     const tumble = !state.input.boostHeld && !lowGravity ? Math.sin(state.session.phaseElapsed * NO_THRUST_TUMBLE_FREQ) * clamp((state.session.noThrustTime || 0) * NO_THRUST_TUMBLE_GAIN, 0, MAX_NO_THRUST_TUMBLE) : 0;
-    state.rocket.tilt = clamp(state.rocket.vx * VELOCITY_TILT_FACTOR + axis * INPUT_TILT_FACTOR + tumble, -MAX_ROCKET_TILT, MAX_ROCKET_TILT);
+    state.rocket.tilt = clamp(state.rocket.gimbalAngle * GIMBAL_TILT_MULTIPLIER + state.rocket.vx * VELOCITY_TILT_FACTOR * VELOCITY_TILT_DAMPEN + tumble, -MAX_ROCKET_TILT, MAX_ROCKET_TILT);
     if (state.rocket.burn > 0) state.rocket.burn = Math.max(0, state.rocket.burn - dt);
   }
 
@@ -1296,31 +1390,9 @@
       state.rocket.y = CH * 0.55;
       state.rocket.vx = 0;
       state.rocket.vy = -1;
+      state.rocket.gimbalAngle = 0;
+      state.rocket.gimbalDrift = 0;
       state.session.phaseGrace = Math.max(state.session.phaseGrace, 3);
-      return;
-    }
-    if (state.settings.difficulty === 'CADET') {
-      Particles.burst(28, () => ({
-        kind: 'smoke',
-        section: state.effects.splitView ? 'upper' : 'main',
-        x: state.effects.splitView ? state.upper.x : state.rocket.x,
-        y: state.effects.splitView ? state.upper.y : state.rocket.y,
-        vx: rand(-1.2, 1.2),
-        vy: rand(-0.6, 0.9),
-        life: 0.7,
-        decay: 0.05,
-        size: rand(2, 6),
-        grow: 0.05,
-        alpha: 0.5,
-        color: '210,245,255'
-      }));
-      state.rocket.x = CW / 2;
-      state.rocket.y = CH * 0.55;
-      state.rocket.vx = 0;
-      state.rocket.vy = -1.2;
-      state.session.phaseGrace = Math.max(state.session.phaseGrace, 3);
-      showOverlayMessage('Range safety triggered — let’s try again!', 2.1);
-      Audio.play('boop', state.settings);
       return;
     }
     if (!currentDifficulty().allowFail) {
@@ -1342,6 +1414,8 @@
       state.rocket.y = CH * 0.55;
       state.rocket.vx = 0;
       state.rocket.vy = -1.2;
+      state.rocket.gimbalAngle = 0;
+      state.rocket.gimbalDrift = 0;
       state.session.phaseGrace = Math.max(state.session.phaseGrace, 1);
       showOverlayMessage('Whoops! Try again — the rocket is fine.', 1.8);
       Audio.play('boop', state.settings);
@@ -1714,19 +1788,22 @@
     updateSky(dt, 0.3 + state.world.cameraVy * 0.6);
     applyRocketControl(dt, false);
     Audio.updateRumble(0.58, state.settings);
-    const axis = playerInputAxis();
-    const sign = axis > 0.2 ? 1 : axis < -0.2 ? -1 : 0;
-    if (state.session.phaseGrace <= 0 && sign && state.session.recentSteerSign && sign !== state.session.recentSteerSign) {
-      state.session.structuralStress += mode.qStressGain + Math.abs(state.rocket.vx) * 0.02;
+    // Structural stress driven by gimbal angle changes at high dynamic pressure.
+    const gimbalSign = state.rocket.gimbalAngle > MAX_GIMBAL_ANGLE * GIMBAL_STRESS_THRESHOLD_FACTOR ? 1 : state.rocket.gimbalAngle < -MAX_GIMBAL_ANGLE * GIMBAL_STRESS_THRESHOLD_FACTOR ? -1 : 0;
+    if (state.session.phaseGrace <= 0 && gimbalSign && state.session.recentSteerSign && gimbalSign !== state.session.recentSteerSign) {
+      state.session.structuralStress += mode.qStressGain + Math.abs(state.rocket.vx) * VELOCITY_STRESS_MULTIPLIER;
       state.session.lastSteerChange = state.session.totalElapsed;
       addShake(1.4, 0.15);
     }
+    // Large gimbal angles at max-Q also add continuous stress.
+    if (state.session.phaseGrace <= 0 && Math.abs(state.rocket.gimbalAngle) > MAX_GIMBAL_ANGLE * CONTINUOUS_STRESS_GIMBAL_THRESHOLD) {
+      state.session.structuralStress += mode.qStressGain * CONTINUOUS_STRESS_MULTIPLIER * dt;
+    }
     state.session.structuralStress = Math.max(0, state.session.structuralStress - dt * mode.qStressDecay);
     if (updateNoThrustLoss(dt, 'maxq')) return;
-    if (state.settings.difficulty === 'CADET') state.session.structuralStress = Math.min(state.session.structuralStress, 0.45);
-    state.session.recentSteerSign = sign || state.session.recentSteerSign;
-    if (state.session.phaseElapsed > 2.5 && Math.random() < 0.018 * Math.max(0.2, mode.spawnMul)) spawnAtmosphericObstacle();
-    if (state.settings.difficulty !== 'CADET' && state.session.structuralStress >= 1) {
+    state.session.recentSteerSign = gimbalSign || state.session.recentSteerSign;
+    if (state.session.phaseElapsed > 2.5 && Math.random() < 0.022 * Math.max(0.2, mode.spawnMul)) spawnAtmosphericObstacle();
+    if (state.session.structuralStress >= 1) {
       triggerRud('maxq');
       return;
     }
@@ -2286,6 +2363,26 @@
       ctx.fillRect(-8, -5, 16, 10);
       ctx.strokeStyle = '#d6e3ef';
       ctx.strokeRect(-8, -5, 16, 10);
+    } else if (o.type === 'lightning') {
+      // Animated lightning bolt — bright, dangerous, fast-moving.
+      const jitter = (Math.random() - 0.5) * 2;
+      ctx.strokeStyle = '#ffffa0';
+      ctx.shadowColor = '#ffff40';
+      ctx.shadowBlur = 8;
+      ctx.lineWidth = 2.2;
+      ctx.beginPath();
+      ctx.moveTo(0 + jitter, -20);
+      ctx.lineTo(-5 + jitter, -6);
+      ctx.lineTo(3 + jitter, -6);
+      ctx.lineTo(-6 + jitter, 12);
+      ctx.lineTo(0 + jitter, 12);
+      ctx.lineTo(-4 + jitter, 22);
+      ctx.stroke();
+      ctx.shadowBlur = 0;
+      ctx.fillStyle = 'rgba(255,255,60,0.18)';
+      ctx.beginPath();
+      ctx.ellipse(0, 0, 14, 24, 0, 0, Math.PI * 2);
+      ctx.fill();
     } else {
       ctx.strokeStyle = '#f7e4a8';
       ctx.lineWidth = 1.2;
@@ -2555,8 +2652,35 @@
       ctx.strokeRect(58, CH - 112, CW - 116, 32);
       ctx.fillStyle = '#ffcf5d';
       ctx.textAlign = 'center';
-      ctx.fillText('Hold BOOST to climb. ◀▶ to steer.', CW / 2, CH - 92);
+      ctx.fillText('Hold BOOST. Steer with TVC gimbal. Dodge everything.', CW / 2, CH - 92);
       ctx.textAlign = 'left';
+    }
+    // Gimbal TVC angle indicator — visible during powered atmospheric flight.
+    if (state.session.phase === 'ASCENT' || state.session.phase === 'MAX_Q' || state.session.phase === 'SUPERSONIC') {
+      const gx = CW / 2 - 44;
+      const gy = CH - 22;
+      const gw = 88;
+      const gh = 9;
+      ctx.fillStyle = 'rgba(0,0,0,0.5)';
+      ctx.fillRect(gx - 26, gy - 2, gw + 30, gh + 4);
+      ctx.strokeStyle = '#33ff33';
+      ctx.lineWidth = 1;
+      ctx.strokeRect(gx, gy, gw, gh);
+      // Danger zone at extremes
+      ctx.fillStyle = 'rgba(255,80,60,0.35)';
+      ctx.fillRect(gx, gy, gw * 0.18, gh);
+      ctx.fillRect(gx + gw * 0.82, gy, gw * 0.18, gh);
+      // Center tick
+      ctx.fillStyle = '#33ff33';
+      ctx.fillRect(gx + gw / 2 - 1, gy, 2, gh);
+      // Current gimbal angle marker
+      const gimbalFrac = (state.rocket.gimbalAngle + MAX_GIMBAL_ANGLE) / (2 * MAX_GIMBAL_ANGLE);
+      const markerColor = Math.abs(state.rocket.gimbalAngle) > MAX_GIMBAL_ANGLE * GIMBAL_DANGER_THRESHOLD ? '#ff5d5d' : '#ffcf5d';
+      ctx.fillStyle = markerColor;
+      ctx.fillRect(gx + clamp(gimbalFrac * gw - 3, 0, gw - 6), gy, 6, gh);
+      ctx.fillStyle = '#33ff33';
+      ctx.font = '8px "Share Tech Mono", monospace';
+      ctx.fillText('TVC', gx - 24, gy + gh - 1);
     }
     if (state.ui.phaseCaptionTimer > 0 && state.ui.phaseCaption) {
       ctx.fillStyle = 'rgba(0,0,0,0.45)';
@@ -2638,10 +2762,11 @@
     });
     ctx.fillStyle = '#33ff33';
     ctx.font = '11px "Share Tech Mono", monospace';
-    ctx.fillText('Auto-poll pad, survive Max-Q, recover booster, hit orbit, deploy payload.', CW / 2, 346);
-    ctx.fillText('Konami code unlocks Bezos Mode. That is the entire joke.', CW / 2, 366);
-    if (state.settings.bestFlight) ctx.fillText(`Mission Record: ${state.settings.bestFlight.name} | ${state.settings.bestFlight.medal}`, CW / 2, 386);
-    ctx.fillText('P pause | M mute | Settings in pause menu', CW / 2, 408);
+    ctx.fillText('GOAL: Liftoff → Stage Sep → Orbit Insertion → Deploy Payload. Everything explodes on impact.', CW / 2, 346);
+    ctx.fillText('TVC gimbal lags — steer early. Control loss = RUD. Gradatim Ferociter.', CW / 2, 362);
+    ctx.fillText('KID: forgiving  |  CADET: explodes on hit  |  PAD RAT: realistic & brutal', CW / 2, 378);
+    if (state.settings.bestFlight) ctx.fillText(`Mission Record: ${state.settings.bestFlight.name} | ${state.settings.bestFlight.medal}`, CW / 2, 394);
+    ctx.fillText('P pause | M mute | Settings in pause menu', CW / 2, 410);
   }
 
   function drawPadOverlay(ctx) {
