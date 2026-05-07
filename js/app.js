@@ -2020,24 +2020,56 @@ window.shareApp = shareApp;
 
 function setupSplash() {
   const SEEN_KEY = 'toolbox-seen-splash';
-  try {
-    if (localStorage.getItem(SEEN_KEY)) return;
-  } catch (_) {}
+  const storage = (() => {
+    try {
+      return window.localStorage;
+    } catch (_) {
+      return null;
+    }
+  })();
+
+  if (storage && storage.getItem(SEEN_KEY)) return;
 
   const modal = document.getElementById('splash-modal');
   if (!modal) return;
 
   const primaryAction = modal.querySelector('[data-action="splashEnterToolbox"]');
+  const getFocusable = () => Array.from(modal.querySelectorAll('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'))
+    .filter(element => !element.disabled && element.getAttribute('aria-hidden') !== 'true');
   const onKeydown = (event) => {
-    if (!modal.hidden && event.key === 'Escape') dismiss();
+    if (modal.hidden) return;
+
+    if (event.key === 'Escape') {
+      event.preventDefault();
+      dismiss();
+      return;
+    }
+
+    if (event.key !== 'Tab') return;
+
+    const focusable = getFocusable();
+    if (!focusable.length) return;
+
+    const first = focusable[0];
+    const last = focusable[focusable.length - 1];
+    if (!modal.contains(document.activeElement)) {
+      event.preventDefault();
+      first.focus();
+      return;
+    }
+    if (event.shiftKey && document.activeElement === first) {
+      event.preventDefault();
+      last.focus();
+    } else if (!event.shiftKey && document.activeElement === last) {
+      event.preventDefault();
+      first.focus();
+    }
   };
   const dismiss = () => {
     if (modal.hidden) return;
     modal.hidden = true;
     document.removeEventListener('keydown', onKeydown);
-    try {
-      localStorage.setItem(SEEN_KEY, '1');
-    } catch (_) {}
+    if (storage) storage.setItem(SEEN_KEY, '1');
   };
 
   window.splashClose = dismiss;
@@ -2052,7 +2084,7 @@ function setupSplash() {
 
   modal.hidden = false;
   document.addEventListener('keydown', onKeydown);
-  if (primaryAction) primaryAction.focus();
+  (primaryAction || getFocusable()[0] || modal).focus();
 }
 
 /* ============================================================
