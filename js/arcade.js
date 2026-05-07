@@ -165,11 +165,39 @@
   const SIDE_THRUSTER_SPAWN_CHANCE_SPACE = 0.25;
   const SIDE_THRUSTER_SPAWN_CHANCE_ATMO = 0.38;
   // Gimbal thrust-vector control
-  const MAX_GIMBAL_ANGLE = 0.22;       // ~12.6° max TVC deflection
-  const LATERAL_GIMBAL_SCALE = 1.5;    // multiplier: gimbal-angle → lateral force
+  const MAX_GIMBAL_ANGLE = 0.22;           // ~12.6° max TVC deflection
+  const LATERAL_GIMBAL_SCALE = 1.5;        // multiplier: gimbal-angle → lateral force
+  const MAX_GIMBAL_DRIFT = 0.055;          // max passive gimbal drift magnitude
+  const GIMBAL_DRIFT_DECAY_RATE = 0.88;    // per-frame decay when actively steering
+  const GIMBAL_DRIFT_AXIS_THRESHOLD = 0.15;// axis magnitude below which drift accumulates
+  const GIMBAL_TILT_MULTIPLIER = 3.5;      // gimbal angle to visual tilt scaling
+  const VELOCITY_TILT_DAMPEN = 0.25;       // dampen velocity contribution to tilt
+  const UNPOWERED_LATERAL_AUTHORITY = 0.22;// lateral authority without main engine thrust
+  const THRUST_GROWTH_RATE = 0.009;        // thrust scale growth per second (propellant burn)
+  const MAX_THRUST_SCALE = 1.45;           // max thrust multiplier as vehicle lightens
   // Wind gust forces (acts on lateral velocity during atmospheric flight)
   const WIND_GUST_FORCE_ATMO = 0.028;
   const WIND_GUST_FORCE_MAXQ = 0.10;
+  const WIND_FREQ_PRIMARY = 2.4;
+  const WIND_FREQ_SECONDARY = 7.1;
+  const WIND_PHASE_OFFSET = 1.8;
+  const WIND_SECONDARY_SCALE = 0.45;
+  // Obstacle spawn tuning
+  const LIGHTNING_VY_MIN = 4.5;
+  const LIGHTNING_VY_MAX = 7.0;
+  const OBSTACLE_VY_MIN = 2.0;
+  const OBSTACLE_VY_MAX = 3.5;
+  const OBSTACLE_HOMING_STRENGTH = 0.006;  // how strongly obstacles drift toward the rocket
+  const PAIRED_OBSTACLE_SPAWN_CHANCE = 0.25;
+  const PAIRED_OBSTACLE_MIN_OFFSET = 40;
+  const PAIRED_OBSTACLE_MAX_OFFSET = 70;
+  const OBSTACLE_EDGE_MARGIN = 36;
+  // Max-Q stress tuning
+  const GIMBAL_STRESS_THRESHOLD_FACTOR = 0.2;  // fraction of MAX_GIMBAL_ANGLE for stress sign
+  const VELOCITY_STRESS_MULTIPLIER = 0.025;
+  const CONTINUOUS_STRESS_GIMBAL_THRESHOLD = 0.65; // fraction of max before continuous stress
+  const CONTINUOUS_STRESS_MULTIPLIER = 0.35;
+  const GIMBAL_DANGER_THRESHOLD = 0.78;    // fraction of MAX_GIMBAL_ANGLE for HUD danger color
   const CLOUD_SHADOW_ALPHA_FACTOR = 0.35;
   const VELOCITY_TILT_FACTOR = 0.15;
   const INPUT_TILT_FACTOR = 0.08;
@@ -1175,9 +1203,9 @@
       if (!blocked) break;
       x = rand(36, CW - 36);
     }
-    const baseVy = type === 'lightning' ? rand(4.5, 7.0) : rand(2.0, 3.5);
+    const baseVy = type === 'lightning' ? rand(LIGHTNING_VY_MIN, LIGHTNING_VY_MAX) : rand(OBSTACLE_VY_MIN, OBSTACLE_VY_MAX);
     // Slight homing: obstacles drift toward the rocket to increase pressure.
-    const homeVx = (state.rocket.x - x) * 0.006;
+    const homeVx = (state.rocket.x - x) * OBSTACLE_HOMING_STRENGTH;
     state.obstacles.push({
       type,
       x,
@@ -1189,8 +1217,8 @@
       whooshed: false
     });
     // On harder difficulties occasionally spawn a paired obstacle nearby to force a harder dodge.
-    if (state.settings.difficulty !== 'KID' && Math.random() < 0.25 && type !== 'lightning') {
-      const pairedX = clamp(x + rand(40, 70) * (Math.random() < 0.5 ? 1 : -1), 36, CW - 36);
+    if (state.settings.difficulty !== 'KID' && Math.random() < PAIRED_OBSTACLE_SPAWN_CHANCE && type !== 'lightning') {
+      const pairedX = clamp(x + rand(PAIRED_OBSTACLE_MIN_OFFSET, PAIRED_OBSTACLE_MAX_OFFSET) * (Math.random() < 0.5 ? 1 : -1), OBSTACLE_EDGE_MARGIN, CW - OBSTACLE_EDGE_MARGIN);
       state.obstacles.push({
         type,
         x: pairedX,
@@ -1239,14 +1267,14 @@
     const slewRate = mode.gimbalSlewRate * step;
     state.rocket.gimbalAngle = approach(state.rocket.gimbalAngle, gimbalTarget, slewRate);
     // Passive gimbal drift — rocket wanders off-axis when player is not actively correcting.
-    if (Math.abs(axis) < 0.15) {
+    if (Math.abs(axis) < GIMBAL_DRIFT_AXIS_THRESHOLD) {
       state.rocket.gimbalDrift = clamp(
         state.rocket.gimbalDrift + (Math.random() - 0.5) * mode.gimbalDriftBias,
-        -0.055, 0.055
+        -MAX_GIMBAL_DRIFT, MAX_GIMBAL_DRIFT
       );
       state.rocket.gimbalAngle += state.rocket.gimbalDrift * step;
     } else {
-      state.rocket.gimbalDrift *= 0.88; // decay when player is actively steering
+      state.rocket.gimbalDrift *= GIMBAL_DRIFT_DECAY_RATE; // decay when player is actively steering
     }
     state.rocket.gimbalAngle = clamp(state.rocket.gimbalAngle, -MAX_GIMBAL_ANGLE, MAX_GIMBAL_ANGLE);
 
@@ -1257,13 +1285,13 @@
       state.rocket.vx += Math.sin(state.rocket.gimbalAngle) * lateralAccel * LATERAL_GIMBAL_SCALE * step;
     } else if (!lowGravity) {
       // Without thrust in atmosphere: minimal aerodynamic authority only.
-      state.rocket.vx += axis * lateralAccel * 0.22 * step;
+      state.rocket.vx += axis * lateralAccel * UNPOWERED_LATERAL_AUTHORITY * step;
     }
     // Atmospheric wind gusts (sinusoidal multi-frequency — harder to predict).
     if (!lowGravity && state.session.phase !== 'STAGE_SEP') {
       const windBase = state.session.phase === 'MAX_Q' ? WIND_GUST_FORCE_MAXQ : WIND_GUST_FORCE_ATMO;
       const t = state.session.totalElapsed;
-      state.rocket.vx += (Math.sin(t * 2.4) * windBase + Math.sin(t * 7.1 + 1.8) * windBase * 0.45) * step;
+      state.rocket.vx += (Math.sin(t * WIND_FREQ_PRIMARY) * windBase + Math.sin(t * WIND_FREQ_SECONDARY + WIND_PHASE_OFFSET) * windBase * WIND_SECONDARY_SCALE) * step;
     }
     state.rocket.vx *= lowGravity ? LATERAL_DAMPING_SPACE : LATERAL_DAMPING_ATMO;
     state.rocket.vx = clamp(state.rocket.vx, -MAX_LATERAL_VELOCITY, MAX_LATERAL_VELOCITY);
@@ -1278,7 +1306,7 @@
     if (state.input.boostHeld) {
       const thrust = lowGravity ? MAIN_THRUST_SPACE : MAIN_THRUST_ATMO;
       // Thrust builds as propellant burns — lighter rocket accelerates faster (realistic TWR growth).
-      const thrustScale = lowGravity ? 1.0 : clamp(1.0 + state.session.phaseElapsed * 0.009, 1.0, 1.45);
+      const thrustScale = lowGravity ? 1.0 : clamp(1.0 + state.session.phaseElapsed * THRUST_GROWTH_RATE, 1.0, MAX_THRUST_SCALE);
       const vertThrust = Math.cos(state.rocket.gimbalAngle) * thrust * thrustScale;
       state.rocket.vy = Math.max(lowGravity ? MAX_UPWARD_VELOCITY_SPACE : MAX_UPWARD_VELOCITY_ATMO, state.rocket.vy - vertThrust * step);
       state.rocket.burn = Math.max(state.rocket.burn, MAIN_BURN_MIN);
@@ -1295,7 +1323,7 @@
     }
     // Tilt primarily follows gimbal angle (gives visual feedback of TVC state).
     const tumble = !state.input.boostHeld && !lowGravity ? Math.sin(state.session.phaseElapsed * NO_THRUST_TUMBLE_FREQ) * clamp((state.session.noThrustTime || 0) * NO_THRUST_TUMBLE_GAIN, 0, MAX_NO_THRUST_TUMBLE) : 0;
-    state.rocket.tilt = clamp(state.rocket.gimbalAngle * 3.5 + state.rocket.vx * VELOCITY_TILT_FACTOR * 0.25 + tumble, -MAX_ROCKET_TILT, MAX_ROCKET_TILT);
+    state.rocket.tilt = clamp(state.rocket.gimbalAngle * GIMBAL_TILT_MULTIPLIER + state.rocket.vx * VELOCITY_TILT_FACTOR * VELOCITY_TILT_DAMPEN + tumble, -MAX_ROCKET_TILT, MAX_ROCKET_TILT);
     if (state.rocket.burn > 0) state.rocket.burn = Math.max(0, state.rocket.burn - dt);
   }
 
@@ -1761,15 +1789,15 @@
     applyRocketControl(dt, false);
     Audio.updateRumble(0.58, state.settings);
     // Structural stress driven by gimbal angle changes at high dynamic pressure.
-    const gimbalSign = state.rocket.gimbalAngle > MAX_GIMBAL_ANGLE * 0.2 ? 1 : state.rocket.gimbalAngle < -MAX_GIMBAL_ANGLE * 0.2 ? -1 : 0;
+    const gimbalSign = state.rocket.gimbalAngle > MAX_GIMBAL_ANGLE * GIMBAL_STRESS_THRESHOLD_FACTOR ? 1 : state.rocket.gimbalAngle < -MAX_GIMBAL_ANGLE * GIMBAL_STRESS_THRESHOLD_FACTOR ? -1 : 0;
     if (state.session.phaseGrace <= 0 && gimbalSign && state.session.recentSteerSign && gimbalSign !== state.session.recentSteerSign) {
-      state.session.structuralStress += mode.qStressGain + Math.abs(state.rocket.vx) * 0.025;
+      state.session.structuralStress += mode.qStressGain + Math.abs(state.rocket.vx) * VELOCITY_STRESS_MULTIPLIER;
       state.session.lastSteerChange = state.session.totalElapsed;
       addShake(1.4, 0.15);
     }
     // Large gimbal angles at max-Q also add continuous stress.
-    if (state.session.phaseGrace <= 0 && Math.abs(state.rocket.gimbalAngle) > MAX_GIMBAL_ANGLE * 0.65) {
-      state.session.structuralStress += mode.qStressGain * 0.35 * dt;
+    if (state.session.phaseGrace <= 0 && Math.abs(state.rocket.gimbalAngle) > MAX_GIMBAL_ANGLE * CONTINUOUS_STRESS_GIMBAL_THRESHOLD) {
+      state.session.structuralStress += mode.qStressGain * CONTINUOUS_STRESS_MULTIPLIER * dt;
     }
     state.session.structuralStress = Math.max(0, state.session.structuralStress - dt * mode.qStressDecay);
     if (updateNoThrustLoss(dt, 'maxq')) return;
@@ -2647,7 +2675,7 @@
       ctx.fillRect(gx + gw / 2 - 1, gy, 2, gh);
       // Current gimbal angle marker
       const gimbalFrac = (state.rocket.gimbalAngle + MAX_GIMBAL_ANGLE) / (2 * MAX_GIMBAL_ANGLE);
-      const markerColor = Math.abs(state.rocket.gimbalAngle) > MAX_GIMBAL_ANGLE * 0.78 ? '#ff5d5d' : '#ffcf5d';
+      const markerColor = Math.abs(state.rocket.gimbalAngle) > MAX_GIMBAL_ANGLE * GIMBAL_DANGER_THRESHOLD ? '#ff5d5d' : '#ffcf5d';
       ctx.fillStyle = markerColor;
       ctx.fillRect(gx + clamp(gimbalFrac * gw - 3, 0, gw - 6), gy, 6, gh);
       ctx.fillStyle = '#33ff33';
