@@ -123,7 +123,7 @@
   ];
   const KONAMI = ['ArrowUp', 'ArrowUp', 'ArrowDown', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'ArrowLeft', 'ArrowRight', 'KeyB', 'KeyA'];
   const PAD_POLL_FLIP_SEC = 0.5;
-  const ASCENT_SPAWN_INTERVAL_MULTIPLIER = 5; // ~5x timeline expansion from v3.0, so spawns are spaced similarly per phase.
+  const ASCENT_SPAWN_INTERVAL_MULTIPLIER = 3; // Denser spawn pacing to keep ascent play more arcade-challenging.
   const BIN_LABEL_OFFSET_X = -7; // Centers 5px stencil text on 18px block width.
   const BIN_LABEL_OFFSET_Y = -2; // Lifts stencil text above the top face for tiny stenciled readability.
   const PAD_SKY_ALTITUDE_THRESHOLD = 18000;
@@ -647,9 +647,9 @@
         structuralStress: 0,
         recentSteerSign: 0,
         lastSteerChange: -10,
-        ascentObstacleTarget: 5,
+        ascentObstacleTarget: 9,
         ascentObstacleCount: 0,
-        nextAscentSpawnAt: 3,
+        nextAscentSpawnAt: 1.5,
         upperObstacleTarget: 2,
         upperObstacleCount: 0,
         nextUpperSpawnAt: 1.5,
@@ -1118,7 +1118,7 @@
     const type = types[Math.floor(Math.random() * types.length)];
     let x = rand(42, CW - 42);
     for (let i = 0; i < 8; i++) {
-      const blocked = state.obstacles.some(o => o.y > -20 && o.y < CH + 20 && Math.abs(o.x - x) < 60);
+      const blocked = state.obstacles.some(o => o.y > -20 && o.y < CH + 20 && Math.abs(o.x - x) < 48);
       if (!blocked) break;
       x = rand(42, CW - 42);
     }
@@ -1395,9 +1395,9 @@
         state.effects.liftoffShake = 2;
         state.effects.delugeTimer = Math.max(state.effects.delugeTimer, 3);
         state.effects.shockRing = 1;
-        state.session.ascentObstacleTarget = Math.floor(rand(4, 7));
+        state.session.ascentObstacleTarget = Math.floor(rand(8, 13));
         state.session.ascentObstacleCount = 0;
-        state.session.nextAscentSpawnAt = 3;
+        state.session.nextAscentSpawnAt = 1.5;
         state.session.obstacleStreak = 0;
         Audio.setMood('ascent', state.settings);
         break;
