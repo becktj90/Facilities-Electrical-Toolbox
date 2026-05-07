@@ -139,6 +139,34 @@
   const NO_THRUST_TUMBLE_GAIN = 0.09;
   const MAX_NO_THRUST_TUMBLE = 0.34;
   const MAX_ROCKET_TILT = 0.8;
+  const ROCKET_Y_MIN = CH * 0.34;
+  const ROCKET_Y_MAX = CH * 0.78;
+  const ROCKET_BOUNDARY_EPSILON = 0.01;
+  const ROCKET_BOUNDARY_DAMPING = 0.55;
+  const LATERAL_ACCEL_SPACE = 0.14;
+  const LATERAL_ACCEL_ATMO = 0.32;
+  const LATERAL_DAMPING_SPACE = 0.96;
+  const LATERAL_DAMPING_ATMO = 0.965;
+  const MAX_LATERAL_VELOCITY = 5.4;
+  const GRAVITY_SPACE = 0.045;
+  const GRAVITY_ATMO = 0.11;
+  const THRUSTLESS_DROP_RATE = 0.05;
+  const MAX_THRUSTLESS_DROP = 0.18;
+  const MAIN_THRUST_SPACE = 0.14;
+  const MAIN_THRUST_ATMO = 0.27;
+  const MAX_UPWARD_VELOCITY_SPACE = -2.2;
+  const MAX_UPWARD_VELOCITY_ATMO = -3.6;
+  const LATERAL_THRUST_SPACE = 0.028;
+  const LATERAL_THRUST_ATMO = 0.05;
+  const VERTICAL_DAMPING_SPACE = 0.995;
+  const VERTICAL_DAMPING_ATMO = 0.992;
+  const MAIN_BURN_MIN = 0.1;
+  const SIDE_THRUSTER_AXIS_THRESHOLD = 0.24;
+  const SIDE_THRUSTER_SPAWN_CHANCE_SPACE = 0.25;
+  const SIDE_THRUSTER_SPAWN_CHANCE_ATMO = 0.38;
+  const CLOUD_SHADOW_ALPHA_FACTOR = 0.35;
+  const VELOCITY_TILT_FACTOR = 0.15;
+  const INPUT_TILT_FACTOR = 0.08;
   const MAX_PARTICLES = 600;
   const VOICE_POOL_SIZE = 8;
   const PAD_SPRITE_H = 480;
@@ -1174,24 +1202,34 @@
   function applyRocketControl(dt, lowGravity) {
     const step = dt * BASE_FPS;
     const axis = playerInputAxis();
-    state.rocket.vx += axis * 0.22 * step;
-    state.rocket.vx *= 0.88;
-    state.rocket.vx = clamp(state.rocket.vx, -4.2, 4.2);
-    state.rocket.x = clamp(state.rocket.x + state.rocket.vx * step, 28, CW - 28);
-    const gravity = lowGravity ? 0.03 : 0.08;
+    const lateralAccel = lowGravity ? LATERAL_ACCEL_SPACE : LATERAL_ACCEL_ATMO;
+    state.rocket.vx += axis * lateralAccel * step;
+    state.rocket.vx *= lowGravity ? LATERAL_DAMPING_SPACE : LATERAL_DAMPING_ATMO;
+    state.rocket.vx = clamp(state.rocket.vx, -MAX_LATERAL_VELOCITY, MAX_LATERAL_VELOCITY);
+    const gravity = lowGravity ? GRAVITY_SPACE : GRAVITY_ATMO;
     state.rocket.vy += gravity * step;
-    state.rocket.vy *= lowGravity ? 0.96 : 0.94;
+    const thrustlessDropAccel = !state.input.boostHeld && !lowGravity
+      ? clamp((state.session.noThrustTime || 0) * THRUSTLESS_DROP_RATE, 0, MAX_THRUSTLESS_DROP)
+      : 0;
+    state.rocket.vy += thrustlessDropAccel * step;
     if (state.input.boostHeld) {
-      state.rocket.vy = Math.max(lowGravity ? -1.8 : -2.8, state.rocket.vy - (lowGravity ? 0.12 : 0.2) * step);
-      state.rocket.burn = Math.max(state.rocket.burn, 0.08);
+      const thrust = lowGravity ? MAIN_THRUST_SPACE : MAIN_THRUST_ATMO;
+      state.rocket.vy = Math.max(lowGravity ? MAX_UPWARD_VELOCITY_SPACE : MAX_UPWARD_VELOCITY_ATMO, state.rocket.vy - thrust * step);
+      state.rocket.vx += axis * (lowGravity ? LATERAL_THRUST_SPACE : LATERAL_THRUST_ATMO) * step;
+      state.rocket.burn = Math.max(state.rocket.burn, MAIN_BURN_MIN);
       spawnExhaust(lowGravity ? 'be3u' : 'be4', state.rocket.x, state.rocket.y + 28, lowGravity ? 0.7 : 1.1, state.effects.splitView ? 'upper' : 'main');
     }
-    const noThrustDrop = !lowGravity ? clamp((state.session.noThrustTime || 0) * NO_THRUST_DROP_RATE, 0, MAX_NO_THRUST_DROP) : 0;
-    const anchorY = CH * 0.55 + (lowGravity ? -8 : noThrustDrop);
-    const bob = clamp(state.rocket.vy * 1.2, -7, 7);
-    state.rocket.y = approach(state.rocket.y, anchorY + bob, 0.9 * step);
+    if (Math.abs(axis) > SIDE_THRUSTER_AXIS_THRESHOLD && Math.random() < (lowGravity ? SIDE_THRUSTER_SPAWN_CHANCE_SPACE : SIDE_THRUSTER_SPAWN_CHANCE_ATMO)) {
+      spawnExhaust('be3u', state.rocket.x - Math.sign(axis) * 12, state.rocket.y + 8, lowGravity ? 0.24 : 0.34, state.effects.splitView ? 'upper' : 'main');
+    }
+    state.rocket.vy *= lowGravity ? VERTICAL_DAMPING_SPACE : VERTICAL_DAMPING_ATMO;
+    state.rocket.x = clamp(state.rocket.x + state.rocket.vx * step, 28, CW - 28);
+    state.rocket.y = clamp(state.rocket.y + state.rocket.vy * step, ROCKET_Y_MIN, ROCKET_Y_MAX);
+    if (state.rocket.y <= ROCKET_Y_MIN + ROCKET_BOUNDARY_EPSILON || state.rocket.y >= ROCKET_Y_MAX - ROCKET_BOUNDARY_EPSILON) {
+      state.rocket.vy *= ROCKET_BOUNDARY_DAMPING;
+    }
     const tumble = !state.input.boostHeld && !lowGravity ? Math.sin(state.session.phaseElapsed * NO_THRUST_TUMBLE_FREQ) * clamp((state.session.noThrustTime || 0) * NO_THRUST_TUMBLE_GAIN, 0, MAX_NO_THRUST_TUMBLE) : 0;
-    state.rocket.tilt = clamp(state.rocket.vx * 0.1 + tumble, -MAX_ROCKET_TILT, MAX_ROCKET_TILT);
+    state.rocket.tilt = clamp(state.rocket.vx * VELOCITY_TILT_FACTOR + axis * INPUT_TILT_FACTOR + tumble, -MAX_ROCKET_TILT, MAX_ROCKET_TILT);
     if (state.rocket.burn > 0) state.rocket.burn = Math.max(0, state.rocket.burn - dt);
   }
 
@@ -1878,9 +1916,9 @@
     if (!panel) {
       if (isPadSky) {
         const bg = ctx.createLinearGradient(0, 0, 0, CH);
-        bg.addColorStop(0, '#1a1a3a');
-        bg.addColorStop(0.62, '#5a3565');
-        bg.addColorStop(1, '#d4807a');
+        bg.addColorStop(0, '#87c8ec');
+        bg.addColorStop(0.62, '#9ad1f0');
+        bg.addColorStop(1, '#b3dbf3');
         ctx.fillStyle = bg;
         ctx.fillRect(0, 0, CW, CH);
       } else {
@@ -1894,9 +1932,9 @@
       ctx.clip();
       if (isPadSky) {
         const bg = ctx.createLinearGradient(0, panel.y, 0, panel.y + panel.h);
-        bg.addColorStop(0, '#1a1a3a');
-        bg.addColorStop(0.62, '#5a3565');
-        bg.addColorStop(1, '#d4807a');
+        bg.addColorStop(0, '#87c8ec');
+        bg.addColorStop(0.62, '#9ad1f0');
+        bg.addColorStop(1, '#b3dbf3');
         ctx.fillStyle = bg;
         ctx.fillRect(0, panel.y, CW, panel.h);
       } else {
@@ -1956,11 +1994,16 @@
   function drawCloudLayers(ctx, altitude) {
     const fade = clamp(1 - altitude / 18000, 0, 1);
     for (const cloud of state.clouds) {
-      ctx.fillStyle = `rgba(225,238,245,${cloud.alpha * fade})`;
+      const alpha = cloud.alpha * fade;
+      ctx.fillStyle = `rgba(184,212,230,${alpha * CLOUD_SHADOW_ALPHA_FACTOR})`;
+      ctx.beginPath();
+      ctx.ellipse(cloud.x, cloud.y + cloud.h * 0.18, cloud.w * 0.46, cloud.h * 0.48, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = `rgba(240,249,255,${alpha})`;
       ctx.beginPath();
       ctx.ellipse(cloud.x, cloud.y, cloud.w * 0.42, cloud.h * 0.55, 0, 0, Math.PI * 2);
-      ctx.ellipse(cloud.x + cloud.w * 0.2, cloud.y + 2, cloud.w * 0.28, cloud.h * 0.48, 0, 0, Math.PI * 2);
-      ctx.ellipse(cloud.x - cloud.w * 0.24, cloud.y + 4, cloud.w * 0.24, cloud.h * 0.42, 0, 0, Math.PI * 2);
+      ctx.ellipse(cloud.x + cloud.w * 0.22, cloud.y + 1, cloud.w * 0.30, cloud.h * 0.50, 0, 0, Math.PI * 2);
+      ctx.ellipse(cloud.x - cloud.w * 0.26, cloud.y + 3, cloud.w * 0.24, cloud.h * 0.44, 0, 0, Math.PI * 2);
       ctx.fill();
     }
   }
@@ -2284,9 +2327,9 @@
       ctx.fillRect(5, -22, 6, 3);
     }
     const rocketBodyGrad = ctx.createLinearGradient(-9, -72, 9, 28);
-    rocketBodyGrad.addColorStop(0, '#d9b188');
-    rocketBodyGrad.addColorStop(0.32, '#c89968');
-    rocketBodyGrad.addColorStop(1, '#b48358');
+    rocketBodyGrad.addColorStop(0, '#f5f8fc');
+    rocketBodyGrad.addColorStop(0.4, '#e1e8f1');
+    rocketBodyGrad.addColorStop(1, '#c8d1db');
     ctx.fillStyle = rocketBodyGrad;
     ctx.fillRect(-9, -62, 18, 75);
     ctx.fillStyle = 'rgba(255,240,220,0.18)';
@@ -2298,7 +2341,7 @@
       ctx.lineTo(9, sy);
       ctx.stroke();
     }
-    ctx.fillStyle = '#1a1f26';
+    ctx.fillStyle = '#2f73d8';
     ctx.fillRect(-9, 13, 18, 8);
     ctx.fillStyle = '#33261d';
     ctx.fillRect(-8, -62, 16, 1);
@@ -2317,7 +2360,7 @@
       ctx.fillRect(-9, -98, 18, 36);
       ctx.beginPath(); ctx.moveTo(-9, -98); ctx.lineTo(0, -116); ctx.lineTo(9, -98); ctx.closePath(); ctx.fill();
     }
-    ctx.fillStyle = '#1a1f26';
+    ctx.fillStyle = '#0f1722';
     ctx.fillRect(-10, 21, 20, 14);
     ctx.fillStyle = '#0c1118';
     [[0, 30], [-6, 31], [6, 31], [-10, 34], [-3, 34], [3, 34], [10, 34]].forEach(p => {
