@@ -1,42 +1,25 @@
-# Facilities Electrical Toolbox
+# Revit Panel Schedule OCR
 
-A browser-based electrical engineering reference and calculator application based on **Ugly's Electrical References** and the **National Electrical Code (NEC)**.
+A static single-page web application for extracting circuit data from Revit panel schedule images and printing a clean half-sheet panel schedule.
 
-Open `index.html` in any modern web browser — no build step or server required.
+## Features
 
-## Calculators & Reference Tables
-
-| Category | What's Included |
-|---|---|
-| **Ohm's Law** | Solve for V, I, R; power output |
-| **DC Power** | P = VI, P = I²R, P = V²/R |
-| **AC Power** | Single-phase & three-phase kVA, kW, kVAR, PF, phase angle |
-| **Reactance & Impedance** | XL, XC, series impedance Z, phase angle |
-| **Resonance** | Resonant frequency f₀, Q factor, bandwidth |
-| **Power Factor Correction** | Capacitor bank sizing (kVAR) |
-| **Series/Parallel Circuits** | Resistance, capacitance, inductance (add as many components as needed) |
-| **Voltage Drop** | Single-phase & three-phase VD%, minimum wire size finder |
-| **Motor Calculations** | HP from FLA, FLA from HP; single- & three-phase |
-| **Transformer Calculations** | kVA, primary/secondary currents, turns ratio; 1Ø & 3Ø |
-| **Conduit Fill** | THHN/THWN-2 in EMT with NEC fill limits; minimum conduit size suggestion |
-| **Short Circuit** | Available fault current (simplified transformer-only method) |
-| **Conductor Reference** | NEC 310.16 ampacity, AWG circular mils, THHN areas (copper & aluminum) |
-| **Motor FLA Tables** | NEC Table 430.248 (1Ø) and NEC Table 430.250 (3Ø) |
-| **Conduit Fill Tables** | EMT dimensions, max fill areas, THHN max conductor counts |
-| **Unit Conversions** | HP↔kW, W↔BTU/h, voltage/current/resistance/capacitance/inductance/frequency/length |
-| **Circular Mils** | Diameter (in) ↔ circular mils |
+- Client-side OCR with **Tesseract.js** loaded from a CDN
+- Drag-and-drop image upload plus a classic file picker
+- Editable circuit grid for fixing OCR mistakes before printing
+- Professional print layout sized to **4.25 in × 11 in** for half-sheet cardstock
+- Static hosting compatibility with **GitHub Pages**
 
 ## Usage
 
-1. Clone or download this repository.
-2. Open `index.html` in a web browser.
-3. Use the sidebar to navigate between calculator categories.
+1. Open `index.html` in a modern web browser.
+2. Upload or drag in a Revit panel schedule image.
+3. Click **Read Schedule** to run OCR.
+4. Review the extracted text and editable circuit table.
+5. Click **Print Schedule** for the clean half-sheet output.
 
-## Formulas Reference
+## Notes
 
-All formulas are standard electrical engineering relationships as documented in:
-- *Ugly's Electrical References* (Jones & Bartlett Learning)
-- *National Electrical Code* (NFPA 70)
-- IEEE standards
-
-> **Disclaimer:** Always verify calculations against the current edition of the NEC and consult a licensed electrician or engineer for code compliance and safety-critical applications.
+- OCR accuracy depends heavily on image quality, alignment, and contrast.
+- If OCR misses fields, edit the raw text or table manually before printing.
+- No build step or backend is required.
