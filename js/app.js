@@ -81,6 +81,7 @@ function val(id) {
 
 function fmt(n, decimals = 4) {
   if (!isFinite(n)) return '—';
+  // Engineering-friendly large-number formatting
   const abs = Math.abs(n);
   if (abs >= 1e9) return (n / 1e9).toFixed(2) + 'G';
   if (abs >= 1e6) return (n / 1e6).toFixed(2) + 'M';
@@ -746,11 +747,14 @@ window.calcConduitFill = function () {
    13. SHORT CIRCUIT (AVAILABLE FAULT CURRENT)
    ============================================================ */
 window.calcSC = function () {
-  const kVA = val('sc_kva'), Vs = val('sc_vs'), Zp = val('sc_z') / 100, XR = val('sc_xr');
-  if (!isPos(kVA, Vs, Zp, XR)) return showError('sc_result', 'Enter transformer kVA, secondary voltage (V), impedance %, and X/R ratio (> 0).');
+  const kVA = val('sc_kva'), Vs = val('sc_vs'), Zp = val('sc_z') / 100;
+  const xrInput = val('sc_xr');
+  const XR = isFinite(xrInput) && xrInput > 0 ? xrInput : 6.6;
+  if (!isPos(kVA, Vs, Zp)) return showError('sc_result', 'Enter transformer kVA, secondary voltage (V), and impedance %.');
   const I_base = kVA * 1000 / (Math.sqrt(3) * Vs);
   const I_fault = I_base / Zp;  // simplified (neglects line impedance)
   const I_sym  = I_fault;
+  // IEEE asymmetrical factor calculation based on X/R ratio
   const K = Math.sqrt(1 + 2 * Math.exp(-2 * Math.PI / XR));
   const I_asym = I_fault * K;
   showResult('sc_result', [
