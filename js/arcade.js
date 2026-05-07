@@ -2737,7 +2737,7 @@
     ctx.fillStyle = '#33ff33';
     ctx.textAlign = 'center';
     ctx.font = '36px "VT323", monospace';
-    ctx.fillText('NEW GLENN RUNNER v2', CW / 2, 124);
+    ctx.fillText('NEW GLENN RUNNER v' + (window.TOOLBOX_VERSION || '4.0.0'), CW / 2, 124);
     ctx.font = '12px "Share Tech Mono", monospace';
     ctx.fillStyle = '#8ce0ff';
     ctx.fillText('FIRST NEWLY-BUILT ORBITAL PAD SINCE THE 1960s', CW / 2, 154);
