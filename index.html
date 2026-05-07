@@ -30,6 +30,10 @@
 
   <!-- ── SIDEBAR NAV ── -->
   <nav class="sidebar">
+    <div class="sidebar-search">
+      <label for="nav-search">Search Calculators</label>
+      <input type="search" id="nav-search" placeholder="/ search calculators…">
+    </div>
     <div class="sidebar-section">
       <div class="sidebar-section-title">Fundamentals</div>
       <button class="nav-btn" data-target="sec-ohm">Ohm's Law</button>
@@ -1214,14 +1218,16 @@
             <div class="formula-box">
               I_base = kVA × 1000 / (√3 × V_sec)<br>
               I_SC   = I_base / Z_pu &nbsp;&nbsp; (Z_pu = %Z / 100)<br>
-              I_asym ≈ I_SC × 1.25  (simplified multiplier)
+              K = √(1 + 2·exp(−2π/(X/R)))<br>
+              I_asym = I_SC × K
             </div>
             <div class="input-group">
               <div><label>Transformer Rating (kVA)</label><input type="number" id="sc_kva" placeholder="e.g. 500" step="any" min="0"></div>
               <div><label>Secondary Voltage — L-L (V)</label><input type="number" id="sc_vs" placeholder="e.g. 480" step="any" min="0"></div>
             </div>
-            <div class="input-group single">
+            <div class="input-group">
               <div><label>Transformer Impedance — %Z</label><input type="number" id="sc_z" placeholder="e.g. 5.75" step="any" min="0"></div>
+              <div><label>X/R Ratio</label><input type="number" id="sc_xr" value="6.6" placeholder="e.g. 6.6" step="any" min="0"></div>
             </div>
             <button class="btn" onclick="calcSC()">Calculate</button>
             <div id="sc_result" class="result"></div>
@@ -1277,35 +1283,36 @@
                     <th>Circular Mils</th>
                     <th>Cu Ampacity (75°C)</th>
                     <th>Al Ampacity (75°C)</th>
+                    <th>Max OCPD per NEC 240.4(D)</th>
                     <th>THHN Area (sq in)</th>
                   </tr>
                 </thead>
                 <tbody>
-                  <tr><td>14 AWG</td><td>4,110</td><td>20 A</td><td>—</td><td>0.0097</td></tr>
-                  <tr><td>12 AWG</td><td>6,530</td><td>25 A</td><td>20 A</td><td>0.0133</td></tr>
-                  <tr><td>10 AWG</td><td>10,380</td><td>35 A</td><td>30 A</td><td>0.0211</td></tr>
-                  <tr><td>8 AWG</td><td>16,510</td><td>50 A</td><td>40 A</td><td>0.0366</td></tr>
-                  <tr><td>6 AWG</td><td>26,240</td><td>65 A</td><td>50 A</td><td>0.0507</td></tr>
-                  <tr><td>4 AWG</td><td>41,740</td><td>85 A</td><td>65 A</td><td>0.0824</td></tr>
-                  <tr><td>3 AWG</td><td>52,620</td><td>100 A</td><td>75 A</td><td>0.0973</td></tr>
-                  <tr><td>2 AWG</td><td>66,360</td><td>115 A</td><td>90 A</td><td>0.1158</td></tr>
-                  <tr><td>1 AWG</td><td>83,690</td><td>130 A</td><td>100 A</td><td>0.1562</td></tr>
-                  <tr><td>1/0 AWG</td><td>105,600</td><td>150 A</td><td>120 A</td><td>0.1855</td></tr>
-                  <tr><td>2/0 AWG</td><td>133,100</td><td>175 A</td><td>135 A</td><td>0.2223</td></tr>
-                  <tr><td>3/0 AWG</td><td>167,800</td><td>200 A</td><td>155 A</td><td>0.2679</td></tr>
-                  <tr><td>4/0 AWG</td><td>211,600</td><td>230 A</td><td>180 A</td><td>0.3237</td></tr>
-                  <tr><td>250 kcmil</td><td>250,000</td><td>255 A</td><td>205 A</td><td>0.3970</td></tr>
-                  <tr><td>300 kcmil</td><td>300,000</td><td>285 A</td><td>230 A</td><td>0.4608</td></tr>
-                  <tr><td>350 kcmil</td><td>350,000</td><td>310 A</td><td>250 A</td><td>0.5242</td></tr>
-                  <tr><td>400 kcmil</td><td>400,000</td><td>335 A</td><td>270 A</td><td>0.5863</td></tr>
-                  <tr><td>500 kcmil</td><td>500,000</td><td>380 A</td><td>310 A</td><td>0.7073</td></tr>
-                  <tr><td>600 kcmil</td><td>600,000</td><td>420 A</td><td>340 A</td><td>—</td></tr>
-                  <tr><td>750 kcmil</td><td>750,000</td><td>475 A</td><td>385 A</td><td>—</td></tr>
+                  <tr><td>14 AWG</td><td>4,110</td><td>20 A</td><td>—</td><td>15 A</td><td>0.0097</td></tr>
+                  <tr><td>12 AWG</td><td>6,530</td><td>25 A</td><td>20 A</td><td>20 A</td><td>0.0133</td></tr>
+                  <tr><td>10 AWG</td><td>10,380</td><td>35 A</td><td>30 A</td><td>30 A</td><td>0.0211</td></tr>
+                  <tr><td>8 AWG</td><td>16,510</td><td>50 A</td><td>40 A</td><td>—</td><td>0.0366</td></tr>
+                  <tr><td>6 AWG</td><td>26,240</td><td>65 A</td><td>50 A</td><td>—</td><td>0.0507</td></tr>
+                  <tr><td>4 AWG</td><td>41,740</td><td>85 A</td><td>65 A</td><td>—</td><td>0.0824</td></tr>
+                  <tr><td>3 AWG</td><td>52,620</td><td>100 A</td><td>75 A</td><td>—</td><td>0.0973</td></tr>
+                  <tr><td>2 AWG</td><td>66,360</td><td>115 A</td><td>90 A</td><td>—</td><td>0.1158</td></tr>
+                  <tr><td>1 AWG</td><td>83,690</td><td>130 A</td><td>100 A</td><td>—</td><td>0.1562</td></tr>
+                  <tr><td>1/0 AWG</td><td>105,600</td><td>150 A</td><td>120 A</td><td>—</td><td>0.1855</td></tr>
+                  <tr><td>2/0 AWG</td><td>133,100</td><td>175 A</td><td>135 A</td><td>—</td><td>0.2223</td></tr>
+                  <tr><td>3/0 AWG</td><td>167,800</td><td>200 A</td><td>155 A</td><td>—</td><td>0.2679</td></tr>
+                  <tr><td>4/0 AWG</td><td>211,600</td><td>230 A</td><td>180 A</td><td>—</td><td>0.3237</td></tr>
+                  <tr><td>250 kcmil</td><td>250,000</td><td>255 A</td><td>205 A</td><td>—</td><td>0.3970</td></tr>
+                  <tr><td>300 kcmil</td><td>300,000</td><td>285 A</td><td>230 A</td><td>—</td><td>0.4608</td></tr>
+                  <tr><td>350 kcmil</td><td>350,000</td><td>310 A</td><td>250 A</td><td>—</td><td>0.5242</td></tr>
+                  <tr><td>400 kcmil</td><td>400,000</td><td>335 A</td><td>270 A</td><td>—</td><td>0.5863</td></tr>
+                  <tr><td>500 kcmil</td><td>500,000</td><td>380 A</td><td>310 A</td><td>—</td><td>0.7073</td></tr>
+                  <tr><td>600 kcmil</td><td>600,000</td><td>420 A</td><td>340 A</td><td>—</td><td>—</td></tr>
+                  <tr><td>750 kcmil</td><td>750,000</td><td>475 A</td><td>385 A</td><td>—</td><td>—</td></tr>
                 </tbody>
               </table>
             </div>
             <div class="note">
-              ℹ NEC 310.16 (75°C column). Derate for ambient temperature, more than 3 conductors, or continuous loads. 14 AWG aluminum not listed in NEC for service conductors. Consult current NEC edition for complete rules.
+              ℹ NEC 310.16 (75°C column). Derate for ambient temperature, more than 3 conductors, or continuous loads. NEC 240.4(D) small-conductor OCPD caps are shown for 14/12/10 AWG copper. 14 AWG aluminum not listed in NEC for service conductors. Consult current NEC edition for complete rules.
             </div>
           </div>
         </div>
@@ -3855,7 +3862,7 @@
   </main><!-- end .main -->
 </div><!-- end .layout -->
 
-<script src="https://cdn.jsdelivr.net/npm/javascript-lp-solver/prod/solver.js"></script>
+<script src="js/vendor/solver.js"></script>
 <script src="js/app.js"></script>
 <script src="js/arcade.js"></script>
 </body>
