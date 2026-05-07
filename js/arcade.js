@@ -126,6 +126,7 @@
   const ASCENT_SPAWN_INTERVAL_MULTIPLIER = 3; // Denser spawn pacing to keep ascent play more arcade challenging.
   const ASCENT_INITIAL_SPAWN_AT = 1.5;
   const ASCENT_INITIAL_OBSTACLE_TARGET = 8;
+  const ASCENT_MAX_OBSTACLE_TARGET = 13;
   const BIN_LABEL_OFFSET_X = -7; // Centers 5px stencil text on 18px block width.
   const BIN_LABEL_OFFSET_Y = -2; // Lifts stencil text above the top face for tiny stenciled readability.
   const PAD_SKY_ALTITUDE_THRESHOLD = 18000;
@@ -1422,7 +1423,7 @@
         state.effects.liftoffShake = 2;
         state.effects.delugeTimer = Math.max(state.effects.delugeTimer, 3);
         state.effects.shockRing = 1;
-        state.session.ascentObstacleTarget = Math.floor(rand(ASCENT_INITIAL_OBSTACLE_TARGET, 13));
+        state.session.ascentObstacleTarget = Math.floor(rand(ASCENT_INITIAL_OBSTACLE_TARGET, ASCENT_MAX_OBSTACLE_TARGET));
         state.session.ascentObstacleCount = 0;
         state.session.nextAscentSpawnAt = ASCENT_INITIAL_SPAWN_AT;
         state.session.noThrustTime = 0;
