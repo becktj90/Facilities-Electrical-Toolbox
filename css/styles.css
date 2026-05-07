@@ -800,7 +800,9 @@ select option {
   header,
   .sidebar,
   .section-info,
-  .cursor {
+  .cursor,
+  .splash-modal,
+  .app-toast {
     display: none !important;
   }
   .layout {
