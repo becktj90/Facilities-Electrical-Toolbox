@@ -1230,8 +1230,8 @@ window.calcNEC = function () {
   const LABEL_LIFTOFF          = 'LIFTOFF — PAD CLEARANCE';
   const LAUNCH_IDLE_FREQUENCY  = 0.65;
   const LAUNCH_IDLE_AMPLITUDE  = 0.8;
-  const EASTER_EGG_BLINK_INTERVAL = 400;
-  const EASTER_EGG_VISIBILITY_DIVISOR = 7;
+  const STAR_BLINK_INTERVAL_FRAMES = 24;
+  const STAR_VISIBILITY_MODULO = 7;
 
   function currentGap() {
     const shrink = Math.min(score * 1.6, 82);
@@ -2078,7 +2078,7 @@ window.calcNEC = function () {
     ctx.font = 'bold 6px "Share Tech Mono", monospace';
     ctx.textAlign = 'center';
     ctx.fillText('BG', 0, 10);
-    if (Math.floor(Date.now() / EASTER_EGG_BLINK_INTERVAL) % EASTER_EGG_VISIBILITY_DIVISOR === 0) {
+    if (Math.floor(frame / STAR_BLINK_INTERVAL_FRAMES) % STAR_VISIBILITY_MODULO === 0) {
       ctx.fillStyle = '#ffcf5d';
       ctx.fillText('★', 0, -9);
     }
