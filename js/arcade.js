@@ -139,6 +139,8 @@
   const NO_THRUST_TUMBLE_GAIN = 0.09;
   const MAX_NO_THRUST_TUMBLE = 0.34;
   const MAX_ROCKET_TILT = 0.8;
+  const ROCKET_Y_MIN = CH * 0.34;
+  const ROCKET_Y_MAX = CH * 0.78;
   const MAX_PARTICLES = 600;
   const VOICE_POOL_SIZE = 8;
   const PAD_SPRITE_H = 480;
@@ -1174,24 +1176,34 @@
   function applyRocketControl(dt, lowGravity) {
     const step = dt * BASE_FPS;
     const axis = playerInputAxis();
-    state.rocket.vx += axis * 0.22 * step;
-    state.rocket.vx *= 0.88;
-    state.rocket.vx = clamp(state.rocket.vx, -4.2, 4.2);
-    state.rocket.x = clamp(state.rocket.x + state.rocket.vx * step, 28, CW - 28);
-    const gravity = lowGravity ? 0.03 : 0.08;
+    const lateralAccel = lowGravity ? 0.14 : 0.32;
+    state.rocket.vx += axis * lateralAccel * step;
+    state.rocket.vx *= lowGravity ? 0.96 : 0.965;
+    state.rocket.vx = clamp(state.rocket.vx, -5.4, 5.4);
+    const gravity = lowGravity ? 0.045 : 0.11;
     state.rocket.vy += gravity * step;
-    state.rocket.vy *= lowGravity ? 0.96 : 0.94;
+    const noThrustPenalty = !state.input.boostHeld && !lowGravity
+      ? clamp((state.session.noThrustTime || 0) * 0.05, 0, 0.18)
+      : 0;
+    state.rocket.vy += noThrustPenalty * step;
     if (state.input.boostHeld) {
-      state.rocket.vy = Math.max(lowGravity ? -1.8 : -2.8, state.rocket.vy - (lowGravity ? 0.12 : 0.2) * step);
-      state.rocket.burn = Math.max(state.rocket.burn, 0.08);
+      const thrust = lowGravity ? 0.14 : 0.27;
+      state.rocket.vy = Math.max(lowGravity ? -2.2 : -3.6, state.rocket.vy - thrust * step);
+      state.rocket.vx += axis * (lowGravity ? 0.028 : 0.05) * step;
+      state.rocket.burn = Math.max(state.rocket.burn, 0.1);
       spawnExhaust(lowGravity ? 'be3u' : 'be4', state.rocket.x, state.rocket.y + 28, lowGravity ? 0.7 : 1.1, state.effects.splitView ? 'upper' : 'main');
     }
-    const noThrustDrop = !lowGravity ? clamp((state.session.noThrustTime || 0) * NO_THRUST_DROP_RATE, 0, MAX_NO_THRUST_DROP) : 0;
-    const anchorY = CH * 0.55 + (lowGravity ? -8 : noThrustDrop);
-    const bob = clamp(state.rocket.vy * 1.2, -7, 7);
-    state.rocket.y = approach(state.rocket.y, anchorY + bob, 0.9 * step);
+    if (Math.abs(axis) > 0.24 && Math.random() < (lowGravity ? 0.25 : 0.38)) {
+      spawnExhaust('be3u', state.rocket.x - Math.sign(axis) * 12, state.rocket.y + 8, lowGravity ? 0.24 : 0.34, state.effects.splitView ? 'upper' : 'main');
+    }
+    state.rocket.vy *= lowGravity ? 0.995 : 0.992;
+    state.rocket.x = clamp(state.rocket.x + state.rocket.vx * step, 28, CW - 28);
+    state.rocket.y = clamp(state.rocket.y + state.rocket.vy * step, ROCKET_Y_MIN, ROCKET_Y_MAX);
+    if (state.rocket.y <= ROCKET_Y_MIN + 0.01 || state.rocket.y >= ROCKET_Y_MAX - 0.01) {
+      state.rocket.vy *= 0.55;
+    }
     const tumble = !state.input.boostHeld && !lowGravity ? Math.sin(state.session.phaseElapsed * NO_THRUST_TUMBLE_FREQ) * clamp((state.session.noThrustTime || 0) * NO_THRUST_TUMBLE_GAIN, 0, MAX_NO_THRUST_TUMBLE) : 0;
-    state.rocket.tilt = clamp(state.rocket.vx * 0.1 + tumble, -MAX_ROCKET_TILT, MAX_ROCKET_TILT);
+    state.rocket.tilt = clamp(state.rocket.vx * 0.15 + axis * 0.08 + tumble, -MAX_ROCKET_TILT, MAX_ROCKET_TILT);
     if (state.rocket.burn > 0) state.rocket.burn = Math.max(0, state.rocket.burn - dt);
   }
 
@@ -1878,9 +1890,9 @@
     if (!panel) {
       if (isPadSky) {
         const bg = ctx.createLinearGradient(0, 0, 0, CH);
-        bg.addColorStop(0, '#1a1a3a');
-        bg.addColorStop(0.62, '#5a3565');
-        bg.addColorStop(1, '#d4807a');
+        bg.addColorStop(0, '#87c8ec');
+        bg.addColorStop(0.62, '#9ad1f0');
+        bg.addColorStop(1, '#b3dbf3');
         ctx.fillStyle = bg;
         ctx.fillRect(0, 0, CW, CH);
       } else {
@@ -1894,9 +1906,9 @@
       ctx.clip();
       if (isPadSky) {
         const bg = ctx.createLinearGradient(0, panel.y, 0, panel.y + panel.h);
-        bg.addColorStop(0, '#1a1a3a');
-        bg.addColorStop(0.62, '#5a3565');
-        bg.addColorStop(1, '#d4807a');
+        bg.addColorStop(0, '#87c8ec');
+        bg.addColorStop(0.62, '#9ad1f0');
+        bg.addColorStop(1, '#b3dbf3');
         ctx.fillStyle = bg;
         ctx.fillRect(0, panel.y, CW, panel.h);
       } else {
@@ -1956,11 +1968,16 @@
   function drawCloudLayers(ctx, altitude) {
     const fade = clamp(1 - altitude / 18000, 0, 1);
     for (const cloud of state.clouds) {
-      ctx.fillStyle = `rgba(225,238,245,${cloud.alpha * fade})`;
+      const alpha = cloud.alpha * fade;
+      ctx.fillStyle = `rgba(184,212,230,${alpha * 0.35})`;
+      ctx.beginPath();
+      ctx.ellipse(cloud.x, cloud.y + cloud.h * 0.18, cloud.w * 0.46, cloud.h * 0.48, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = `rgba(240,249,255,${alpha})`;
       ctx.beginPath();
       ctx.ellipse(cloud.x, cloud.y, cloud.w * 0.42, cloud.h * 0.55, 0, 0, Math.PI * 2);
-      ctx.ellipse(cloud.x + cloud.w * 0.2, cloud.y + 2, cloud.w * 0.28, cloud.h * 0.48, 0, 0, Math.PI * 2);
-      ctx.ellipse(cloud.x - cloud.w * 0.24, cloud.y + 4, cloud.w * 0.24, cloud.h * 0.42, 0, 0, Math.PI * 2);
+      ctx.ellipse(cloud.x + cloud.w * 0.22, cloud.y + 1, cloud.w * 0.30, cloud.h * 0.50, 0, 0, Math.PI * 2);
+      ctx.ellipse(cloud.x - cloud.w * 0.26, cloud.y + 3, cloud.w * 0.24, cloud.h * 0.44, 0, 0, Math.PI * 2);
       ctx.fill();
     }
   }
@@ -2284,9 +2301,9 @@
       ctx.fillRect(5, -22, 6, 3);
     }
     const rocketBodyGrad = ctx.createLinearGradient(-9, -72, 9, 28);
-    rocketBodyGrad.addColorStop(0, '#d9b188');
-    rocketBodyGrad.addColorStop(0.32, '#c89968');
-    rocketBodyGrad.addColorStop(1, '#b48358');
+    rocketBodyGrad.addColorStop(0, '#f5f8fc');
+    rocketBodyGrad.addColorStop(0.4, '#e1e8f1');
+    rocketBodyGrad.addColorStop(1, '#c8d1db');
     ctx.fillStyle = rocketBodyGrad;
     ctx.fillRect(-9, -62, 18, 75);
     ctx.fillStyle = 'rgba(255,240,220,0.18)';
@@ -2298,7 +2315,7 @@
       ctx.lineTo(9, sy);
       ctx.stroke();
     }
-    ctx.fillStyle = '#1a1f26';
+    ctx.fillStyle = '#2f73d8';
     ctx.fillRect(-9, 13, 18, 8);
     ctx.fillStyle = '#33261d';
     ctx.fillRect(-8, -62, 16, 1);
@@ -2317,7 +2334,7 @@
       ctx.fillRect(-9, -98, 18, 36);
       ctx.beginPath(); ctx.moveTo(-9, -98); ctx.lineTo(0, -116); ctx.lineTo(9, -98); ctx.closePath(); ctx.fill();
     }
-    ctx.fillStyle = '#1a1f26';
+    ctx.fillStyle = '#0f1722';
     ctx.fillRect(-10, 21, 20, 14);
     ctx.fillStyle = '#0c1118';
     [[0, 30], [-6, 31], [6, 31], [-10, 34], [-3, 34], [3, 34], [10, 34]].forEach(p => {
