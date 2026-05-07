@@ -33,6 +33,9 @@
   };
   const STD = ['GRAY', 'RED', 'YELLOW', 'GREEN', 'BLUE'];
 
+  const INITIALS_DELAY_MS = 3500; // ms to show win/loss screen before prompting initials
+  const ROW_FILL_DENSITY = 0.78;  // fraction of cells populated when a new row drops
+
   const BLOCK_LABELS = [
     'BLOCK 7-B', '4,400 LB', 'STILL HERE', 'JIM SAYS LEAVE IT', 'SEE FRANK',
     'PROPERTY GSE', 'LAST INS: NEVER', 'MOVE LATER', 'FRANK KNOWS', 'CALL BOB',
@@ -652,7 +655,7 @@
       const screenAtCheck = S.screen;
       setTimeout(() => {
         if (S.screen === screenAtCheck) S.screen = 'initials';
-      }, 3500);
+      }, INITIALS_DELAY_MS);
     }
   }
 
@@ -681,8 +684,7 @@
     const cols = maxCol(0);
     const colors = missionColors(mDef);
     for (let c = 0; c < cols; c++) {
-      // ~78% fill density produces well-balanced new rows
-      S.grid[0][c] = Math.random() < 0.78 ? makeBlock(randomBlockType(mDef)) : null;
+      S.grid[0][c] = Math.random() < ROW_FILL_DENSITY ? makeBlock(randomBlockType(mDef)) : null;
     }
     Audio.SFX('drop_row');
 
