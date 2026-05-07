@@ -1098,7 +1098,7 @@
 
   function spawnAtmosphericObstacle() {
     const alt = state.telemetry.altitude;
-    let types = ['bird'];
+    let types;
     if (alt < 2000) types = ['bird', 'bird', 'bird'];
     else if (alt < 15000) types = ['balloon', 'balloon', 'bird'];
     else if (alt >= 30000 && alt <= 50000) types = ['ice', 'ice', 'balloon'];
@@ -1699,7 +1699,7 @@
     if (!state.booster.reentryBurnDone && splitT >= 344 && splitT <= 364 && (state.input.boostPressed || (isCadet && splitT >= 356))) {
       state.booster.reentryBurnDone = true;
       state.booster.burn = 1.6;
-      showOverlayMessage('REENTRY BURN COMMANDED (T+6:48 EQUIV)', 1.6);
+      showOverlayMessage('REENTRY BURN COMMANDED (T+6:48 EQUIVALENT)', 1.6);
       Audio.play('boost', state.settings);
       addShake(2, 0.35);
     }
@@ -2633,7 +2633,7 @@
     ctx.fillStyle = '#ff5d5d';
     ctx.textAlign = 'center';
     ctx.font = '34px "VT323", monospace';
-    ctx.fillText(state.status === 'CONTINUE' ? 'MISSION FAILED' : 'MISSION FAILED', CW / 2, 212);
+    ctx.fillText('MISSION FAILED', CW / 2, 212);
     ctx.font = '11px "Share Tech Mono", monospace';
     const map = {
       ascent: 'VEHICLE LOST DURING ASCENT — Investigation board convened.',
