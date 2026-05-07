@@ -9,10 +9,30 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="Toolbox">
   <link rel="apple-touch-icon" href="icons/icon-192.png">
+  <meta property="og:title" content="Facilities Electrical Toolbox + New Glenn Runner">
+  <meta property="og:description" content="NEC calculators for the day job, and a New Glenn launch arcade for breaks. Installable as a home-screen app.">
+  <meta property="og:image" content="https://becktj90.github.io/Facilities-Electrical-Toolbox/icons/icon-512.png">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://becktj90.github.io/Facilities-Electrical-Toolbox/">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="description" content="Electrical engineering reference toolbox with built-in New Glenn launch game.">
   <title>Facilities Electrical Toolbox</title>
   <link rel="stylesheet" href="css/styles.css">
 </head>
 <body>
+
+<div id="splash-modal" class="splash-modal" role="dialog" aria-labelledby="splash-title" aria-modal="true" hidden>
+  <div class="splash-card">
+    <h1 id="splash-title">Welcome, Pad Rat.</h1>
+    <p>This is a self-contained electrical engineering toolbox. NEC calculators for the day job — plus a launch arcade for breaks.</p>
+    <div class="splash-actions">
+      <button type="button" class="btn splash-primary" data-action="splashEnterToolbox">⚡ Open Toolbox</button>
+      <button type="button" class="btn splash-secondary" data-action="splashEnterGame">🚀 Play New Glenn Runner</button>
+    </div>
+    <p class="splash-tip">Tip: tap Install in the header to add it to your home screen — it works offline.</p>
+    <button type="button" class="splash-close" data-action="splashClose" aria-label="Close welcome">×</button>
+  </div>
+</div>
 
 <!-- ── CRT Scanlines overlay ── -->
 <div class="scanlines" aria-hidden="true"></div>
@@ -26,9 +46,14 @@
       <div class="subtitle">C:\ELEC&gt; Tools for Facilities Electrical Engineering</div>
     </div>
     <div class="header-status">
-      SYS: <span class="status-ok">ONLINE</span><br>
-      MEM: <span class="status-ok">OK</span><br>
-      <button id="install-btn" style="display:none">📲 Install</button>
+      <div class="header-readout">
+        SYS: <span class="status-ok">ONLINE</span><br>
+        MEM: <span class="status-ok">OK</span>
+      </div>
+      <div class="header-actions">
+        <button id="share-btn" class="header-btn" type="button" data-action="shareApp" aria-label="Share">↗ Share</button>
+        <button id="install-btn" class="header-btn" type="button" style="display:none">📲 Install</button>
+      </div>
     </div>
   </div>
 </header>

@@ -204,10 +204,39 @@ header .subtitle {
   flex-shrink: 0;
   letter-spacing: 0.03em;
   line-height: 1.5;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 8px;
+}
+.header-readout {
+  text-align: right;
 }
 .header-status .status-ok {
   color: var(--green);
   text-shadow: var(--glow-sm);
+}
+.header-actions {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+}
+.header-btn {
+  padding: 6px 12px;
+  background: transparent;
+  color: var(--green);
+  border: 1px solid var(--green);
+  font-family: var(--font-mono);
+  font-size: 0.82rem;
+  cursor: pointer;
+  text-shadow: var(--glow-sm);
+  transition: background 0.1s, color 0.1s, box-shadow 0.1s;
+}
+.header-btn:hover {
+  background: var(--green);
+  color: #000;
+  box-shadow: var(--glow-md);
+  text-shadow: none;
 }
 
 /* ── Layout ── */
@@ -737,7 +766,10 @@ select option {
   .input-group { grid-template-columns: 1fr; }
   .input-group.triple { grid-template-columns: 1fr; }
   .card-grid { grid-template-columns: 1fr; }
-  .header-status { display: none; }
+  .header-status { gap: 6px; }
+  .header-readout { display: none; }
+  .header-actions { width: 100%; justify-content: flex-end; }
+  .header-btn { font-size: 0.78rem; padding: 6px 10px; }
 }
 
 /* ── Arcade fullscreen ── */
@@ -812,3 +844,29 @@ select option {
     animation: none !important;
   }
 }
+
+
+.splash-modal { position: fixed; inset: 0; background: rgba(0,0,0,0.85); z-index: 9999;
+  display: flex; align-items: center; justify-content: center; padding: 20px;
+  animation: splashFadeIn 0.3s ease-out; }
+.splash-modal[hidden] { display: none; }
+@keyframes splashFadeIn { from { opacity: 0; } to { opacity: 1; } }
+.splash-card { position: relative; background: var(--bg-card); border: 1px solid var(--green);
+  border-radius: 6px; padding: 32px 28px; max-width: 440px; width: 100%;
+  box-shadow: 0 0 24px rgba(51, 255, 51, 0.4); text-align: center; }
+.splash-card h1 { color: var(--green-bright); font-family: var(--font-main); font-size: 28px;
+  margin: 0 0 12px; text-shadow: 0 0 6px var(--green); }
+.splash-card p { color: var(--green); margin: 0 0 18px; line-height: 1.45; }
+.splash-actions { display: flex; flex-direction: column; gap: 10px; margin: 20px 0 14px; }
+.splash-primary, .splash-secondary { width: 100%; padding: 12px; font-size: 16px; }
+.splash-tip { font-size: 13px; color: var(--green-mid); font-style: italic; }
+.splash-close { position: absolute; top: 8px; right: 12px; background: none; border: none;
+  color: var(--green); font-size: 24px; cursor: pointer; line-height: 1; padding: 4px 8px; }
+.splash-close:hover { color: var(--amber); }
+.app-toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(40px);
+  background: var(--bg-card); color: var(--green); border: 1px solid var(--green-mid);
+  padding: 10px 18px; border-radius: 4px; font-family: var(--font-mono); font-size: 14px;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.5); opacity: 0; transition: all 0.25s ease;
+  z-index: 10000; pointer-events: none; }
+.app-toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+@media (max-width: 480px) { .splash-card { padding: 24px 20px; } .splash-card h1 { font-size: 22px; } }

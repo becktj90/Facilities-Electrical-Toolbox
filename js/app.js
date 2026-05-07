@@ -1974,10 +1974,101 @@ window.calcTHD = function () {
   ]);
 };
 
+function showToast(message) {
+  const existing = document.querySelector('.app-toast');
+  if (existing) existing.remove();
+  const toast = document.createElement('div');
+  toast.className = 'app-toast';
+  toast.textContent = message;
+  document.body.appendChild(toast);
+  setTimeout(() => toast.classList.add('show'), 10);
+  setTimeout(() => {
+    toast.classList.remove('show');
+    setTimeout(() => toast.remove(), 300);
+  }, 2500);
+}
+window.showToast = showToast;
+
+async function shareApp() {
+  const url = location.origin + location.pathname;
+  const shareData = {
+    title: 'Facilities Electrical Toolbox',
+    text: 'Electrical calculators + a New Glenn launch arcade. Built by a pad rat.',
+    url
+  };
+
+  try {
+    if (navigator.share && (!navigator.canShare || navigator.canShare(shareData))) {
+      await navigator.share(shareData);
+      return;
+    }
+  } catch (err) {
+    if (err && err.name === 'AbortError') return;
+  }
+
+  try {
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      await navigator.clipboard.writeText(url);
+      showToast('Link copied to clipboard');
+      return;
+    }
+  } catch (_) {}
+
+  showToast('Copy this URL: ' + url);
+}
+window.shareApp = shareApp;
+
+function setupSplash() {
+  const SEEN_KEY = 'toolbox-seen-splash';
+  try {
+    if (localStorage.getItem(SEEN_KEY)) return;
+  } catch (_) {}
+
+  const modal = document.getElementById('splash-modal');
+  if (!modal) return;
+
+  const primaryAction = modal.querySelector('[data-action="splashEnterToolbox"]');
+  const onKeydown = (event) => {
+    if (!modal.hidden && event.key === 'Escape') dismiss();
+  };
+  const dismiss = () => {
+    if (modal.hidden) return;
+    modal.hidden = true;
+    document.removeEventListener('keydown', onKeydown);
+    try {
+      localStorage.setItem(SEEN_KEY, '1');
+    } catch (_) {}
+  };
+
+  window.splashClose = dismiss;
+  window.splashEnterToolbox = () => {
+    dismiss();
+    location.hash = '#sec-ohm';
+  };
+  window.splashEnterGame = () => {
+    dismiss();
+    location.hash = '#sec-arcade';
+  };
+
+  modal.hidden = false;
+  document.addEventListener('keydown', onKeydown);
+  if (primaryAction) primaryAction.focus();
+}
+
 /* ============================================================
    INIT
    ============================================================ */
 document.addEventListener('DOMContentLoaded', () => {
+  document.querySelectorAll('[data-action]').forEach(control => {
+    control.addEventListener('click', (event) => {
+      const action = control.dataset.action;
+      const handler = action ? window[action] : null;
+      if (typeof handler === 'function') handler(event);
+    });
+  });
+
+  setupSplash();
+
   let deferredInstallPrompt = null;
   const installBtn = document.getElementById('install-btn');
   if (installBtn) {
