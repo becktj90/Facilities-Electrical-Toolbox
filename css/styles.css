@@ -542,6 +542,7 @@ textarea {
 
   body {
     margin: 0;
+    /* Preserve the clean schedule grid and header fills in the printed cardstock output. */
     print-color-adjust: exact;
     -webkit-print-color-adjust: exact;
   }

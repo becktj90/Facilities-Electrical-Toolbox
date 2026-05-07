@@ -73,7 +73,7 @@ function bindEvents() {
 
   elements.processButton.addEventListener('click', runOcr);
   elements.resetButton.addEventListener('click', resetApp);
-  elements.printButton.addEventListener('click', () => window.print());
+  elements.printButton.addEventListener('click', handlePrint);
   elements.parseTextButton.addEventListener('click', () => parseAndApplyText(elements.rawText.value, false));
   elements.addRowButton.addEventListener('click', () => {
     state.rows.push(createEmptyRow());
@@ -241,7 +241,7 @@ function isIgnoredLine(line) {
     || /(ckt|circuit).*(load|description)/i.test(line)
     || /(trip|amps?).*(poles?)/i.test(line)
     || /^odd\s+even$/i.test(line)
-    || (/^panel\b/i.test(line) && !looksLikeCircuit(line.split(' ')[0]));
+    || isPanelMetadataLine(line);
 }
 
 function looksLikeCircuit(value) {
@@ -254,6 +254,10 @@ function looksLikeTrip(value) {
 
 function looksLikePoles(value) {
   return /^(?:[123]|1P|2P|3P)$/i.test(String(value).trim());
+}
+
+function isPanelMetadataLine(line) {
+  return /^panel\b/i.test(line) && !looksLikeCircuit(line.split(' ')[0]);
 }
 
 function findSecondaryCircuitIndex(columns) {
@@ -598,7 +602,16 @@ function humanizeStatus(status) {
 }
 
 function defaultPrintDate() {
-  return new Date().toLocaleDateString('en-US');
+  return new Date().toLocaleDateString();
+}
+
+function handlePrint() {
+  if (!state.rows.some(row => row.description || row.trip || row.poles)) {
+    setStatus('Add or parse at least one circuit row before printing.');
+    return;
+  }
+
+  window.print();
 }
 
 function escapeAttr(value) {
