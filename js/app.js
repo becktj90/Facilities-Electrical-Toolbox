@@ -1201,6 +1201,7 @@ window.calcNEC = function () {
   const ROCKET_H               = 52;
   const GRAVITY                = 0.26;
   const BOOST_IMPULSE          = -4.8;
+  const MAX_BOOST_VELOCITY     = -7.2;
   const BOOST_FRAMES           = 10;
   const SIDE_ACCEL             = 0.28;
   const SIDE_DRAG              = 0.88;
@@ -1224,6 +1225,8 @@ window.calcNEC = function () {
   const LAUNCH_HOLD_FRAMES     = 42;
   const LAUNCH_TOTAL_FRAMES    = 132;
   const PRELAUNCH_VENT_RATE    = 16;
+  const LAUNCH_HOLD_LABEL      = 'ENGINE START SEQUENCE';
+  const LAUNCH_LIFTOFF_LABEL   = 'LIFTOFF — PAD CLEARANCE';
 
   function currentGap() {
     const shrink = Math.min(score * 1.6, 82);
@@ -1402,7 +1405,7 @@ window.calcNEC = function () {
 
   function triggerBoost() {
     if (state !== 'PLAYING' && state !== 'LAUNCH') return;
-    rocket.vy = Math.max(-7.2, rocket.vy + BOOST_IMPULSE);
+    rocket.vy = Math.max(MAX_BOOST_VELOCITY, rocket.vy + BOOST_IMPULSE);
     rocket.burnFrames = BOOST_FRAMES;
     emitExhaust(8, 1.0);
   }
@@ -1615,7 +1618,7 @@ window.calcNEC = function () {
     telemetry.q = Math.max(0, 0.08 + ascentRatio * 14.5);
     telemetry.lng = Math.max(0, telemetry.lng - 0.05);
     telemetry.lox = Math.max(0, telemetry.lox - 0.09);
-    telemetry.milestone = launchTimer < LAUNCH_HOLD_FRAMES ? 'ENGINE START SEQUENCE' : 'LIFTOFF — PAD CLEARANCE';
+    telemetry.milestone = launchTimer < LAUNCH_HOLD_FRAMES ? LAUNCH_HOLD_LABEL : LAUNCH_LIFTOFF_LABEL;
 
     if (launchTimer >= LAUNCH_TOTAL_FRAMES) {
       state = 'PLAYING';
