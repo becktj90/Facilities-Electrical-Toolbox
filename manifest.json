@@ -1,5 +1,6 @@
 {
   "name": "Facilities Electrical Toolbox",
+  "version": "4.0.0",
   "short_name": "Toolbox",
   "description": "Electrical engineering reference + New Glenn Runner",
   "start_url": "./index.html",
