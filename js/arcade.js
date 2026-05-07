@@ -123,6 +123,9 @@
   ];
   const KONAMI = ['ArrowUp', 'ArrowUp', 'ArrowDown', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'ArrowLeft', 'ArrowRight', 'KeyB', 'KeyA'];
   const PAD_POLL_FLIP_SEC = 0.5;
+  const ASCENT_SPAWN_INTERVAL_MULTIPLIER = 5;
+  const BIN_LABEL_OFFSET_X = -7;
+  const BIN_LABEL_OFFSET_Y = -2;
   const PAD_SKY_ALTITUDE_THRESHOLD = 18000;
   const OBSTACLE_WARNING_TIME = 1.5;
   const MAX_PARTICLES = 600;
@@ -1566,7 +1569,7 @@
       if (state.session.ascentObstacleCount < state.session.ascentObstacleTarget && state.session.phaseElapsed >= state.session.nextAscentSpawnAt) {
         spawnAtmosphericObstacle();
         state.session.ascentObstacleCount += 1;
-        state.session.nextAscentSpawnAt += (rand(1.8, 3.2) * 5) / Math.max(0.4, mode.spawnMul + 0.2);
+        state.session.nextAscentSpawnAt += (rand(1.8, 3.2) * ASCENT_SPAWN_INTERVAL_MULTIPLIER) / Math.max(0.4, mode.spawnMul + 0.2);
       }
     }
     if (state.effects.liftoffShake > 0) {
@@ -1699,7 +1702,7 @@
     if (!state.booster.reentryBurnDone && splitT >= 344 && splitT <= 364 && (state.input.boostPressed || (isCadet && splitT >= 356))) {
       state.booster.reentryBurnDone = true;
       state.booster.burn = 1.6;
-      showOverlayMessage('REENTRY BURN COMMANDED (T+6:48 EQUIVALENT)', 1.6);
+      showOverlayMessage(`REENTRY BURN COMMANDED (${formatMissionTime(Math.round(timelineValue(MAIN_TIMELINE, 'actual', splitT)))})`, 1.6);
       Audio.play('boost', state.settings);
       addShake(2, 0.35);
     }
@@ -1719,7 +1722,7 @@
         state.session.boosterRecovered = true;
         Audio.play('landing_touchdown', state.settings);
         setRadio(RADIO.BOOSTER_WIN, 2.5);
-        showOverlayMessage('Landed on Jacklyn (T+9:09 equivalent).', 3);
+        showOverlayMessage(`Landed on Jacklyn (${formatMissionTime(Math.round(timelineValue(MAIN_TIMELINE, 'actual', splitT)))})`, 3);
         addShake(4.5, 0.5);
         vibrate([40]);
       } else {
@@ -2059,7 +2062,7 @@
     ctx.fillStyle = '#0b1216';
     ctx.font = '5px "Share Tech Mono", monospace';
     stacks.forEach(({ x, y }, i) => {
-      ctx.fillText(labels[i % labels.length], x - 7, y - 2);
+      ctx.fillText(labels[i % labels.length], x + BIN_LABEL_OFFSET_X, y + BIN_LABEL_OFFSET_Y);
     });
     ctx.fillStyle = '#7ea36f';
     ctx.beginPath();
