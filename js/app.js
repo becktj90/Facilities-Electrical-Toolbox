@@ -1974,6 +1974,15 @@ window.calcTHD = function () {
   ]);
 };
 
+const SPLASH_SEEN_KEY = 'toolbox-seen-splash';
+const SPLASH_FOCUSABLE_SELECTOR = 'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])';
+const UI_ACTIONS = Object.freeze({
+  shareApp: () => shareApp(),
+  splashClose: () => { if (typeof window.splashClose === 'function') window.splashClose(); },
+  splashEnterToolbox: () => { if (typeof window.splashEnterToolbox === 'function') window.splashEnterToolbox(); },
+  splashEnterGame: () => { if (typeof window.splashEnterGame === 'function') window.splashEnterGame(); }
+});
+
 function showToast(message) {
   const existing = document.querySelector('.app-toast');
   if (existing) existing.remove();
@@ -2019,7 +2028,6 @@ async function shareApp() {
 window.shareApp = shareApp;
 
 function setupSplash() {
-  const SEEN_KEY = 'toolbox-seen-splash';
   const storage = (() => {
     try {
       return window.localStorage;
@@ -2028,13 +2036,13 @@ function setupSplash() {
     }
   })();
 
-  if (storage && storage.getItem(SEEN_KEY)) return;
+  if (storage && storage.getItem(SPLASH_SEEN_KEY)) return;
 
   const modal = document.getElementById('splash-modal');
   if (!modal) return;
 
   const primaryAction = modal.querySelector('[data-action="splashEnterToolbox"]');
-  const getFocusable = () => Array.from(modal.querySelectorAll('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'))
+  const getFocusable = () => Array.from(modal.querySelectorAll(SPLASH_FOCUSABLE_SELECTOR))
     .filter(element => !element.disabled && element.getAttribute('aria-hidden') !== 'true');
   const onKeydown = (event) => {
     if (modal.hidden) return;
@@ -2069,7 +2077,7 @@ function setupSplash() {
     if (modal.hidden) return;
     modal.hidden = true;
     document.removeEventListener('keydown', onKeydown);
-    if (storage) storage.setItem(SEEN_KEY, '1');
+    if (storage) storage.setItem(SPLASH_SEEN_KEY, '1');
   };
 
   window.splashClose = dismiss;
@@ -2084,7 +2092,8 @@ function setupSplash() {
 
   modal.hidden = false;
   document.addEventListener('keydown', onKeydown);
-  (primaryAction || getFocusable()[0] || modal).focus();
+  const initialFocus = primaryAction || getFocusable()[0];
+  if (initialFocus) initialFocus.focus();
 }
 
 /* ============================================================
@@ -2094,7 +2103,7 @@ document.addEventListener('DOMContentLoaded', () => {
   document.querySelectorAll('[data-action]').forEach(control => {
     control.addEventListener('click', (event) => {
       const action = control.dataset.action;
-      const handler = action ? window[action] : null;
+      const handler = action ? UI_ACTIONS[action] : null;
       if (typeof handler === 'function') handler(event);
     });
   });
