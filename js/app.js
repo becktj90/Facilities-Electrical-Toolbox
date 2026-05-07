@@ -74,7 +74,7 @@ function bindEvents() {
   elements.processButton.addEventListener('click', runOcr);
   elements.resetButton.addEventListener('click', resetApp);
   elements.printButton.addEventListener('click', handlePrint);
-  elements.parseTextButton.addEventListener('click', () => parseAndApplyText(elements.rawText.value, false));
+  elements.parseTextButton.addEventListener('click', handleParseText);
   elements.addRowButton.addEventListener('click', () => {
     state.rows.push(createEmptyRow());
     renderAll();
@@ -422,10 +422,10 @@ function renderEditorTable() {
   const rows = state.rows.length ? state.rows : [createEmptyRow()];
 
   elements.editorTableBody.innerHTML = rows.map((row, index) => `
-    <tr>
-      <td><input type="text" data-field="circuit" data-index="${index}" value="${escapeAttr(row.circuit)}" placeholder="1"></td>
-      <td><input type="text" data-field="description" data-index="${index}" value="${escapeAttr(row.description)}" placeholder="Lighting"></td>
-      <td><input type="text" data-field="trip" data-index="${index}" value="${escapeAttr(row.trip)}" placeholder="20A"></td>
+      <tr>
+      <td><input type="text" data-field="circuit" data-index="${index}" value="${escapeHtml(row.circuit)}" placeholder="1"></td>
+      <td><input type="text" data-field="description" data-index="${index}" value="${escapeHtml(row.description)}" placeholder="Lighting"></td>
+      <td><input type="text" data-field="trip" data-index="${index}" value="${escapeHtml(row.trip)}" placeholder="20A"></td>
       <td>
         <select data-field="poles" data-index="${index}">
           <option value="" ${row.poles ? '' : 'selected'}>—</option>
@@ -574,6 +574,10 @@ function resetApp() {
   renderAll();
 }
 
+function handleParseText() {
+  parseAndApplyText(elements.rawText.value, false);
+}
+
 function updateProgress(value, statusMessage) {
   const percent = Math.max(0, Math.min(100, Math.round(value * 100)));
   elements.progressFill.style.width = `${percent}%`;
@@ -613,10 +617,6 @@ function handlePrint() {
   }
 
   window.print();
-}
-
-function escapeAttr(value) {
-  return escapeHtml(value);
 }
 
 function escapeHtml(value) {

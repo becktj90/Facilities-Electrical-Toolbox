@@ -544,6 +544,7 @@ textarea {
   body {
     margin: 0;
     /* Preserve preview-matching grid lines and header fills when printing the half-sheet schedule. */
+    color-adjust: exact;
     print-color-adjust: exact;
     -webkit-print-color-adjust: exact;
   }
