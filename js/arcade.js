@@ -15,15 +15,18 @@
     difficulty: 'CADET',
     engineerPanel: false,
     hiScore: 0,
+    leaderboard: [],
     missionCount: 0,
     bestFlight: null,
+    achievements: [],
     patches: []
   };
   const BLOCK_LABELS = [
-    ['DO NOT MOVE', 'BLOCK 7-B', 'STILL HERE'],
-    ['PROPERTY OF GSE', 'LAST INSPECTED: NEVER', 'STILL HERE'],
-    ['BLOCK-7B', 'DO NOT MOVE', 'PROPERTY OF GSE'],
-    ['STILL HERE SINCE 2019', 'BLOCK 7-B', 'DO NOT MOVE']
+    ['DO NOT MOVE', 'BLOCK 7-B', 'STILL HERE', 'PROPERTY OF GSE', 'LAST INSPECTED: NEVER'],
+    ['BLOCK 12-A', 'JIM SAYS LEAVE IT', 'NOT MY BLOCK', 'PAD RAT RESERVED', 'OK FOR LIFT'],
+    ['STRUCTURAL', 'DO NOT PAINT', 'WAS HERE FIRST', 'CONCRETE: YES', 'TOO HEAVY'],
+    ['IF MOVED, REPLACE', 'TARE: 4,400 LB', 'HOLDS DOWN PAPERWORK', 'SEE FRANK', 'STILL HERE SINCE 2019'],
+    ['CALL BEFORE MOVING', 'HEAVIER THAN IT LOOKS', 'PROP OF FACILITIES', 'BLOCK ZULU', 'TBD']
   ];
   const LOADING_TIPS = [
     'New Glenn is 7 m wide. Yes, that wide.',
@@ -46,59 +49,77 @@
   const DIFFICULTY = {
     KID: { spawnMul: 0.25, hitboxScale: 0.45, graceFrames: 180, qStressGain: 0.04, qStressDecay: 0.20, landingTolerance: 28, secoBand: 280, allowFail: false },
     CADET: { spawnMul: 0.20, hitboxScale: 0.40, graceFrames: 180, qStressGain: 0.03, qStressDecay: 0.30, landingTolerance: 32, secoBand: 320, allowFail: true },
-    ENGINEER: { spawnMul: 1.0, hitboxScale: 0.7, graceFrames: 60, qStressGain: 0.16, qStressDecay: 0.08, landingTolerance: 10, secoBand: 100, allowFail: true }
+    PAD_RAT: { spawnMul: 1.0, hitboxScale: 0.7, graceFrames: 60, qStressGain: 0.16, qStressDecay: 0.08, landingTolerance: 10, secoBand: 100, allowFail: true }
   };
   const MISSION_CAPTIONS = {
     PAD: 'Pad ops complete. Countdown at T-3 and all systems are green.',
     ASCENT: 'Liftoff! Enjoy the climb — vehicle is flying nominally.',
     MAX_Q: 'Throttling down — vehicle handling Max-Q nicely.',
-    COAST: 'MECO confirmed. Take in the view while booster heads home.',
+    SUPERSONIC: 'Passing through supersonic climb toward MECO.',
     STAGE_SEP: 'MECO confirmed. Stage sep nominal. Booster heading home.',
-    UPPER_ASCENT: 'Upper stage ignition. Cyan BE-3U plume looks gorgeous.',
+    KARMAN: 'Crossing 100 km — welcome to space.',
+    BOOSTER_RTLS: 'Booster recovery ops in progress.',
     ORBIT_INSERT: 'SECO target is generous — guide velocity into the green.',
     PAYLOAD_DEPLOY: 'Payload deployed. Mission accomplished.'
   };
   const RADIO = {
     PAD: 'Pad systems nominal.',
     ASCENT: 'You are go for launch.',
-    MAX_Q: 'Throttling down — vehicle handling Max-Q nicely.',
-    COAST: 'Gradatim ferociter. MECO confirmed.',
+    MAX_Q: 'Going through Max-Q. Holding.',
+    SUPERSONIC: 'Tower clear. Roll program.',
     STAGE_SEP: 'MECO confirmed. Stage sep nominal. Booster heading home.',
-    UPPER_ASCENT: 'Fairing away. Payload exposed.',
+    KARMAN: 'S-band lock. Telemetry green.',
+    BOOSTER_RTLS: 'GS-1 on the deck. Pad rats earned their pay.',
     ORBIT_INSERT: 'SECO guidance is live. Enjoy the easy green band.',
     PAYLOAD_DEPLOY: 'Payload deployed. Mission accomplished.',
     BOOSTER_WIN: 'Landed on Jacklyn. Sea state nominal. Coffee earned.'
   };
+  const LEVEL_ORDER = ['PAD', 'ASCENT', 'MAX_Q', 'SUPERSONIC', 'STAGE_SEP', 'KARMAN', 'BOOSTER_RTLS', 'ORBIT_INSERT', 'PAYLOAD_DEPLOY'];
+  const LEVEL_TARGETS = {
+    PAD: 800,
+    ASCENT: 1300,
+    MAX_Q: 1700,
+    SUPERSONIC: 2200,
+    STAGE_SEP: 2800,
+    KARMAN: 3400,
+    BOOSTER_RTLS: 4000,
+    ORBIT_INSERT: 4700,
+    PAYLOAD_DEPLOY: 5200
+  };
   const PAYLOADS = ['Blue Ring Pathfinder', 'Twin Probes', 'BlueBird Satellite'];
   const PHASES = {
-    PAD: { label: 'PAD OPS', start: 0, end: 8 },
-    ASCENT: { label: 'ASCENT', start: 8, end: 20 },
-    MAX_Q: { label: 'MAX-Q', start: 20, end: 26 },
-    COAST: { label: 'MECO APPROACH', start: 26, end: 30 },
-    STAGE_SEP: { label: 'STAGE SEPARATION', start: 30, end: 34 },
-    UPPER_ASCENT: { label: 'UPPER ASCENT', start: 34, end: 51 },
-    BOOSTER_LANDING: { label: 'BOOSTER RECOVERY', start: 34, end: 48 },
-    ORBIT_INSERT: { label: 'ORBIT INSERT', start: 51, end: 57 },
-    PAYLOAD_DEPLOY: { label: 'PAYLOAD DEPLOY', start: 57, end: 61 },
-    EXTENDED: { label: 'EXTENDED MISSION', start: 61, end: Infinity }
+    PAD:            { label: 'LEVEL 1: PAD OPS',          start: 0,    end: 30  },
+    ASCENT:         { label: 'LEVEL 2: LIFTOFF & ASCENT', start: 30,   end: 115 },
+    MAX_Q:          { label: 'LEVEL 3: MAX-Q',            start: 115,  end: 130 },
+    SUPERSONIC:     { label: 'LEVEL 4: SUPERSONIC',       start: 130,  end: 215 },
+    STAGE_SEP:      { label: 'LEVEL 5: STAGE SEP',        start: 215,  end: 240 },
+    KARMAN:         { label: 'LEVEL 6: KARMAN LINE',      start: 240,  end: 290 },
+    BOOSTER_RTLS:   { label: 'LEVEL 7: BOOSTER RTLS',     start: 290,  end: 410 },
+    ORBIT_INSERT:   { label: 'LEVEL 8: ORBIT INSERT',     start: 410,  end: 470 },
+    PAYLOAD_DEPLOY: { label: 'LEVEL 9: PAYLOAD DEPLOY',   start: 470,  end: 500 },
+    EXTENDED:       { label: 'EXTENDED MISSION',          start: 500,  end: Infinity }
   };
   const MAIN_TIMELINE = [
     { t: 0, actual: -30, altitude: 0, velocity: 0, q: 0 },
-    { t: 8, actual: 0, altitude: 0, velocity: 0, q: 0.4 },
-    { t: 20, actual: 95, altitude: 13000, velocity: 1180, q: 28 },
-    { t: 26, actual: 105, altitude: 26000, velocity: 1500, q: 23 },
-    { t: 30, actual: 185, altitude: 75000, velocity: 2700, q: 5 },
-    { t: 34, actual: 197, altitude: 85000, velocity: 2150, q: 1.2 },
-    { t: 36, actual: 230, altitude: 110000, velocity: 3200, q: 0.2 },
-    { t: 51, actual: 549, altitude: 170000, velocity: 6300, q: 0 },
-    { t: 57, actual: 780, altitude: 200000, velocity: 7800, q: 0 },
-    { t: 61, actual: 820, altitude: 212000, velocity: 7700, q: 0 }
+    { t: 30, actual: 0, altitude: 0, velocity: 0, q: 0.4 },
+    { t: 55, actual: 25, altitude: 3000, velocity: 260, q: 9 },
+    { t: 90, actual: 60, altitude: 8000, velocity: 730, q: 19 },
+    { t: 115, actual: 85, altitude: 13000, velocity: 1090, q: 30 },
+    { t: 130, actual: 100, altitude: 16000, velocity: 1320, q: 26 },
+    { t: 180, actual: 150, altitude: 50000, velocity: 2300, q: 8 },
+    { t: 215, actual: 185, altitude: 75000, velocity: 2700, q: 3 },
+    { t: 219, actual: 189, altitude: 79000, velocity: 2450, q: 2.2 },
+    { t: 250, actual: 235, altitude: 100000, velocity: 3200, q: 0.4 },
+    { t: 290, actual: 300, altitude: 135000, velocity: 4300, q: 0 },
+    { t: 410, actual: 549, altitude: 175000, velocity: 6250, q: 0 },
+    { t: 470, actual: 780, altitude: 205000, velocity: 7800, q: 0 },
+    { t: 500, actual: 820, altitude: 212000, velocity: 7720, q: 0 }
   ];
   const BOOSTER_TIMELINE = [
-    { t: 34, altitude: 80000, velocity: -900 },
-    { t: 40, altitude: 50000, velocity: -1150 },
-    { t: 46, altitude: 5000, velocity: -290 },
-    { t: 48, altitude: 0, velocity: -16 }
+    { t: 240, altitude: 80000, velocity: -900 },
+    { t: 350, altitude: 50000, velocity: -1150 },
+    { t: 398, altitude: 5000, velocity: -290 },
+    { t: 410, altitude: 0, velocity: -16 }
   ];
   const KONAMI = ['ArrowUp', 'ArrowUp', 'ArrowDown', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'ArrowLeft', 'ArrowRight', 'KeyB', 'KeyA'];
   const PAD_POLL_FLIP_SEC = 0.5;
@@ -107,8 +128,8 @@
   const MAX_PARTICLES = 600;
   const VOICE_POOL_SIZE = 8;
   const PAD_SPRITE_H = 480;
-  const ROCKET_SPRITE_W = 52;
-  const ROCKET_SPRITE_H = 96;
+  const ROCKET_SPRITE_W = 56;
+  const ROCKET_SPRITE_H = 180;
 
   let skySprite = null;
   let lastSkyKey = -1;
@@ -132,7 +153,10 @@
         const raw = localStorage.getItem(STORAGE_KEY);
         if (!raw) return { ...DEFAULT_SETTINGS };
         const merged = { ...DEFAULT_SETTINGS, ...JSON.parse(raw) };
+        if (merged.difficulty === 'ENGINEER') merged.difficulty = 'PAD_RAT';
         if (!DIFFICULTY[merged.difficulty]) merged.difficulty = 'CADET';
+        if (!Array.isArray(merged.leaderboard)) merged.leaderboard = [];
+        if (!Array.isArray(merged.achievements)) merged.achievements = [];
         return merged;
       } catch (err) {
         return { ...DEFAULT_SETTINGS };
@@ -567,6 +591,19 @@
         tutorialSeen: false,
         phaseCaption: '',
         phaseCaptionTimer: 0,
+        levelIntroTimer: 0,
+        levelClearTimer: 0,
+        levelClearPhase: '',
+        pendingPhase: null,
+        levelStarsPopup: 0,
+        scorePops: [],
+        canSkipCinematic: false,
+        continueCountdown: 9,
+        continueTimer: 0,
+        initials: 'AAA',
+        initialsIndex: 0,
+        enteringInitials: false,
+        karmanBannerTimer: 0,
         difficultyButtons: [],
         tortoiseMoved: 0,
         lastPhase: 'READY',
@@ -583,6 +620,12 @@
         phaseElapsed: 0,
         phaseGrace: 0,
         phase: 'PAD',
+        failedPhase: null,
+        continuesUsed: 0,
+        startsByPhase: { PAD: PHASES.PAD.start },
+        levelStars: {},
+        totalStars: 0,
+        perfectFlight: false,
         ascentGrace: 2.5,
         score: 0,
         boosterRecovered: false,
@@ -613,7 +656,11 @@
       obstacles: [],
       upperHazards: [],
       effects: { fairingSplit: 0, stageSepPuff: 0, splitView: false, rudTimer: 0, quickMessage: '', delugeTimer: 0, liftoffShake: 0, shockRing: 0 },
-      easter: { binLabels: BLOCK_LABELS[Math.floor(Math.random() * BLOCK_LABELS.length)], bezosMode: false },
+      easter: {
+        binLabels: BLOCK_LABELS[Math.floor(Math.random() * BLOCK_LABELS.length)],
+        bezosMode: false,
+        van: { parked: true, x: 20, y: CH - 82, beeped: false, messageShown: false }
+      },
       buttons: { mute: null, pause: null }
     };
   }
@@ -645,7 +692,7 @@
   }
 
   function showPhaseCaption(phase) {
-    if (state.settings.difficulty === 'ENGINEER') return;
+    if (state.settings.difficulty === 'PAD_RAT') return;
     const message = MISSION_CAPTIONS[phase];
     if (!message) return;
     state.ui.phaseCaption = message;
@@ -723,6 +770,19 @@
     state.ui.tutorialSeen = false;
     state.ui.phaseCaption = '';
     state.ui.phaseCaptionTimer = 0;
+    state.ui.levelIntroTimer = 1.5;
+    state.ui.levelClearTimer = 0;
+    state.ui.levelClearPhase = '';
+    state.ui.pendingPhase = null;
+    state.ui.levelStarsPopup = 0;
+    state.ui.scorePops = [];
+    state.ui.canSkipCinematic = true;
+    state.ui.continueCountdown = 9;
+    state.ui.continueTimer = 0;
+    state.ui.initials = 'AAA';
+    state.ui.initialsIndex = 0;
+    state.ui.enteringInitials = false;
+    state.ui.karmanBannerTimer = 0;
     state.ui.difficultyButtons = [];
     state.ui.tortoiseMoved = 0;
     state.ui.flash = 0;
@@ -737,6 +797,12 @@
       phaseElapsed: 0,
       phaseGrace: 0,
       phase: 'PAD',
+      failedPhase: null,
+      continuesUsed: 0,
+      startsByPhase: { PAD: PHASES.PAD.start },
+      levelStars: {},
+      totalStars: 0,
+      perfectFlight: false,
       ascentGrace: 2.5,
       score: 0,
       boosterRecovered: false,
@@ -768,6 +834,7 @@
     state.upperHazards = [];
     state.effects = { fairingSplit: 0, stageSepPuff: 0, splitView: false, rudTimer: 0, quickMessage: '', delugeTimer: 0, liftoffShake: 0, shockRing: 0 };
     state.easter.binLabels = BLOCK_LABELS[Math.floor(Math.random() * BLOCK_LABELS.length)];
+    state.easter.van = { parked: true, x: 20, y: CH - 82, beeped: false, messageShown: false };
     Audio.setMood('idle', state.settings);
     state.effects.quickMessage = '';
     state.effects.splitView = false;
