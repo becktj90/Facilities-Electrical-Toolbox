@@ -1978,6 +1978,27 @@ window.calcTHD = function () {
    INIT
    ============================================================ */
 document.addEventListener('DOMContentLoaded', () => {
+  let deferredInstallPrompt = null;
+  const installBtn = document.getElementById('install-btn');
+  if (installBtn) {
+    window.addEventListener('beforeinstallprompt', (event) => {
+      event.preventDefault();
+      deferredInstallPrompt = event;
+      installBtn.style.display = '';
+    });
+    installBtn.addEventListener('click', async () => {
+      if (!deferredInstallPrompt) return;
+      deferredInstallPrompt.prompt();
+      try { await deferredInstallPrompt.userChoice; } catch (_) {}
+      deferredInstallPrompt = null;
+      installBtn.style.display = 'none';
+    });
+    window.addEventListener('appinstalled', () => {
+      deferredInstallPrompt = null;
+      installBtn.style.display = 'none';
+    });
+  }
+
   window.addEventListener('hashchange', () => {
     setActiveSection(getHashSectionId() || DEFAULT_SECTION_ID);
   });
@@ -2040,3 +2061,7 @@ document.addEventListener('DOMContentLoaded', () => {
   dcPowerModeChange();
   cmModeChange();
 });
+
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => navigator.serviceWorker.register('./sw.js').catch(() => {}));
+}

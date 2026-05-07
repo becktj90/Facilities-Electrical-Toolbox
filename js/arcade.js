@@ -104,6 +104,27 @@
   const PAD_POLL_FLIP_SEC = 0.5;
   const PAD_SKY_ALTITUDE_THRESHOLD = 18000;
   const OBSTACLE_WARNING_TIME = 1.5;
+  const MAX_PARTICLES = 600;
+  const VOICE_POOL_SIZE = 8;
+  const PAD_SPRITE_H = 480;
+  const ROCKET_SPRITE_W = 52;
+  const ROCKET_SPRITE_H = 96;
+
+  let skySprite = null;
+  let lastSkyKey = -1;
+  let padSprite = null;
+  let rocketSpriteFairing = null;
+  let rocketSpriteBare = null;
+  let starSpriteDeep = null;
+  let starSpriteMid = null;
+
+  function makeOffscreenCanvas(width, height) {
+    if (typeof OffscreenCanvas !== 'undefined') return new OffscreenCanvas(width, height);
+    const cv = document.createElement('canvas');
+    cv.width = width;
+    cv.height = height;
+    return cv;
+  }
 
   const Settings = {
     load() {
@@ -130,6 +151,7 @@
     let rumbleTone = null;
     let musicTimer = null;
     let musicMode = 'idle';
+    let voices = [];
 
     const patterns = {
       idle: [[196, 0.36, 'sawtooth'], [220, 0.42, 'sawtooth'], [null, 0.28], [174.61, 0.52, 'triangle']],
@@ -149,6 +171,12 @@
         master = ctx.createGain();
         master.gain.value = 0.18;
         master.connect(ctx.destination);
+        voices = Array.from({ length: VOICE_POOL_SIZE }, () => {
+          const gain = ctx.createGain();
+          gain.gain.value = 0.0001;
+          gain.connect(master);
+          return { gain, releaseAt: 0 };
+        });
       } catch (err) {
         ctx = null;
         return false;
@@ -175,17 +203,27 @@
     function tone(freq, duration, type, gain, slideTo) {
       if (!ctx || !master || !freq) return;
       const t = now();
+      const voice = getVoice(t);
       const osc = ctx.createOscillator();
-      const env = ctx.createGain();
       osc.type = type || 'square';
       osc.frequency.setValueAtTime(freq, t);
       if (slideTo) osc.frequency.exponentialRampToValueAtTime(Math.max(1, slideTo), t + duration);
-      env.gain.setValueAtTime(Math.max(0.0001, gain || 0.08), t);
-      env.gain.exponentialRampToValueAtTime(0.0001, t + Math.max(0.04, duration));
-      osc.connect(env);
-      env.connect(master);
+      voice.gain.gain.cancelScheduledValues(t);
+      voice.gain.gain.setValueAtTime(Math.max(0.0001, gain || 0.08), t);
+      voice.gain.gain.exponentialRampToValueAtTime(0.0001, t + Math.max(0.04, duration));
+      osc.connect(voice.gain);
       osc.start(t);
       osc.stop(t + duration + 0.04);
+      voice.releaseAt = t + duration;
+    }
+
+    function getVoice(time) {
+      let oldest = voices[0];
+      for (const voice of voices) {
+        if (voice.releaseAt < time) return voice;
+        if (voice.releaseAt < oldest.releaseAt) oldest = voice;
+      }
+      return oldest;
     }
 
     function noise(duration, gain, lowpassFreq) {
@@ -302,10 +340,16 @@
   })();
 
   const Particles = (() => {
-    const pool = Array.from({ length: 420 }, () => ({ active: false }));
+    const pool = Array.from({ length: MAX_PARTICLES }, () => ({ active: false }));
 
     function spawn(opts) {
-      const slot = pool.find(p => !p.active);
+      let slot = null;
+      for (let i = 0; i < pool.length; i++) {
+        if (!pool[i].active) {
+          slot = pool[i];
+          break;
+        }
+      }
       if (!slot) return;
       Object.assign(slot, {
         active: true,
@@ -341,25 +385,35 @@
     }
 
     function draw(ctx, section) {
-      let additive = false;
       for (const p of pool) {
         if (!p.active || (section && p.section !== section)) continue;
+        if (p.kind === 'fire' || p.kind === 'plasma' || p.kind === 'flash') continue;
         const alpha = Math.max(0, p.life * p.alpha);
-        if (!additive && (p.kind === 'fire' || p.kind === 'plasma' || p.kind === 'flash')) {
-          ctx.save();
-          ctx.globalCompositeOperation = 'lighter';
-          additive = true;
-        }
         ctx.fillStyle = `rgba(${p.color},${alpha})`;
-        ctx.beginPath();
         if (p.kind === 'streak') {
           ctx.fillRect(p.x, p.y, p.size * 2.6, 1.2);
         } else {
+          ctx.beginPath();
           ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
           ctx.fill();
         }
       }
-      if (additive) ctx.restore();
+      ctx.save();
+      ctx.globalCompositeOperation = 'lighter';
+      for (const p of pool) {
+        if (!p.active || (section && p.section !== section)) continue;
+        if (p.kind !== 'fire' && p.kind !== 'plasma' && p.kind !== 'flash') continue;
+        const alpha = Math.max(0, p.life * p.alpha);
+        ctx.fillStyle = `rgba(${p.color},${alpha})`;
+        if (p.kind === 'streak') {
+          ctx.fillRect(p.x, p.y, p.size * 2.6, 1.2);
+        } else {
+          ctx.beginPath();
+          ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+          ctx.fill();
+        }
+      }
+      ctx.restore();
     }
 
     function clear() {
@@ -454,6 +508,35 @@
       drift: rand(-0.12, 0.12),
       alpha: rand(0.08, 0.18)
     }));
+  }
+
+  function ensureSkySprite(altitude) {
+    const key = Math.floor(Math.max(0, altitude) / 1000);
+    if (!skySprite) skySprite = makeOffscreenCanvas(CW, CH);
+    if (key === lastSkyKey) return;
+    lastSkyKey = key;
+    const g = skySprite.getContext('2d');
+    const grad = altitudeGradient(altitude);
+    const fill = g.createLinearGradient(0, 0, 0, CH);
+    fill.addColorStop(0, grad.top);
+    fill.addColorStop(1, grad.bottom);
+    g.fillStyle = fill;
+    g.fillRect(0, 0, CW, CH);
+  }
+
+  function buildStarSprites() {
+    const make = (r, color) => {
+      const size = Math.ceil(r * 2) + 4;
+      const cv = makeOffscreenCanvas(size, size);
+      const g = cv.getContext('2d');
+      g.fillStyle = color;
+      g.beginPath();
+      g.arc(size / 2, size / 2, r, 0, Math.PI * 2);
+      g.fill();
+      return cv;
+    };
+    starSpriteDeep = make(1.6, 'rgba(180,225,255,1)');
+    starSpriteMid = make(1.2, 'rgba(120,190,255,1)');
   }
 
   function createState() {
@@ -1508,27 +1591,34 @@
 
   function drawBackground(ctx, altitude, panel) {
     const isPadSky = altitude < PAD_SKY_ALTITUDE_THRESHOLD && !state.world.padGone;
-    const bg = ctx.createLinearGradient(0, panel ? panel.y : 0, 0, panel ? panel.y + panel.h : CH);
-    if (isPadSky) {
-      bg.addColorStop(0, '#1a1a3a');
-      bg.addColorStop(0.62, '#5a3565');
-      bg.addColorStop(1, '#d4807a');
-    } else {
-      const grad = altitudeGradient(altitude);
-      bg.addColorStop(0, grad.top);
-      bg.addColorStop(1, grad.bottom);
-    }
+    ensureSkySprite(altitude);
     if (!panel) {
-      ctx.fillStyle = bg;
-      ctx.fillRect(0, 0, CW, CH);
+      if (isPadSky) {
+        const bg = ctx.createLinearGradient(0, 0, 0, CH);
+        bg.addColorStop(0, '#1a1a3a');
+        bg.addColorStop(0.62, '#5a3565');
+        bg.addColorStop(1, '#d4807a');
+        ctx.fillStyle = bg;
+        ctx.fillRect(0, 0, CW, CH);
+      } else {
+        ctx.drawImage(skySprite, 0, 0);
+      }
     }
     if (panel) {
       ctx.save();
       ctx.beginPath();
       ctx.rect(0, panel.y, CW, panel.h);
       ctx.clip();
-      ctx.fillStyle = bg;
-      ctx.fillRect(0, panel.y, CW, panel.h);
+      if (isPadSky) {
+        const bg = ctx.createLinearGradient(0, panel.y, 0, panel.y + panel.h);
+        bg.addColorStop(0, '#1a1a3a');
+        bg.addColorStop(0.62, '#5a3565');
+        bg.addColorStop(1, '#d4807a');
+        ctx.fillStyle = bg;
+        ctx.fillRect(0, panel.y, CW, panel.h);
+      } else {
+        ctx.drawImage(skySprite, 0, 0);
+      }
       drawStarLayers(ctx, altitude, panel.y, panel.h);
       if (altitude > 100000) drawEarthHorizon(ctx, panel.y + panel.h - 10, panel.h * 0.75);
       ctx.restore();
@@ -1546,20 +1636,18 @@
   function drawStarLayers(ctx, altitude, y0, h) {
     const visible = clamp((altitude - 15000) / 85000, 0, 1);
     const early = altitude < 15000 ? 0.18 : 0;
+    if (!starSpriteDeep || !starSpriteMid) return;
     for (const star of state.stars.deep) {
       if (star.y < y0 - 4 || star.y > y0 + h + 4) continue;
-      ctx.fillStyle = `rgba(180,225,255,${(0.1 + star.alpha * (visible + early)).toFixed(3)})`;
-      ctx.beginPath();
-      ctx.arc(star.x, star.y, star.r, 0, Math.PI * 2);
-      ctx.fill();
+      ctx.globalAlpha = clamp(0.1 + star.alpha * (visible + early), 0, 1);
+      ctx.drawImage(starSpriteDeep, star.x - 2, star.y - 2, star.r * 2.4, star.r * 2.4);
     }
     for (const star of state.stars.mid) {
       if (star.y < y0 - 4 || star.y > y0 + h + 4) continue;
-      ctx.fillStyle = `rgba(120,190,255,${(0.05 + star.alpha * (visible + early) * 0.8).toFixed(3)})`;
-      ctx.beginPath();
-      ctx.arc(star.x, star.y, star.r * 0.8, 0, Math.PI * 2);
-      ctx.fill();
+      ctx.globalAlpha = clamp(0.05 + star.alpha * (visible + early) * 0.8, 0, 1);
+      ctx.drawImage(starSpriteMid, star.x - 2, star.y - 2, star.r * 2, star.r * 2);
     }
+    ctx.globalAlpha = 1;
   }
 
   function drawEarthHorizon(ctx, y, radius) {
@@ -1594,20 +1682,15 @@
     }
   }
 
-  function drawLaunchPad(ctx) {
-    const groundY = CH - 30 + state.world.scrollY;
-    if (groundY > CH + 220) return;
-    const blink = Math.floor((performance.now() || 0) / 500) % 2 === 0;
+  function drawPadStatic(ctx, groundY) {
     const leftTowerX = 60;
     const rightTowerX = CW - 60;
     const towerTopY = groundY - 380;
-
     ctx.fillStyle = '#1d2328';
     ctx.fillRect(0, groundY, CW, 90);
     ctx.fillStyle = '#2f3a42';
     ctx.fillRect(0, groundY + 20, CW, 16);
 
-    // Floodlight masts + cones
     const mastXs = [100, 150, CW - 150, CW - 100];
     mastXs.forEach((x) => {
       const topY = groundY - 80;
@@ -1618,19 +1701,8 @@
       ctx.stroke();
       ctx.fillStyle = '#f8fcff';
       for (let i = -1; i <= 1; i++) ctx.fillRect(x + i * 5 - 2, topY - 3, 4, 3);
-      ctx.save();
-      ctx.globalCompositeOperation = 'lighter';
-      ctx.fillStyle = 'rgba(230,245,255,0.08)';
-      ctx.beginPath();
-      ctx.moveTo(x, topY);
-      ctx.lineTo(x - 32, groundY + 36);
-      ctx.lineTo(x + 32, groundY + 36);
-      ctx.closePath();
-      ctx.fill();
-      ctx.restore();
     });
 
-    // Lightning towers lattice
     [leftTowerX, rightTowerX].forEach((x) => {
       ctx.strokeStyle = '#edf4fa';
       ctx.beginPath();
@@ -1649,18 +1721,12 @@
         ctx.lineTo(x - 12, y - 12);
         ctx.stroke();
       }
-      ctx.strokeStyle = '#edf4fa';
       ctx.beginPath();
       ctx.moveTo(x, towerTopY);
       ctx.lineTo(x, towerTopY - 40);
       ctx.stroke();
-      ctx.fillStyle = blink ? '#ff4d4d' : '#5a1a1a';
-      ctx.beginPath();
-      ctx.arc(x, towerTopY - 42, 3, 0, Math.PI * 2);
-      ctx.fill();
     });
 
-    // Right FSS + umbilical platforms
     ctx.strokeStyle = '#dce6ef';
     ctx.fillStyle = 'rgba(180,196,210,0.18)';
     ctx.fillRect(rightTowerX - 28, groundY - 200, 20, 200);
@@ -1675,30 +1741,26 @@
       ctx.fillRect(rightTowerX - 46, y, 38, 4);
     });
 
-    // Catenary cable
     ctx.strokeStyle = 'rgba(225,238,247,0.9)';
     ctx.beginPath();
     ctx.moveTo(leftTowerX, towerTopY - 42);
     ctx.quadraticCurveTo(CW / 2, towerTopY - 2, rightTowerX, towerTopY - 42);
     ctx.stroke();
 
-    // Launch mount tiers + trench
-    const tierBottomY = groundY;
     ctx.fillStyle = '#9aa5ad';
-    ctx.fillRect(CW / 2 - 110, tierBottomY - 16, 220, 16);
+    ctx.fillRect(CW / 2 - 110, groundY - 16, 220, 16);
     ctx.fillStyle = '#7e8891';
-    ctx.fillRect(CW / 2 - 80, tierBottomY - 30, 160, 14);
+    ctx.fillRect(CW / 2 - 80, groundY - 30, 160, 14);
     ctx.fillStyle = '#6f7880';
-    ctx.fillRect(CW / 2 - 55, tierBottomY - 40, 110, 10);
+    ctx.fillRect(CW / 2 - 55, groundY - 40, 110, 10);
     ctx.fillStyle = '#0a0d12';
     ctx.beginPath();
-    ctx.moveTo(CW / 2 - 25, tierBottomY - 2);
-    ctx.lineTo(CW / 2, tierBottomY - 32);
-    ctx.lineTo(CW / 2 + 25, tierBottomY - 2);
+    ctx.moveTo(CW / 2 - 25, groundY - 2);
+    ctx.lineTo(CW / 2, groundY - 32);
+    ctx.lineTo(CW / 2 + 25, groundY - 2);
     ctx.closePath();
     ctx.fill();
 
-    const labels = state.easter.binLabels;
     const stacks = [CW / 2 - 122, CW / 2 - 102, CW / 2 - 82, CW / 2 + 70, CW / 2 + 90, CW / 2 + 110];
     stacks.forEach((x, i) => {
       const by = groundY - 18 - (i % 2) * 8;
@@ -1706,38 +1768,113 @@
       ctx.fillRect(x, by, 18, 11);
       ctx.strokeStyle = '#c2c7cb';
       ctx.strokeRect(x, by, 18, 11);
-      ctx.fillStyle = '#0b1216';
-      ctx.font = '5px "Share Tech Mono", monospace';
+    });
+  }
+
+  function drawFloodlightCones(ctx, groundY, nowMs) {
+    const pulse = 0.06 + (Math.sin(nowMs / 280) * 0.02);
+    [100, 150, CW - 150, CW - 100].forEach((x) => {
+      const topY = groundY - 80;
+      ctx.save();
+      ctx.globalCompositeOperation = 'lighter';
+      ctx.fillStyle = `rgba(230,245,255,${pulse.toFixed(3)})`;
+      ctx.beginPath();
+      ctx.moveTo(x, topY);
+      ctx.lineTo(x - 32, groundY + 36);
+      ctx.lineTo(x + 32, groundY + 36);
+      ctx.closePath();
+      ctx.fill();
+      ctx.restore();
+    });
+  }
+
+  function drawTowerLights(ctx, groundY, nowMs) {
+    const towerTopY = groundY - 380;
+    const blink = Math.floor(nowMs / 500) % 2 === 0;
+    [60, CW - 60].forEach((x) => {
+      ctx.fillStyle = blink ? '#ff4d4d' : '#5a1a1a';
+      ctx.beginPath();
+      ctx.arc(x, towerTopY - 42, 3, 0, Math.PI * 2);
+      ctx.fill();
+    });
+  }
+
+  function drawBinBlockLabels(ctx, groundY) {
+    const labels = state.easter.binLabels;
+    const stacks = [CW / 2 - 122, CW / 2 - 102, CW / 2 - 82, CW / 2 + 70, CW / 2 + 90, CW / 2 + 110];
+    ctx.fillStyle = '#0b1216';
+    ctx.font = '5px "Share Tech Mono", monospace';
+    stacks.forEach((x, i) => {
+      const by = groundY - 18 - (i % 2) * 8;
       ctx.fillText(labels[i % labels.length], x - 10, by - 3);
     });
-
     ctx.fillStyle = '#7ea36f';
     ctx.beginPath();
     ctx.ellipse(CW / 2 - 134 + state.ui.tortoiseMoved, groundY - 6, 9, 5, 0, 0, Math.PI * 2);
     ctx.fill();
     ctx.fillRect(CW / 2 - 142 + state.ui.tortoiseMoved, groundY - 5, 4, 3);
     ctx.fillRect(CW / 2 - 130 + state.ui.tortoiseMoved, groundY - 5, 4, 3);
+  }
 
-    // Deluge mist near trench, strongest around liftoff
+  function drawWaterDeluge(groundY) {
     const tPlus = state.telemetry.actualTime || -30;
     const delugeBoost = clamp(1 - Math.abs(tPlus) / 3, 0, 1);
-    if (state.effects.delugeTimer > 0 || delugeBoost > 0) {
-      const mistAlpha = 0.3 + delugeBoost * 0.2;
-      Particles.burst(6, () => ({
-        kind: 'plasma',
-        section: 'main',
-        x: CW / 2 + rand(-34, 34),
-        y: groundY - 16 + rand(-8, 8),
-        vx: rand(-1.8, 1.8),
-        vy: rand(-2.6, -0.8),
-        life: 0.75,
-        decay: 0.06,
-        size: rand(5, 10),
-        grow: 0.04,
-        alpha: mistAlpha,
-        color: '240,250,255'
-      }));
-    }
+    if (state.effects.delugeTimer <= 0 && delugeBoost <= 0) return;
+    const mistAlpha = 0.3 + delugeBoost * 0.2;
+    Particles.burst(6, () => ({
+      kind: 'plasma',
+      section: 'main',
+      x: CW / 2 + rand(-34, 34),
+      y: groundY - 16 + rand(-8, 8),
+      vx: rand(-1.8, 1.8),
+      vy: rand(-2.6, -0.8),
+      life: 0.75,
+      decay: 0.06,
+      size: rand(5, 10),
+      grow: 0.04,
+      alpha: mistAlpha,
+      color: '240,250,255'
+    }));
+  }
+
+  function drawFlameTrenchFire(groundY) {
+    if (state.session.phase !== 'ASCENT') return;
+    const flame = clamp(1 - state.session.phaseElapsed / 3, 0, 1);
+    if (flame <= 0) return;
+    Particles.burst(4, () => ({
+      kind: 'fire',
+      section: 'main',
+      x: CW / 2 + rand(-24, 24),
+      y: groundY - 12 + rand(-3, 4),
+      vx: rand(-0.9, 0.9),
+      vy: rand(-2.2, -0.8),
+      life: 0.5 + flame * 0.3,
+      decay: 0.08,
+      size: rand(3, 8),
+      grow: 0.05,
+      alpha: 0.6,
+      color: Math.random() < 0.5 ? '255,176,60' : '255,110,20'
+    }));
+  }
+
+  function buildPadSprite() {
+    const cv = makeOffscreenCanvas(CW, PAD_SPRITE_H);
+    const g = cv.getContext('2d');
+    drawPadStatic(g, PAD_SPRITE_H - 30);
+    padSprite = cv;
+  }
+
+  function drawLaunchPad(ctx) {
+    const groundY = CH - 30 + state.world.scrollY;
+    if (groundY > CH + 220) return;
+    const nowMs = performance.now() || 0;
+    const dy = state.world.scrollY + (CH - 30 - (PAD_SPRITE_H - 30));
+    ctx.drawImage(padSprite, 0, dy);
+    drawFloodlightCones(ctx, groundY, nowMs);
+    drawTowerLights(ctx, groundY, nowMs);
+    drawBinBlockLabels(ctx, groundY);
+    drawWaterDeluge(groundY);
+    drawFlameTrenchFire(groundY);
   }
 
   function drawObstacle(ctx, o) {
@@ -1800,12 +1937,9 @@
     ctx.restore();
   }
 
-  function drawRocket(ctx, x, y, tilt, mode, opts) {
+  function drawRocketShape(ctx, mode, opts) {
     opts = opts || {};
-    ctx.save();
-    ctx.translate(x, y);
-    ctx.rotate(tilt || 0);
-    if (state.easter.bezosMode) {
+    if (state.easter.bezosMode && mode !== 'cache') {
       ctx.fillStyle = '#111';
       ctx.fillRect(-8, -24, 16, 5);
       ctx.fillRect(-11, -22, 6, 3);
@@ -1844,6 +1978,32 @@
       ctx.font = 'bold 6px "Share Tech Mono", monospace';
       ctx.textAlign = 'center';
       ctx.fillText('Never Tell Me The Odds', 0, 4);
+    }
+  }
+
+  function buildRocketSprites() {
+    const make = (fairing) => {
+      const cv = makeOffscreenCanvas(ROCKET_SPRITE_W, ROCKET_SPRITE_H);
+      const g = cv.getContext('2d');
+      g.translate(ROCKET_SPRITE_W / 2, 42);
+      drawRocketShape(g, 'cache', { fairingGone: !fairing });
+      return cv;
+    };
+    rocketSpriteFairing = make(true);
+    rocketSpriteBare = make(false);
+  }
+
+  function drawRocket(ctx, x, y, tilt, mode, opts) {
+    opts = opts || {};
+    const shouldUseCache = !state.easter.bezosMode && mode !== 'booster';
+    ctx.save();
+    ctx.translate(x, y);
+    ctx.rotate(tilt || 0);
+    if (shouldUseCache) {
+      const sprite = opts.fairingGone ? rocketSpriteBare : rocketSpriteFairing;
+      ctx.drawImage(sprite, -ROCKET_SPRITE_W / 2, -42);
+    } else {
+      drawRocketShape(ctx, mode, opts);
     }
     ctx.restore();
   }
@@ -2473,6 +2633,11 @@
     state.wrapper = document.getElementById('arcade-fs-wrapper');
     if (!state.canvas) return;
     state.ctx = state.canvas.getContext('2d');
+    buildPadSprite();
+    buildRocketSprites();
+    buildStarSprites();
+    skySprite = makeOffscreenCanvas(CW, CH);
+    lastSkyKey = -1;
     state.ui.systems = freshSystems();
     updateRecordDisplay();
     updateButtons();
