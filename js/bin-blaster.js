@@ -1852,8 +1852,11 @@
         swapBlock();
         return;
       }
-      updateAim(px, py);
-      fireBlock();
+      const launcherTap = px >= LAUNCHER_X - 78 && px < LAUNCHER_X + 78 && py >= LAUNCHER_Y - 60 && py < LAUNCHER_Y + 44;
+      if (py < GRID_ZONE_BOTTOM || launcherTap) {
+        updateAim(px, py);
+        fireBlock();
+      }
       return;
     }
 
