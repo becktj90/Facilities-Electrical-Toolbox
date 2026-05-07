@@ -1743,7 +1743,7 @@
   function loop(ts) {
     requestAnimationFrame(loop);
     if (!S.canvas || !S.ctx) return;
-    if (!isSectionActive()) { S.lastTs = ts; return; }
+    if (!isSectionActive() || document.hidden) { S.lastTs = ts; return; }
 
     const dt = S.lastTs ? Math.min(1 / 20, (ts - S.lastTs) / 1000) : 1 / 60;
     S.lastTs = ts;
