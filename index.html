@@ -2715,11 +2715,19 @@
               <canvas id="arcadeCanvas" width="420" height="640" style="display:block;margin:0 auto;border:2px solid var(--green);box-shadow:var(--glow-md);cursor:pointer;max-width:100%"></canvas>
               <button onclick="arcadeFullscreen()" title="Toggle fullscreen" style="position:absolute;top:4px;right:4px;background:rgba(0,0,0,0.75);color:var(--green);border:1px solid var(--green);font-family:var(--font-mono);font-size:0.68rem;padding:2px 7px;cursor:pointer;z-index:10">&#x26F6; FS</button>
             </div>
-            <div style="margin-top:8px;font-family:var(--font-mono);font-size:0.78rem;color:var(--green-mid)">
-              SPACE / CLICK / TAP = launch + boost &nbsp;|&nbsp; A / D or &#8592; / &#8594; steer &nbsp;|&nbsp; Tap where you want to drift on touch devices
+
+            <!-- On-screen touch controls (great for mobile, useful on desktop too) -->
+            <div id="arcade-touch-btns" style="display:flex;gap:6px;margin:8px auto;max-width:420px;user-select:none">
+              <button id="atb-left" style="flex:1;font-size:1.3rem;padding:14px 0;background:rgba(0,30,0,0.85);color:var(--green);border:1px solid var(--green);font-family:var(--font-mono);cursor:pointer;border-radius:3px;touch-action:none">&#9664; LEFT</button>
+              <button id="atb-boost" style="flex:2;font-size:1rem;padding:14px 0;background:rgba(0,40,0,0.9);color:var(--amber);border:2px solid var(--amber);font-family:var(--font-mono);cursor:pointer;border-radius:3px;touch-action:none;font-weight:bold">&#128640; BOOST</button>
+              <button id="atb-right" style="flex:1;font-size:1.3rem;padding:14px 0;background:rgba(0,30,0,0.85);color:var(--green);border:1px solid var(--green);font-family:var(--font-mono);cursor:pointer;border-radius:3px;touch-action:none">RIGHT &#9654;</button>
+            </div>
+
+            <div style="margin-top:4px;font-family:var(--font-mono);font-size:0.78rem;color:var(--green-mid)">
+              BOOST = climb &nbsp;|&nbsp; &#9664; &#9654; buttons or A/D or &#8592;/&#8594; = steer &nbsp;|&nbsp; drag on canvas = steer while in flight
             </div>
             <div class="note" style="text-align:left">
-              &#9432; A launch-hold blast-off sequence kicks off each run, then the live HUD tracks velocity, altitude, dynamic pressure, LNG/LOX levels, and mission milestones through ascent.
+              &#9432; A launch-hold blast-off sequence kicks off each run. A safe launch corridor clears at the start of ascent. The live HUD tracks velocity, altitude, dynamic pressure, LNG/LOX levels, and mission milestones.
             </div>
           </div>
         </div>
@@ -2736,12 +2744,13 @@
           <div class="card-title">How to Play</div>
           <div class="card-body">
             <div class="formula-box">
-              SPACE / CLICK / TAP = start countdown and boost upward<br>
-              A / D or &#8592; / &#8594; = steer left and right through the gap<br>
-              Collect EMI shields for one protected impact<br>
+              BOOST BUTTON / SPACE / TAP CANVAS = start &amp; boost upward<br>
+              &#9664; / &#9654; BUTTONS or A/D or &#8592;/&#8594; = steer left and right<br>
+              DRAG on canvas = steer toward your finger while flying<br>
+              Collect EM shields for one protected impact<br>
               Each barrier cleared = +1 mission phase<br>
-              Starts on the LC-36 pad with ignition smoke and hold-down release<br>
-              Descent rate of hazards and cloud flow increase over time<br><br>
+              Safe launch corridor clears at liftoff (no collisions)<br>
+              Gap narrows and barriers speed up as score increases<br><br>
               ENGINE START &#8594; LIFTOFF &#8594; MAX-Q &#8594; ORBIT<br>
               ...PAYLOAD DEPLOYMENT = LEGEND STATUS
             </div>
