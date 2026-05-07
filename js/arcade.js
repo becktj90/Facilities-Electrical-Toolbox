@@ -129,6 +129,9 @@
   const PAD_SKY_ALTITUDE_THRESHOLD = 18000;
   const OBSTACLE_WARNING_TIME = 1.5;
   const NO_THRUST_FAIL_SEC = 1.8;
+  const MAX_NO_THRUST_TIME = 4;
+  const NO_THRUST_TUMBLE_FREQ = 17;
+  const NO_THRUST_TUMBLE_GAIN = 0.09;
   const MAX_PARTICLES = 600;
   const VOICE_POOL_SIZE = 8;
   const PAD_SPRITE_H = 480;
@@ -1180,7 +1183,7 @@
     const anchorY = CH * 0.55 + (lowGravity ? -8 : noThrustDrop);
     const bob = clamp(state.rocket.vy * 1.2, -7, 7);
     state.rocket.y = approach(state.rocket.y, anchorY + bob, 0.9 * step);
-    const tumble = !state.input.boostHeld && !lowGravity ? Math.sin(state.session.phaseElapsed * 17) * clamp((state.session.noThrustTime || 0) * 0.09, 0, 0.34) : 0;
+    const tumble = !state.input.boostHeld && !lowGravity ? Math.sin(state.session.phaseElapsed * NO_THRUST_TUMBLE_FREQ) * clamp((state.session.noThrustTime || 0) * NO_THRUST_TUMBLE_GAIN, 0, 0.34) : 0;
     state.rocket.tilt = clamp(state.rocket.vx * 0.1 + tumble, -0.8, 0.8);
     if (state.rocket.burn > 0) state.rocket.burn = Math.max(0, state.rocket.burn - dt);
   }
@@ -1190,7 +1193,7 @@
       state.session.noThrustTime = 0;
       return false;
     }
-    state.session.noThrustTime = Math.min(4, (state.session.noThrustTime || 0) + dt);
+    state.session.noThrustTime = Math.min(MAX_NO_THRUST_TIME, (state.session.noThrustTime || 0) + dt);
     if (state.session.phaseGrace <= 0 && state.session.noThrustTime >= NO_THRUST_FAIL_SEC) {
       triggerRud(failKey);
       return true;
