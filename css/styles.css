@@ -526,6 +526,7 @@ textarea {
   }
 }
 
+/* Print to standard letter paper; the schedule itself occupies the left half-sheet width. */
 @page {
   size: 8.5in 11in;
   margin: 0;

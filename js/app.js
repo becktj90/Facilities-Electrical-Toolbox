@@ -541,7 +541,8 @@ function createEmptyRow() {
 }
 
 function seedRows(count) {
-  state.rows = Array.from({ length: count }, (_, index) => ({
+  const safeCount = Math.max(1, Math.min(MAX_CIRCUIT_SLOTS, Number(count) || MAX_CIRCUIT_SLOTS));
+  state.rows = Array.from({ length: safeCount }, (_, index) => ({
     circuit: String(index + 1),
     description: '',
     trip: '',
