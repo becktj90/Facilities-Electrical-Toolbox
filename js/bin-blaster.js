@@ -998,11 +998,7 @@
     scale = scale || 1;
     const w = BLOCK_W * scale, h = BLOCK_H * scale;
     const def = TYPES[typeKey] || TYPES.GRAY;
-    let color = def.color;
-
-    if (typeKey === 'RAINBOW') {
-      color = `hsl(${(Date.now() / 15) % 360},100%,65%)`;
-    }
+    const color = def.color;
 
     ctx.save();
     ctx.translate(x, y);
@@ -1828,11 +1824,6 @@
         }
         return;
       }
-      if (py < GRID_ZONE_BOTTOM) {
-        updateAim(px, py);
-        fireBlock();
-        return;
-      }
       // Power tray clicks
       const pupBaseY = 600;
       for (let i = 0; i < 3; i++) {
@@ -1845,7 +1836,10 @@
       const nx = LAUNCHER_X + 68;
       if (px >= nx - 22 && px < nx + 22 && py >= LAUNCHER_Y - 28 && py < LAUNCHER_Y + 20) {
         swapBlock();
+        return;
       }
+      updateAim(px, py);
+      fireBlock();
       return;
     }
 
@@ -1930,7 +1924,7 @@
           S.hoveredMission = i; return;
         }
       }
-    } else if (S.screen === 'playing' && !S.paused && py < GRID_ZONE_BOTTOM) {
+    } else if (S.screen === 'playing' && !S.paused) {
       updateAim(px, py);
     }
   }
