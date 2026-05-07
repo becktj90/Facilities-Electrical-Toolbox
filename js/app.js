@@ -1,3 +1,6 @@
+const MAX_CIRCUIT_SLOTS = 42;
+const PRINT_ROW_PAIRS = MAX_CIRCUIT_SLOTS / 2;
+
 const state = {
   file: null,
   imageUrl: '',
@@ -10,7 +13,7 @@ const elements = {};
 window.addEventListener('DOMContentLoaded', () => {
   cacheElements();
   bindEvents();
-  seedRows(42);
+  seedRows(MAX_CIRCUIT_SLOTS);
   renderAll();
 });
 
@@ -77,7 +80,7 @@ function bindEvents() {
     renderAll();
   });
   elements.fillSlotsButton.addEventListener('click', () => {
-    seedRows(42);
+    seedRows(MAX_CIRCUIT_SLOTS);
     renderAll();
     setStatus('Seeded 42 editable circuit rows for manual entry.');
   });
@@ -238,7 +241,7 @@ function isIgnoredLine(line) {
     || /(ckt|circuit).*(load|description)/i.test(line)
     || /(trip|amps?).*(poles?)/i.test(line)
     || /^odd\s+even$/i.test(line)
-    || /^panel\b/i.test(line) && !looksLikeCircuit(line.split(' ')[0]);
+    || (/^panel\b/i.test(line) && !looksLikeCircuit(line.split(' ')[0]));
 }
 
 function looksLikeCircuit(value) {
@@ -452,11 +455,13 @@ function handleRowEdit(event) {
     state.rows[index] = createEmptyRow();
   }
 
-  state.rows[index][field] = field === 'circuit'
-    ? normalizeCircuit(event.target.value)
-    : field === 'trip'
-      ? normalizeTrip(event.target.value)
-      : String(event.target.value || '').trim();
+  if (field === 'circuit') {
+    state.rows[index][field] = normalizeCircuit(event.target.value);
+  } else if (field === 'trip') {
+    state.rows[index][field] = normalizeTrip(event.target.value);
+  } else {
+    state.rows[index][field] = String(event.target.value || '').trim();
+  }
 
   renderPrintSheet();
 }
@@ -465,12 +470,12 @@ function renderPrintSheet() {
   elements.sheetPanelName.textContent = elements.panelName.value.trim() || 'Untitled Panel';
   elements.sheetVoltage.textContent = elements.panelVoltage.value.trim() || '—';
   elements.sheetFeed.textContent = elements.panelFeed.value.trim() || '—';
-  elements.sheetDate.textContent = elements.panelDate.value.trim() || new Date().toISOString().slice(0, 10);
+  elements.sheetDate.textContent = elements.panelDate.value.trim() || defaultPrintDate();
 
   const slots = buildCircuitSlots(state.rows);
   const bodyRows = [];
 
-  for (let pair = 0; pair < 21; pair += 1) {
+  for (let pair = 0; pair < PRINT_ROW_PAIRS; pair += 1) {
     const left = slots[pair * 2 + 1] || createPlaceholderRow(pair * 2 + 1);
     const right = slots[pair * 2 + 2] || createPlaceholderRow(pair * 2 + 2);
     bodyRows.push(`
@@ -497,7 +502,7 @@ function buildCircuitSlots(rows) {
 
   normalized.forEach(row => {
     const slot = firstCircuitNumber(row.circuit);
-    if (slot >= 1 && slot <= 42 && !slots[slot]) {
+    if (slot >= 1 && slot <= MAX_CIRCUIT_SLOTS && !slots[slot]) {
       slots[slot] = row;
     } else {
       overflow.push(row);
@@ -505,7 +510,7 @@ function buildCircuitSlots(rows) {
   });
 
   overflow.forEach(row => {
-    for (let slot = 1; slot <= 42; slot += 1) {
+    for (let slot = 1; slot <= MAX_CIRCUIT_SLOTS; slot += 1) {
       if (!slots[slot]) {
         slots[slot] = { ...row, circuit: row.circuit || String(slot) };
         break;
@@ -548,7 +553,7 @@ function resetApp() {
   state.file = null;
   state.imageUrl = '';
   state.rawText = '';
-  seedRows(42);
+  seedRows(MAX_CIRCUIT_SLOTS);
   elements.imageInput.value = '';
   elements.rawText.value = '';
   elements.panelName.value = '';
@@ -590,6 +595,10 @@ function humanizeStatus(status) {
     .replace(/loading language traineddata/i, 'Loading OCR language pack…')
     .replace(/initializing api/i, 'Initializing OCR engine…')
     .replace(/initializing tesseract/i, 'Starting Tesseract.js…');
+}
+
+function defaultPrintDate() {
+  return new Date().toLocaleDateString('en-US');
 }
 
 function escapeAttr(value) {

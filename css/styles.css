@@ -15,6 +15,7 @@
   --button-text: #111111;
   --print-font: 'Barlow', 'Helvetica Neue', Arial, sans-serif;
   --ui-font: 'MS Sans Serif', Tahoma, Geneva, Verdana, sans-serif;
+  /* Half-letter cardstock schedule body inside a full 8.5x11 print page. */
   --sheet-width: 4.25in;
   --sheet-height: 11in;
 }
