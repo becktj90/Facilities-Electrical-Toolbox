@@ -1982,18 +1982,24 @@ const UI_ACTIONS = Object.freeze({
   splashEnterToolbox: () => { if (typeof window.splashEnterToolbox === 'function') window.splashEnterToolbox(); },
   splashEnterGame: () => { if (typeof window.splashEnterGame === 'function') window.splashEnterGame(); }
 });
+let toastHideTimer = 0;
+let toastRemoveTimer = 0;
 
 function showToast(message) {
   const existing = document.querySelector('.app-toast');
-  if (existing) existing.remove();
+  if (existing) {
+    clearTimeout(toastHideTimer);
+    clearTimeout(toastRemoveTimer);
+    existing.remove();
+  }
   const toast = document.createElement('div');
   toast.className = 'app-toast';
   toast.textContent = message;
   document.body.appendChild(toast);
   setTimeout(() => toast.classList.add('show'), 10);
-  setTimeout(() => {
+  toastHideTimer = window.setTimeout(() => {
     toast.classList.remove('show');
-    setTimeout(() => toast.remove(), 300);
+    toastRemoveTimer = window.setTimeout(() => toast.remove(), 300);
   }, 2500);
 }
 window.showToast = showToast;
@@ -2100,12 +2106,13 @@ function setupSplash() {
    INIT
    ============================================================ */
 document.addEventListener('DOMContentLoaded', () => {
-  document.querySelectorAll('[data-action]').forEach(control => {
-    control.addEventListener('click', (event) => {
-      const action = control.dataset.action;
-      const handler = action ? UI_ACTIONS[action] : null;
-      if (typeof handler === 'function') handler(event);
-    });
+  document.body.addEventListener('click', (event) => {
+    const control = event.target.closest('[data-action]');
+    if (!control) return;
+
+    const action = control.dataset.action;
+    const handler = action ? UI_ACTIONS[action] : null;
+    if (typeof handler === 'function') handler(event);
   });
 
   setupSplash();
