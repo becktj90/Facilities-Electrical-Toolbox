@@ -1222,11 +1222,13 @@ window.calcNEC = function () {
   const COAST_LNG_RATE         = 0.018;
   const BURN_LOX_RATE          = 0.13;
   const COAST_LOX_RATE         = 0.025;
-  const LAUNCH_HOLD_FRAMES     = 42;
+  const LAUNCH_COUNTDOWN_FRAMES = 42;
   const LAUNCH_TOTAL_FRAMES    = 132;
   const PRELAUNCH_VENT_RATE    = 16;
-  const LAUNCH_HOLD_LABEL      = 'ENGINE START SEQUENCE';
-  const LAUNCH_LIFTOFF_LABEL   = 'LIFTOFF — PAD CLEARANCE';
+  const LABEL_ENGINE_START     = 'ENGINE START SEQUENCE';
+  const LABEL_LIFTOFF          = 'LIFTOFF — PAD CLEARANCE';
+  const LAUNCH_IDLE_FREQUENCY  = 0.65;
+  const LAUNCH_IDLE_AMPLITUDE  = 0.8;
 
   function currentGap() {
     const shrink = Math.min(score * 1.6, 82);
@@ -1341,6 +1343,10 @@ window.calcNEC = function () {
     pointerTargetX = clamp((clientX - rect.left) * (CW / rect.width), X_MARGIN, CW - X_MARGIN);
   }
 
+  function isFlightActive() {
+    return state === 'PLAYING' || state === 'LAUNCH';
+  }
+
   function handlePointerMove(e) {
     if (!isSectionActive() || state === 'READY' || state === 'GAMEOVER') return;
     updatePointerTarget(e.clientX);
@@ -1364,7 +1370,7 @@ window.calcNEC = function () {
   }
 
   function handleTouchMove(e) {
-    if (!isSectionActive() || (state !== 'PLAYING' && state !== 'LAUNCH')) return;
+    if (!isSectionActive() || !isFlightActive()) return;
     const t = e.touches[0];
     if (!t) return;
     e.preventDefault();
@@ -1404,7 +1410,7 @@ window.calcNEC = function () {
   }
 
   function triggerBoost() {
-    if (state !== 'PLAYING' && state !== 'LAUNCH') return;
+    if (!isFlightActive()) return;
     rocket.vy = Math.max(MAX_BOOST_VELOCITY, rocket.vy + BOOST_IMPULSE);
     rocket.burnFrames = BOOST_FRAMES;
     emitExhaust(8, 1.0);
@@ -1503,7 +1509,7 @@ window.calcNEC = function () {
         decay: 0.017 + Math.random() * 0.02,
         r: 12 + Math.random() * 18 * scale,
         grow: 0.14 + Math.random() * 0.18,
-        alpha: alpha || 0.42,
+        alpha: alpha ?? 0.42,
         color: Math.random() < 0.4 ? '220,228,235' : '165,176,186'
       });
     }
@@ -1511,7 +1517,7 @@ window.calcNEC = function () {
 
   function emitExhaust(count, thrustScale) {
     const baseY = rocket.y + rocket.h / 2 + 8;
-    const scale = thrustScale || 1;
+    const scale = thrustScale ?? 1;
     for (let i = 0; i < count; i++) {
       particles.push({
         kind: 'fire',
@@ -1594,14 +1600,14 @@ window.calcNEC = function () {
   function updateLaunch() {
     launchTimer++;
     updateHorizontalControl();
-    const holdRatio = launchTimer < LAUNCH_HOLD_FRAMES ? launchTimer / LAUNCH_HOLD_FRAMES : 1;
-    const ascentFrames = Math.max(0, launchTimer - LAUNCH_HOLD_FRAMES);
-    const ascentRatio = clamp(ascentFrames / (LAUNCH_TOTAL_FRAMES - LAUNCH_HOLD_FRAMES), 0, 1);
+    const holdRatio = launchTimer < LAUNCH_COUNTDOWN_FRAMES ? launchTimer / LAUNCH_COUNTDOWN_FRAMES : 1;
+    const ascentFrames = Math.max(0, launchTimer - LAUNCH_COUNTDOWN_FRAMES);
+    const ascentRatio = clamp(ascentFrames / (LAUNCH_TOTAL_FRAMES - LAUNCH_COUNTDOWN_FRAMES), 0, 1);
     const scroll = 0.55 + ascentRatio * 2.2;
 
     rocket.burnFrames = 2;
-    if (launchTimer < LAUNCH_HOLD_FRAMES) {
-      rocket.y = CH - 88 + Math.sin(frame * 0.65) * 0.8;
+    if (launchTimer < LAUNCH_COUNTDOWN_FRAMES) {
+      rocket.y = CH - 88 + Math.sin(frame * LAUNCH_IDLE_FREQUENCY) * LAUNCH_IDLE_AMPLITUDE;
       emitSmoke(CW / 2, CH - 38, 4 + Math.round(holdRatio * 2), 0.9 + holdRatio * 0.35, 0.36);
     } else {
       rocket.vy = -1.4 - ascentRatio * 3.9;
@@ -1618,7 +1624,7 @@ window.calcNEC = function () {
     telemetry.q = Math.max(0, 0.08 + ascentRatio * 14.5);
     telemetry.lng = Math.max(0, telemetry.lng - 0.05);
     telemetry.lox = Math.max(0, telemetry.lox - 0.09);
-    telemetry.milestone = launchTimer < LAUNCH_HOLD_FRAMES ? LAUNCH_HOLD_LABEL : LAUNCH_LIFTOFF_LABEL;
+    telemetry.milestone = launchTimer < LAUNCH_COUNTDOWN_FRAMES ? LABEL_ENGINE_START : LABEL_LIFTOFF;
 
     if (launchTimer >= LAUNCH_TOTAL_FRAMES) {
       state = 'PLAYING';
@@ -2039,8 +2045,8 @@ window.calcNEC = function () {
     ctx.shadowColor = '#ffb300'; ctx.shadowBlur = 12;
     ctx.fillStyle = '#ffb300';
     ctx.font = '18px "Share Tech Mono",monospace';
-    if (launchTimer < LAUNCH_HOLD_FRAMES) {
-      const seconds = Math.max(0, Math.ceil((LAUNCH_HOLD_FRAMES - launchTimer) / (TARGET_FPS / 2)) - 1);
+    if (launchTimer < LAUNCH_COUNTDOWN_FRAMES) {
+      const seconds = Math.max(0, Math.ceil((LAUNCH_COUNTDOWN_FRAMES - launchTimer) / TARGET_FPS));
       ctx.fillText('IGNITION SEQUENCE │ T-' + seconds, CW / 2, CH / 2 - 22);
       ctx.font = '12px "Share Tech Mono",monospace';
       ctx.fillText('ENGINES BUILDING THRUST — WATER DELUGE ONLINE', CW / 2, CH / 2);
