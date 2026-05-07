@@ -123,9 +123,9 @@
   ];
   const KONAMI = ['ArrowUp', 'ArrowUp', 'ArrowDown', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'ArrowLeft', 'ArrowRight', 'KeyB', 'KeyA'];
   const PAD_POLL_FLIP_SEC = 0.5;
-  const ASCENT_SPAWN_INTERVAL_MULTIPLIER = 5;
-  const BIN_LABEL_OFFSET_X = -7;
-  const BIN_LABEL_OFFSET_Y = -2;
+  const ASCENT_SPAWN_INTERVAL_MULTIPLIER = 5; // ~5x timeline expansion from v3.0, so spawns are spaced similarly per phase.
+  const BIN_LABEL_OFFSET_X = -7; // Centers 5px stencil text on 18px block width.
+  const BIN_LABEL_OFFSET_Y = -2; // Lifts stencil text above the top face for tiny stenciled readability.
   const PAD_SKY_ALTITUDE_THRESHOLD = 18000;
   const OBSTACLE_WARNING_TIME = 1.5;
   const MAX_PARTICLES = 600;
@@ -1683,6 +1683,7 @@
     if (!state.booster.alive || state.booster.touchdown) return;
     const step = dt * BASE_FPS;
     const splitT = state.session.totalElapsed;
+    const splitActual = Math.round(timelineValue(MAIN_TIMELINE, 'actual', splitT));
     const isCadet = state.settings.difficulty === 'CADET';
     const desiredAlt = timelineValue(BOOSTER_TIMELINE, 'altitude', clamp(splitT, PHASES.KARMAN.start, PHASES.BOOSTER_RTLS.end));
     const desiredVy = timelineValue(BOOSTER_TIMELINE, 'velocity', clamp(splitT, PHASES.KARMAN.start, PHASES.BOOSTER_RTLS.end));
@@ -1702,7 +1703,7 @@
     if (!state.booster.reentryBurnDone && splitT >= 344 && splitT <= 364 && (state.input.boostPressed || (isCadet && splitT >= 356))) {
       state.booster.reentryBurnDone = true;
       state.booster.burn = 1.6;
-      showOverlayMessage(`REENTRY BURN COMMANDED (${formatMissionTime(Math.round(timelineValue(MAIN_TIMELINE, 'actual', splitT)))})`, 1.6);
+      showOverlayMessage(`REENTRY BURN COMMANDED (${formatMissionTime(splitActual)})`, 1.6);
       Audio.play('boost', state.settings);
       addShake(2, 0.35);
     }
@@ -1722,7 +1723,7 @@
         state.session.boosterRecovered = true;
         Audio.play('landing_touchdown', state.settings);
         setRadio(RADIO.BOOSTER_WIN, 2.5);
-        showOverlayMessage(`Landed on Jacklyn (${formatMissionTime(Math.round(timelineValue(MAIN_TIMELINE, 'actual', splitT)))})`, 3);
+        showOverlayMessage(`Landed on Jacklyn (${formatMissionTime(splitActual)})`, 3);
         addShake(4.5, 0.5);
         vibrate([40]);
       } else {
