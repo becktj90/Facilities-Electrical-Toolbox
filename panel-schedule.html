@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Revit Panel Schedule OCR</title>
+  <link rel="stylesheet" href="css/panel-schedule.css">
+</head>
+<body>
+  <div class="app-shell">
+    <header class="hero screen-only">
+      <div class="title-bar">
+        <span class="title-bar-text">Revit Panel Schedule OCR.exe</span>
+        <div class="title-bar-actions" aria-hidden="true">
+          <span class="win-dot">_</span>
+          <span class="win-dot">□</span>
+          <span class="win-dot">✕</span>
+        </div>
+      </div>
+      <div class="hero-body">
+        <div>
+          <p class="hero-kicker">Facilities Electrical Toolbox / 1998 Edition</p>
+          <h1>Revit Panel Schedule OCR</h1>
+          <p class="hero-copy">Drop in a Revit panel schedule image, extract circuits with Tesseract.js, correct OCR misreads, and print a clean half-sheet schedule sized for cardstock.</p>
+        </div>
+        <button id="printButton" class="btn btn-primary" type="button">Print Schedule</button>
+      </div>
+    </header>
+
+    <main class="workspace">
+      <section class="window screen-only" aria-labelledby="upload-title">
+        <div class="title-bar">
+          <span class="title-bar-text" id="upload-title">Image Intake</span>
+        </div>
+        <div class="window-body stack-lg">
+          <div class="toolbar">
+            <label class="btn" for="imageInput">Upload Image</label>
+            <input id="imageInput" type="file" accept="image/*" hidden>
+            <button id="processButton" class="btn btn-primary" type="button" disabled>Read Schedule</button>
+            <button id="resetButton" class="btn" type="button">Reset</button>
+          </div>
+
+          <label id="dropZone" class="drop-zone" for="imageInput">
+            <span class="drop-zone-icon">📂</span>
+            <strong>Drag &amp; drop a Revit panel schedule here</strong>
+            <span>PNG, JPG, WEBP, or scanned photos work best when the schedule is square to the camera and high contrast.</span>
+          </label>
+
+          <div class="status-strip" role="status" aria-live="polite">
+            <span id="statusText">Awaiting image upload.</span>
+            <span id="fileName">No file selected</span>
+          </div>
+
+          <div class="progress-shell" aria-label="OCR progress">
+            <div class="progress-bar">
+              <div id="progressFill" class="progress-fill"></div>
+            </div>
+            <span id="progressLabel">0%</span>
+          </div>
+
+          <div class="preview-frame">
+            <img id="imagePreview" alt="Uploaded panel schedule preview">
+            <div id="previewPlaceholder" class="preview-placeholder">Image preview appears here.</div>
+          </div>
+        </div>
+      </section>
+
+      <section class="window screen-only" aria-labelledby="editor-title">
+        <div class="title-bar">
+          <span class="title-bar-text" id="editor-title">OCR Review + Manual Corrections</span>
+        </div>
+        <div class="window-body stack-lg">
+          <div class="meta-grid">
+            <label>
+              <span>Panel Name</span>
+              <input id="panelName" type="text" placeholder="MDP-1">
+            </label>
+            <label>
+              <span>Voltage</span>
+              <input id="panelVoltage" type="text" placeholder="208Y/120V">
+            </label>
+            <label>
+              <span>Feed</span>
+              <input id="panelFeed" type="text" placeholder="225A MLO">
+            </label>
+            <label>
+              <span>Date</span>
+              <input id="panelDate" type="text" placeholder="2026-05-07">
+            </label>
+          </div>
+
+          <div class="toolbar toolbar-wrap">
+            <button id="parseTextButton" class="btn" type="button">Parse Text</button>
+            <button id="addRowButton" class="btn" type="button">Add Circuit Row</button>
+            <button id="fillSlotsButton" class="btn" type="button">Seed 42 Circuits</button>
+          </div>
+
+          <label class="field-block">
+            <span>Raw OCR Text</span>
+            <textarea id="rawText" rows="8" placeholder="OCR output will appear here. You can edit it and re-parse."></textarea>
+          </label>
+
+          <div class="table-wrap">
+            <table class="editor-table">
+              <thead>
+                <tr>
+                  <th>Ckt</th>
+                  <th>Load Description</th>
+                  <th>Trip/Amps</th>
+                  <th>Poles</th>
+                  <th class="col-actions">Action</th>
+                </tr>
+              </thead>
+              <tbody id="editorTableBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <section class="window preview-window" aria-labelledby="print-preview-title">
+        <div class="title-bar screen-only">
+          <span class="title-bar-text" id="print-preview-title">Print Preview</span>
+        </div>
+        <div class="window-body preview-body">
+          <article id="printSheet" class="print-sheet">
+            <header class="print-header">
+              <div class="print-header-top">
+                <div>
+                  <p class="print-eyebrow">Panel Schedule</p>
+                  <h2 id="sheetPanelName">Untitled Panel</h2>
+                </div>
+                <div class="print-logo">Facilities Electrical Toolbox</div>
+              </div>
+              <div class="print-meta-grid">
+                <div class="print-meta-field">
+                  <span>Voltage</span>
+                  <strong id="sheetVoltage">—</strong>
+                </div>
+                <div class="print-meta-field">
+                  <span>Feed</span>
+                  <strong id="sheetFeed">—</strong>
+                </div>
+                <div class="print-meta-field">
+                  <span>Date</span>
+                  <strong id="sheetDate">—</strong>
+                </div>
+              </div>
+            </header>
+
+            <table class="schedule-table" aria-label="Printable panel schedule">
+              <thead>
+                <tr>
+                  <th>Ckt</th>
+                  <th>Load Description</th>
+                  <th>Trip</th>
+                  <th>P</th>
+                  <th>Trip</th>
+                  <th>P</th>
+                  <th>Load Description</th>
+                  <th>Ckt</th>
+                </tr>
+              </thead>
+              <tbody id="printScheduleBody"></tbody>
+            </table>
+          </article>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+  <script src="js/panel-schedule.js"></script>
+</body>
+</html>
