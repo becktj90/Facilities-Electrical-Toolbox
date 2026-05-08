@@ -1,11 +1,14 @@
-const CACHE = 'toolbox-v6';
+const CACHE = 'toolbox-v7';
 const ASSETS = [
   './',
   './index.html',
+  './pad-rat.html',
   './panel-schedule.html',
   './manifest.json',
+  './style.css',
   './css/styles.css',
   './css/panel-schedule.css',
+  './game.js',
   './js/app.js',
   './js/panel-schedule.js',
   './js/arcade.js',
