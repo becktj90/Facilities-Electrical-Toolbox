@@ -191,6 +191,7 @@
   const LIGHTNING_VY_MAX = 7.0;
   const OBSTACLE_VY_MIN = 2.0;
   const OBSTACLE_VY_MAX = 3.5;
+  const OBSTACLE_BOUNCE_DAMPING = 0.75;
   const OBSTACLE_HOMING_STRENGTH = 0.006;  // how strongly obstacles drift toward the rocket
   const PAIRED_OBSTACLE_SPAWN_CHANCE = 0.25;
   const PAIRED_OBSTACLE_MIN_OFFSET = 40;
@@ -203,6 +204,13 @@
   const CONTINUOUS_STRESS_MULTIPLIER = 0.35;
   const GIMBAL_DANGER_THRESHOLD = 0.78;    // fraction of MAX_GIMBAL_ANGLE for HUD danger color
   const CLOUD_SHADOW_ALPHA_FACTOR = 0.35;
+  const WAVE_GRID_BASE_ALPHA = 0.06;
+  const WAVE_GRID_VISIBILITY_ALPHA_FACTOR = 0.12;
+  const WAVE_GRID_BASE_AMPLITUDE = 6;
+  const WAVE_GRID_VISIBILITY_AMPLITUDE_FACTOR = 8;
+  const WAVE_GRID_FREQ = 0.04;
+  const WAVE_GRID_TIME_MULT = 2.2;
+  const WAVE_GRID_Y_PHASE_MULT = 0.02;
   const VELOCITY_TILT_FACTOR = 0.15;
   const INPUT_TILT_FACTOR = 0.08;
   const MAX_PARTICLES = 600;
@@ -1545,12 +1553,13 @@
     switch (nextPhase) {
       case 'ASCENT':
         const launchCharge = clamp(state.session.launchCharge || 0, 0, 1);
+        const boostVelocity = LAUNCH_BOOST_MIN + launchCharge * (LAUNCH_BOOST_MAX - LAUNCH_BOOST_MIN);
         setRadio(RADIO.ASCENT, 2.2);
         state.ui.tutorialTimer = state.ui.tutorialSeen ? 0 : 2;
         state.effects.liftoffShake = 1.6 + launchCharge * 1.7;
         state.effects.delugeTimer = Math.max(state.effects.delugeTimer, 3);
         state.effects.shockRing = 1;
-        state.rocket.vy = Math.min(state.rocket.vy, -(LAUNCH_BOOST_MIN + launchCharge * (LAUNCH_BOOST_MAX - LAUNCH_BOOST_MIN)));
+        state.rocket.vy = Math.min(state.rocket.vy, -boostVelocity);
         state.rocket.burn = Math.max(state.rocket.burn, 0.35 + launchCharge * 0.45);
         state.session.ascentObstacleTarget = Math.floor(rand(ASCENT_INITIAL_OBSTACLE_TARGET, ASCENT_MAX_OBSTACLE_TARGET));
         state.session.ascentObstacleCount = 0;
@@ -1773,7 +1782,7 @@
       o.x += (o.vx + waveDrift) * step;
       if (o.x < OBSTACLE_EDGE_MARGIN || o.x > CW - OBSTACLE_EDGE_MARGIN) {
         o.x = clamp(o.x, OBSTACLE_EDGE_MARGIN, CW - OBSTACLE_EDGE_MARGIN);
-        o.vx *= -0.75;
+        o.vx *= -OBSTACLE_BOUNCE_DAMPING;
       }
       if (o.y > CH + 30) {
         state.obstacles.splice(i, 1);
@@ -2069,15 +2078,14 @@
     const lineSpacing = 30;
     ctx.save();
     ctx.globalCompositeOperation = 'lighter';
-    ctx.strokeStyle = `rgba(120,220,255,${(0.06 + visibility * 0.12).toFixed(3)})`;
+    ctx.strokeStyle = `rgba(120,220,255,${(WAVE_GRID_BASE_ALPHA + visibility * WAVE_GRID_VISIBILITY_ALPHA_FACTOR).toFixed(3)})`;
     ctx.lineWidth = 1;
     for (let y = y0 + 26; y < y0 + h; y += lineSpacing) {
-      const amplitude = 6 + visibility * 8;
-      const freq = 0.04;
-      const phase = now * 2.2 + y * 0.02;
+      const amplitude = WAVE_GRID_BASE_AMPLITUDE + visibility * WAVE_GRID_VISIBILITY_AMPLITUDE_FACTOR;
+      const phase = now * WAVE_GRID_TIME_MULT + y * WAVE_GRID_Y_PHASE_MULT;
       ctx.beginPath();
       for (let x = 0; x <= CW; x += 10) {
-        const wy = y + Math.sin(phase + x * freq) * amplitude;
+        const wy = y + Math.sin(phase + x * WAVE_GRID_FREQ) * amplitude;
         if (x === 0) ctx.moveTo(x, wy);
         else ctx.lineTo(x, wy);
       }
