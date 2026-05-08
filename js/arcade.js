@@ -4,7 +4,8 @@
   const CW = 420;
   const CH = 640;
   const BASE_FPS = 60;
-  const STORAGE_KEY = 'newGlennRunnerSettingsV2';
+  const STORAGE_KEY = 'newGlennRunnerStateV3';
+  const LEGACY_KEY = 'newGlennRunnerSettingsV2';
   const DEFAULT_SETTINGS = {
     sound: true,
     music: true,
@@ -226,14 +227,30 @@
   const Settings = {
     load() {
       try {
+        // Try new key first (v3 schema)
         const raw = localStorage.getItem(STORAGE_KEY);
-        if (!raw) return { ...DEFAULT_SETTINGS };
-        const merged = { ...DEFAULT_SETTINGS, ...JSON.parse(raw) };
-        if (merged.difficulty === 'ENGINEER') merged.difficulty = 'PAD_RAT';
-        if (!DIFFICULTY[merged.difficulty]) merged.difficulty = 'CADET';
-        if (!Array.isArray(merged.leaderboard)) merged.leaderboard = [];
-        if (!Array.isArray(merged.achievements)) merged.achievements = [];
-        return merged;
+        if (raw) {
+          const merged = { ...DEFAULT_SETTINGS, ...JSON.parse(raw) };
+          if (merged.difficulty === 'ENGINEER') merged.difficulty = 'PAD_RAT';
+          if (!DIFFICULTY[merged.difficulty]) merged.difficulty = 'CADET';
+          if (!Array.isArray(merged.leaderboard)) merged.leaderboard = [];
+          if (!Array.isArray(merged.achievements)) merged.achievements = [];
+          return merged;
+        }
+        // Migrate from legacy key (v2 schema)
+        const legacy = localStorage.getItem(LEGACY_KEY);
+        if (legacy) {
+          const parsed = JSON.parse(legacy);
+          const merged = { ...DEFAULT_SETTINGS, ...parsed };
+          if (merged.difficulty === 'ENGINEER') merged.difficulty = 'PAD_RAT';
+          if (!DIFFICULTY[merged.difficulty]) merged.difficulty = 'CADET';
+          if (!Array.isArray(merged.leaderboard)) merged.leaderboard = [];
+          if (!Array.isArray(merged.achievements)) merged.achievements = [];
+          // Write migrated data to new key so future loads use it
+          try { localStorage.setItem(STORAGE_KEY, JSON.stringify(merged)); } catch (e) { /* ignore */ }
+          return merged;
+        }
+        return { ...DEFAULT_SETTINGS };
       } catch (err) {
         return { ...DEFAULT_SETTINGS };
       }
