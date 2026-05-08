@@ -123,6 +123,10 @@
   ];
   const KONAMI = ['ArrowUp', 'ArrowUp', 'ArrowDown', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'ArrowLeft', 'ArrowRight', 'KeyB', 'KeyA'];
   const PAD_POLL_FLIP_SEC = 0.5;
+  const LAUNCH_CHARGE_BUILD_RATE = 0.5;
+  const LAUNCH_CHARGE_DECAY_RATE = 0.22;
+  const LAUNCH_BOOST_MIN = 0.9;
+  const LAUNCH_BOOST_MAX = 2.7;
   const ASCENT_SPAWN_INTERVAL_MULTIPLIER = 1.6; // Denser spawn pacing; lower = more frequent obstacles.
   const ASCENT_INITIAL_SPAWN_AT = 1.5;
   const ASCENT_INITIAL_OBSTACLE_TARGET = 22;
@@ -719,6 +723,7 @@
         maxQ: 0,
         structuralStress: 0,
         noThrustTime: 0,
+        launchCharge: 0,
         recentSteerSign: 0,
         lastSteerChange: -10,
         ascentObstacleTarget: ASCENT_INITIAL_OBSTACLE_TARGET,
@@ -915,6 +920,7 @@
       maxQ: 0,
       structuralStress: 0,
       noThrustTime: 0,
+      launchCharge: 0,
       recentSteerSign: 0,
       lastSteerChange: -10,
       ascentObstacleTarget: ASCENT_INITIAL_OBSTACLE_TARGET,
@@ -1214,6 +1220,10 @@
       h: type === 'balloon' ? 30 : type === 'ice' ? 14 : type === 'debris' ? 12 : type === 'lightning' ? 40 : 14,
       vx: rand(-0.6, 0.6) + homeVx,
       vy: baseVy,
+      waveAmp: type === 'lightning' ? rand(0.05, 0.12) : rand(0.08, 0.2),
+      waveFreq: rand(1.2, 2.6),
+      wavePhase: rand(0, Math.PI * 2),
+      waveTime: 0,
       whooshed: false
     });
     // On harder difficulties occasionally spawn a paired obstacle nearby to force a harder dodge.
@@ -1227,6 +1237,10 @@
         h: type === 'balloon' ? 30 : type === 'ice' ? 14 : type === 'debris' ? 12 : 14,
         vx: rand(-0.6, 0.6),
         vy: baseVy * rand(0.88, 1.12),
+        waveAmp: rand(0.06, 0.16),
+        waveFreq: rand(1.2, 2.6),
+        wavePhase: rand(0, Math.PI * 2),
+        waveTime: 0,
         whooshed: false
       });
     }
@@ -1530,11 +1544,14 @@
     showPhaseCaption(nextPhase);
     switch (nextPhase) {
       case 'ASCENT':
+        const launchCharge = clamp(state.session.launchCharge || 0, 0, 1);
         setRadio(RADIO.ASCENT, 2.2);
         state.ui.tutorialTimer = state.ui.tutorialSeen ? 0 : 2;
-        state.effects.liftoffShake = 2;
+        state.effects.liftoffShake = 1.6 + launchCharge * 1.7;
         state.effects.delugeTimer = Math.max(state.effects.delugeTimer, 3);
         state.effects.shockRing = 1;
+        state.rocket.vy = Math.min(state.rocket.vy, -(LAUNCH_BOOST_MIN + launchCharge * (LAUNCH_BOOST_MAX - LAUNCH_BOOST_MIN)));
+        state.rocket.burn = Math.max(state.rocket.burn, 0.35 + launchCharge * 0.45);
         state.session.ascentObstacleTarget = Math.floor(rand(ASCENT_INITIAL_OBSTACLE_TARGET, ASCENT_MAX_OBSTACLE_TARGET));
         state.session.ascentObstacleCount = 0;
         state.session.nextAscentSpawnAt = ASCENT_INITIAL_SPAWN_AT;
@@ -1673,6 +1690,11 @@
       Audio.play('success', state.settings);
     }
     if (state.ui.countdownStarted) {
+      if (state.input.boostHeld) {
+        state.session.launchCharge = clamp((state.session.launchCharge || 0) + dt * LAUNCH_CHARGE_BUILD_RATE, 0, 1);
+      } else {
+        state.session.launchCharge = clamp((state.session.launchCharge || 0) - dt * LAUNCH_CHARGE_DECAY_RATE, 0, 1);
+      }
       state.session.totalElapsed = clamp(state.session.totalElapsed + dt, 0, PHASES.PAD.end);
       Audio.updateRumble(0.3 + (3 - state.ui.countdown) * 0.1, state.settings);
       if (state.ui.countdown <= 3 && state.effects.delugeTimer <= 0) state.effects.delugeTimer = Math.max(state.effects.delugeTimer, state.ui.countdown + 3);
@@ -1687,9 +1709,10 @@
         state.rocket.y = CH * 0.55;
         transitionPhase('ASCENT');
       }
-      addShake(1.1, 0.12);
+      addShake(1.1 + (state.session.launchCharge || 0) * 0.8, 0.12);
     } else {
       state.session.totalElapsed = 0;
+      state.session.launchCharge = 0;
       Audio.updateRumble(0.05, state.settings);
       if (allGreen) state.ui.radio = 'BOOST arms ignition. You are go for launch.';
     }
@@ -1744,8 +1767,14 @@
     }
     for (let i = state.obstacles.length - 1; i >= 0; i--) {
       const o = state.obstacles[i];
+      o.waveTime = (o.waveTime || 0) + dt;
+      const waveDrift = Math.sin((o.wavePhase || 0) + (o.waveTime || 0) * (o.waveFreq || 0)) * (o.waveAmp || 0);
       o.y += (o.vy + state.world.cameraVy) * step;
-      o.x += o.vx * step;
+      o.x += (o.vx + waveDrift) * step;
+      if (o.x < OBSTACLE_EDGE_MARGIN || o.x > CW - OBSTACLE_EDGE_MARGIN) {
+        o.x = clamp(o.x, OBSTACLE_EDGE_MARGIN, CW - OBSTACLE_EDGE_MARGIN);
+        o.vx *= -0.75;
+      }
       if (o.y > CH + 30) {
         state.obstacles.splice(i, 1);
         state.session.obstacleStreak += 1;
@@ -1993,9 +2022,9 @@
     if (!panel) {
       if (isPadSky) {
         const bg = ctx.createLinearGradient(0, 0, 0, CH);
-        bg.addColorStop(0, '#87c8ec');
-        bg.addColorStop(0.62, '#9ad1f0');
-        bg.addColorStop(1, '#b3dbf3');
+        bg.addColorStop(0, '#30124d');
+        bg.addColorStop(0.52, '#4f2c8f');
+        bg.addColorStop(1, '#173c72');
         ctx.fillStyle = bg;
         ctx.fillRect(0, 0, CW, CH);
       } else {
@@ -2009,19 +2038,21 @@
       ctx.clip();
       if (isPadSky) {
         const bg = ctx.createLinearGradient(0, panel.y, 0, panel.y + panel.h);
-        bg.addColorStop(0, '#87c8ec');
-        bg.addColorStop(0.62, '#9ad1f0');
-        bg.addColorStop(1, '#b3dbf3');
+        bg.addColorStop(0, '#30124d');
+        bg.addColorStop(0.52, '#4f2c8f');
+        bg.addColorStop(1, '#173c72');
         ctx.fillStyle = bg;
         ctx.fillRect(0, panel.y, CW, panel.h);
       } else {
         ctx.drawImage(skySprite, 0, 0);
       }
       drawStarLayers(ctx, altitude, panel.y, panel.h);
+      drawWaveFlowGrid(ctx, altitude, panel.y, panel.h);
       if (altitude > 100000) drawEarthHorizon(ctx, panel.y + panel.h - 10, panel.h * 0.75);
       ctx.restore();
     } else {
       drawStarLayers(ctx, altitude, 0, CH);
+      drawWaveFlowGrid(ctx, altitude, 0, CH);
       if (altitude > 100000) drawEarthHorizon(ctx, CH - 12, 280);
       if (altitude < 40000) drawCloudLayers(ctx, altitude);
       if (isPadSky) {
@@ -2029,6 +2060,30 @@
         ctx.fillRect(0, CH - 80, CW, 2);
       }
     }
+  }
+
+  function drawWaveFlowGrid(ctx, altitude, y0, h) {
+    const visibility = clamp((altitude - 8000) / 50000, 0, 1);
+    if (visibility <= 0.02) return;
+    const now = (performance.now() || 0) * 0.001;
+    const lineSpacing = 30;
+    ctx.save();
+    ctx.globalCompositeOperation = 'lighter';
+    ctx.strokeStyle = `rgba(120,220,255,${(0.06 + visibility * 0.12).toFixed(3)})`;
+    ctx.lineWidth = 1;
+    for (let y = y0 + 26; y < y0 + h; y += lineSpacing) {
+      const amplitude = 6 + visibility * 8;
+      const freq = 0.04;
+      const phase = now * 2.2 + y * 0.02;
+      ctx.beginPath();
+      for (let x = 0; x <= CW; x += 10) {
+        const wy = y + Math.sin(phase + x * freq) * amplitude;
+        if (x === 0) ctx.moveTo(x, wy);
+        else ctx.lineTo(x, wy);
+      }
+      ctx.stroke();
+    }
+    ctx.restore();
   }
 
   function drawStarLayers(ctx, altitude, y0, h) {
@@ -2570,8 +2625,8 @@
     ctx.fillText(`ALT ${(state.telemetry.altitude / 1000).toFixed(1)} km`, 10, 54);
     ctx.fillText(`VEL ${Math.round(state.telemetry.velocity)} m/s`, 10, 68);
     ctx.fillText(`Q ${state.telemetry.q.toFixed(1)} kPa`, 10, 82);
-    ctx.fillText(`LNG ${state.telemetry.lng.toFixed(1)}%`, 170, 54);
-    ctx.fillText(`LOX ${state.telemetry.lox.toFixed(1)}%`, 170, 68);
+    ctx.fillText(`LIFTOFF ${(state.session.launchCharge * 100).toFixed(0)}%`, 170, 54);
+    ctx.fillText(`GUIDE ${(state.upper.targetLock * 100).toFixed(0)}%`, 170, 68);
     ctx.fillText(`STRESS ${(state.session.structuralStress * 100).toFixed(0)}%`, 170, 82);
     ctx.fillStyle = '#ffcf5d';
     ctx.font = '10px "Share Tech Mono", monospace';
