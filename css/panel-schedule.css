@@ -1,0 +1,577 @@
+@import url('https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700&display=swap');
+
+:root {
+  --screen-bg: #008080;
+  --desktop: #c0c0c0;
+  --panel: #d4d0c8;
+  --panel-dark: #808080;
+  --panel-darker: #404040;
+  --panel-light: #ffffff;
+  --title: #000080;
+  --accent: #000000;
+  --button-face: #c0c0c0;
+  --button-shadow: #808080;
+  --button-highlight: #ffffff;
+  --button-text: #111111;
+  --print-font: 'Barlow', 'Helvetica Neue', Arial, sans-serif;
+  --ui-font: 'MS Sans Serif', Tahoma, Geneva, Verdana, sans-serif;
+  /* Half-letter cardstock schedule body inside a full 8.5x11 print page. */
+  --sheet-width: 4.25in;
+  --sheet-height: 11in;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  min-height: 100%;
+}
+
+body {
+  font-family: var(--ui-font);
+  background:
+    linear-gradient(90deg, rgba(255,255,255,0.08), transparent 45%),
+    linear-gradient(180deg, #008b8b 0%, var(--screen-bg) 100%);
+  color: var(--accent);
+}
+
+button,
+input,
+textarea {
+  font: inherit;
+}
+
+button {
+  cursor: pointer;
+}
+
+.app-shell {
+  max-width: 1480px;
+  margin: 0 auto;
+  padding: 16px;
+}
+
+.hero,
+.window {
+  background: var(--panel);
+  border-top: 2px solid var(--panel-light);
+  border-left: 2px solid var(--panel-light);
+  border-right: 2px solid var(--panel-darker);
+  border-bottom: 2px solid var(--panel-darker);
+  box-shadow: 2px 2px 0 rgba(0, 0, 0, 0.3);
+}
+
+.title-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 5px 8px;
+  color: #fff;
+  background: linear-gradient(90deg, #000080, #1084d0);
+  font-size: 0.86rem;
+  font-weight: 700;
+}
+
+.title-bar-actions {
+  display: flex;
+  gap: 4px;
+}
+
+.win-dot {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 16px;
+  color: #000;
+  background: var(--button-face);
+  border-top: 1px solid var(--button-highlight);
+  border-left: 1px solid var(--button-highlight);
+  border-right: 1px solid var(--button-shadow);
+  border-bottom: 1px solid var(--button-shadow);
+  line-height: 1;
+}
+
+.hero-body,
+.window-body {
+  padding: 16px;
+}
+
+.hero {
+  margin-bottom: 16px;
+}
+
+.hero-body {
+  display: flex;
+  justify-content: space-between;
+  gap: 20px;
+  align-items: flex-start;
+}
+
+.hero-kicker {
+  margin: 0 0 6px;
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.hero h1 {
+  margin: 0;
+  font-size: clamp(1.8rem, 3.5vw, 2.8rem);
+}
+
+.hero-copy {
+  max-width: 850px;
+  margin: 10px 0 0;
+  line-height: 1.5;
+}
+
+.workspace {
+  display: grid;
+  grid-template-columns: minmax(320px, 520px) minmax(380px, 1fr) minmax(320px, 460px);
+  gap: 16px;
+  align-items: start;
+}
+
+.stack-lg > * + * {
+  margin-top: 14px;
+}
+
+.toolbar {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.toolbar-wrap {
+  flex-wrap: wrap;
+}
+
+.btn {
+  padding: 7px 14px;
+  color: var(--button-text);
+  background: var(--button-face);
+  border-top: 2px solid var(--button-highlight);
+  border-left: 2px solid var(--button-highlight);
+  border-right: 2px solid var(--button-shadow);
+  border-bottom: 2px solid var(--button-shadow);
+  text-decoration: none;
+}
+
+.btn:active {
+  border-top-color: var(--button-shadow);
+  border-left-color: var(--button-shadow);
+  border-right-color: var(--button-highlight);
+  border-bottom-color: var(--button-highlight);
+}
+
+.btn:disabled {
+  color: #666;
+  cursor: not-allowed;
+}
+
+.btn-primary {
+  background: #f4d06f;
+}
+
+.drop-zone {
+  display: grid;
+  place-items: center;
+  gap: 8px;
+  min-height: 210px;
+  padding: 20px;
+  text-align: center;
+  background: #efefef;
+  border: 2px dashed #4d4d4d;
+  border-top-color: var(--panel-darker);
+  border-left-color: var(--panel-darker);
+  border-right-color: var(--panel-light);
+  border-bottom-color: var(--panel-light);
+}
+
+.drop-zone.is-dragover {
+  background: #fff8cc;
+}
+
+.drop-zone-icon {
+  font-size: 2rem;
+}
+
+.status-strip {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 8px 10px;
+  background: #fff;
+  border-top: 2px solid var(--panel-dark);
+  border-left: 2px solid var(--panel-dark);
+  border-right: 2px solid var(--panel-light);
+  border-bottom: 2px solid var(--panel-light);
+  font-size: 0.88rem;
+}
+
+.progress-shell {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 10px;
+  align-items: center;
+}
+
+.progress-bar {
+  height: 24px;
+  background: #fff;
+  border-top: 2px solid var(--panel-dark);
+  border-left: 2px solid var(--panel-dark);
+  border-right: 2px solid var(--panel-light);
+  border-bottom: 2px solid var(--panel-light);
+  overflow: hidden;
+}
+
+.progress-fill {
+  width: 0;
+  height: 100%;
+  background: repeating-linear-gradient(
+    90deg,
+    #000080 0,
+    #000080 18px,
+    #1084d0 18px,
+    #1084d0 36px
+  );
+  transition: width 0.18s ease;
+}
+
+.progress-shell span {
+  min-width: 46px;
+  text-align: right;
+  font-weight: 700;
+}
+
+.preview-frame {
+  position: relative;
+  min-height: 280px;
+  padding: 12px;
+  background: #9c9c9c;
+  border-top: 2px solid var(--panel-dark);
+  border-left: 2px solid var(--panel-dark);
+  border-right: 2px solid var(--panel-light);
+  border-bottom: 2px solid var(--panel-light);
+}
+
+.preview-frame img {
+  display: none;
+  width: 100%;
+  height: auto;
+  object-fit: contain;
+  background: #fff;
+}
+
+.preview-frame.has-image img {
+  display: block;
+}
+
+.preview-frame.has-image .preview-placeholder {
+  display: none;
+}
+
+.preview-placeholder {
+  position: absolute;
+  inset: 12px;
+  display: grid;
+  place-items: center;
+  color: #333;
+  background:
+    linear-gradient(45deg, rgba(0,0,0,0.04) 25%, transparent 25%),
+    linear-gradient(-45deg, rgba(0,0,0,0.04) 25%, transparent 25%),
+    linear-gradient(45deg, transparent 75%, rgba(0,0,0,0.04) 75%),
+    linear-gradient(-45deg, transparent 75%, rgba(0,0,0,0.04) 75%);
+  background-size: 18px 18px;
+  background-position: 0 0, 0 9px, 9px -9px, -9px 0;
+}
+
+.meta-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.meta-grid label,
+.field-block {
+  display: grid;
+  gap: 6px;
+}
+
+.meta-grid span,
+.field-block span {
+  font-weight: 700;
+  font-size: 0.82rem;
+}
+
+input[type="text"],
+textarea,
+.editor-table input,
+.editor-table select {
+  width: 100%;
+  padding: 7px 8px;
+  border-top: 2px solid var(--panel-dark);
+  border-left: 2px solid var(--panel-dark);
+  border-right: 2px solid var(--panel-light);
+  border-bottom: 2px solid var(--panel-light);
+  background: #fff;
+}
+
+textarea {
+  resize: vertical;
+  min-height: 148px;
+}
+
+.table-wrap {
+  max-height: 580px;
+  overflow: auto;
+  background: #fff;
+  border-top: 2px solid var(--panel-dark);
+  border-left: 2px solid var(--panel-dark);
+  border-right: 2px solid var(--panel-light);
+  border-bottom: 2px solid var(--panel-light);
+}
+
+.editor-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.editor-table th,
+.editor-table td {
+  padding: 6px;
+  border: 1px solid #808080;
+  vertical-align: top;
+}
+
+.editor-table th {
+  position: sticky;
+  top: 0;
+  background: #d9d9d9;
+  z-index: 1;
+  text-align: left;
+}
+
+.editor-table .col-actions {
+  width: 72px;
+}
+
+.btn-row-delete {
+  width: 100%;
+  background: #e8b4b8;
+}
+
+.preview-window .window-body {
+  background: #bdbdbd;
+}
+
+.preview-body {
+  display: flex;
+  justify-content: center;
+  padding: 18px;
+}
+
+.print-sheet {
+  width: var(--sheet-width);
+  min-height: var(--sheet-height);
+  padding: 0.18in;
+  color: #111;
+  background: #fff;
+  box-shadow: 0 0 0 1px #cfcfcf, 0 18px 30px rgba(0, 0, 0, 0.18);
+  font-family: var(--print-font);
+}
+
+.print-header {
+  padding-bottom: 0.12in;
+}
+
+.print-header-top {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: flex-start;
+  border-bottom: 0.02in solid #1a1a1a;
+  padding-bottom: 0.1in;
+}
+
+.print-eyebrow {
+  margin: 0;
+  font-size: 0.11in;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #4d4d4d;
+}
+
+.print-header h2 {
+  margin: 0.04in 0 0;
+  font-size: 0.24in;
+  line-height: 1.1;
+}
+
+.print-logo {
+  max-width: 1.3in;
+  text-align: right;
+  font-size: 0.11in;
+  line-height: 1.3;
+  color: #4d4d4d;
+}
+
+.print-meta-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.08in;
+  margin-top: 0.1in;
+}
+
+.print-meta-field {
+  border: 0.01in solid #444;
+  padding: 0.06in;
+}
+
+.print-meta-field span {
+  display: block;
+  font-size: 0.09in;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #555;
+}
+
+.print-meta-field strong {
+  display: block;
+  margin-top: 0.03in;
+  font-size: 0.12in;
+}
+
+.schedule-table {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+  margin-top: 0.12in;
+}
+
+.schedule-table th,
+.schedule-table td {
+  border: 0.01in solid #222;
+  padding: 0.03in 0.04in;
+  font-size: 0.094in;
+}
+
+.schedule-table th {
+  height: 0.22in;
+  font-size: 0.087in;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  background: #f2f2f2;
+}
+
+.schedule-table tbody tr {
+  height: 0.41in;
+}
+
+.schedule-table td:nth-child(1),
+.schedule-table td:nth-child(4),
+.schedule-table td:nth-child(5),
+.schedule-table td:nth-child(8) {
+  text-align: center;
+}
+
+.schedule-table td:nth-child(3),
+.schedule-table td:nth-child(6) {
+  text-align: center;
+  width: 0.42in;
+}
+
+.schedule-table td:nth-child(2),
+.schedule-table td:nth-child(7) {
+  width: 1.34in;
+}
+
+.schedule-table td.blank {
+  color: #b5b5b5;
+}
+
+@media (max-width: 1220px) {
+  .workspace {
+    grid-template-columns: 1fr;
+  }
+
+  .preview-body {
+    overflow-x: auto;
+    justify-content: flex-start;
+  }
+}
+
+@media (max-width: 680px) {
+  .app-shell {
+    padding: 10px;
+  }
+
+  .hero-body {
+    flex-direction: column;
+  }
+
+  .meta-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .toolbar {
+    flex-wrap: wrap;
+  }
+}
+
+/* Print to standard letter paper; the schedule itself occupies the left half-sheet width. */
+@page {
+  size: 8.5in 11in;
+  margin: 0;
+}
+
+@media print {
+  html,
+  body {
+    width: 8.5in;
+    height: 11in;
+    background: #fff;
+    color: #000;
+  }
+
+  body {
+    margin: 0;
+    /* Preserve preview-matching grid lines and header fills when printing the half-sheet schedule. */
+    color-adjust: exact;
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+  }
+
+  .screen-only {
+    display: none !important;
+  }
+
+  .app-shell,
+  .workspace,
+  .preview-window,
+  .preview-body {
+    margin: 0;
+    padding: 0;
+    display: block;
+    background: transparent;
+    border: 0;
+    box-shadow: none;
+  }
+
+  .print-sheet {
+    width: var(--sheet-width);
+    height: var(--sheet-height);
+    margin: 0;
+    padding: 0.18in;
+    box-shadow: none;
+    border: 0;
+    page-break-inside: avoid;
+  }
+}
