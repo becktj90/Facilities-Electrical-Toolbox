@@ -1559,7 +1559,7 @@
         state.effects.liftoffShake = 1.6 + launchCharge * 1.7;
         state.effects.delugeTimer = Math.max(state.effects.delugeTimer, 3);
         state.effects.shockRing = 1;
-        state.rocket.vy = Math.min(state.rocket.vy, -boostVelocity);
+        if (state.rocket.vy > -boostVelocity) state.rocket.vy = -boostVelocity;
         state.rocket.burn = Math.max(state.rocket.burn, 0.35 + launchCharge * 0.45);
         state.session.ascentObstacleTarget = Math.floor(rand(ASCENT_INITIAL_OBSTACLE_TARGET, ASCENT_MAX_OBSTACLE_TARGET));
         state.session.ascentObstacleCount = 0;
@@ -2633,7 +2633,7 @@
     ctx.fillText(`ALT ${(state.telemetry.altitude / 1000).toFixed(1)} km`, 10, 54);
     ctx.fillText(`VEL ${Math.round(state.telemetry.velocity)} m/s`, 10, 68);
     ctx.fillText(`Q ${state.telemetry.q.toFixed(1)} kPa`, 10, 82);
-    ctx.fillText(`LIFTOFF ${(state.session.launchCharge * 100).toFixed(0)}%`, 170, 54);
+    ctx.fillText(`CHARGE ${(state.session.launchCharge * 100).toFixed(0)}%`, 170, 54);
     ctx.fillText(`GUIDE ${(state.upper.targetLock * 100).toFixed(0)}%`, 170, 68);
     ctx.fillText(`STRESS ${(state.session.structuralStress * 100).toFixed(0)}%`, 170, 82);
     ctx.fillStyle = '#ffcf5d';
