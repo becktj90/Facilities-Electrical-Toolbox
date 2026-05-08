@@ -2013,6 +2013,7 @@ const UI_ACTIONS = Object.freeze({
   splashClose: () => { if (typeof window.splashClose === 'function') window.splashClose(); },
   splashEnterToolbox: () => { if (typeof window.splashEnterToolbox === 'function') window.splashEnterToolbox(); },
   splashEnterGame: () => { if (typeof window.splashEnterGame === 'function') window.splashEnterGame(); },
+  splashEnterPadRat: () => { if (typeof window.splashEnterPadRat === 'function') window.splashEnterPadRat(); },
   splashEnterBinBlaster: () => { if (typeof window.splashEnterBinBlaster === 'function') window.splashEnterBinBlaster(); },
   splashEnterTryingNormal: () => { if (typeof window.splashEnterTryingNormal === 'function') window.splashEnterTryingNormal(); },
   copyResult: (event) => {
@@ -2145,6 +2146,10 @@ function setupSplash() {
   window.splashEnterGame = () => {
     dismiss();
     location.hash = '#sec-arcade';
+  };
+  window.splashEnterPadRat = () => {
+    dismiss();
+    location.hash = '#sec-pad-rat';
   };
   window.splashEnterBinBlaster = () => {
     dismiss();

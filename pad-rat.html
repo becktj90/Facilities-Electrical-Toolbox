@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>NEW GLENN: PAD RAT</title>
+<link rel="manifest" href="manifest.json"/>
+<link rel="stylesheet" href="style.css"/>
+</head>
+<body>
+<div id="hud">
+  <div class="panel">
+    <h1>NEW GLENN: PAD RAT</h1>
+    <div id="mission">Mission: NG-17 Commercial Payload</div>
+    <div class="meters">
+      <div>Stress <span id="stress">12</span>%</div>
+      <div>Reputation <span id="rep">74</span></div>
+      <div>Weather <span id="weather">GO</span></div>
+      <div>T- <span id="countdown">3600</span>s</div>
+    </div>
+  </div>
+
+  <div class="panel log-panel">
+    <h2>Mission Ops Feed</h2>
+    <div id="log"></div>
+  </div>
+
+  <div class="panel objectives">
+    <h2>Objectives</h2>
+    <ul id="objectives">
+      <li>Inspect methane feed system</li>
+      <li>Clear launch pad perimeter</li>
+      <li>Run engine chill procedure</li>
+    </ul>
+  </div>
+</div>
+
+<canvas id="game"></canvas>
+
+<div id="interaction">
+  <div id="dialogue"></div>
+  <div id="choices"></div>
+</div>
+
+<script type="module" src="./game.js"></script>
+</body>
+</html>
