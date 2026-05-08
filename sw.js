@@ -1,4 +1,4 @@
-const CACHE = 'toolbox-v5';
+const CACHE = 'toolbox-v6';
 const ASSETS = [
   './',
   './index.html',
@@ -10,6 +10,7 @@ const ASSETS = [
   './js/panel-schedule.js',
   './js/arcade.js',
   './js/bin-blaster.js',
+  './js/trying-to-be-normal.js',
   './js/vendor/solver.js',
   './icons/icon-192.png',
   './icons/icon-512.png',

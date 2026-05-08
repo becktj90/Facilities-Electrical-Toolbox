@@ -10,12 +10,12 @@
   <meta name="apple-mobile-web-app-title" content="Toolbox">
   <link rel="apple-touch-icon" href="icons/icon-192.png">
   <meta property="og:title" content="Facilities Electrical Toolbox + Arcade Games">
-  <meta property="og:description" content="NEC calculators for the day job, plus New Glenn Runner and Bin Block Blaster for breaks. Installable as a home-screen app.">
+  <meta property="og:description" content="NEC calculators for the day job, plus New Glenn Runner, Bin Block Blaster, and Trying To Be Normal for breaks. Installable as a home-screen app.">
   <meta property="og:image" content="https://becktj90.github.io/Facilities-Electrical-Toolbox/icons/icon-512.png">
   <meta property="og:type" content="website">
   <meta property="og:url" content="https://becktj90.github.io/Facilities-Electrical-Toolbox/">
   <meta name="twitter:card" content="summary_large_image">
-  <meta name="description" content="Electrical engineering reference toolbox with built-in New Glenn Runner and Bin Block Blaster games.">
+  <meta name="description" content="Electrical engineering reference toolbox with built-in New Glenn Runner, Bin Block Blaster, and Trying To Be Normal games.">
   <title>Facilities Electrical Toolbox</title>
   <link rel="stylesheet" href="css/styles.css">
 </head>
@@ -24,11 +24,12 @@
 <div id="splash-modal" class="splash-modal" role="dialog" aria-labelledby="splash-title" aria-modal="true" hidden>
   <div class="splash-card">
     <h1 id="splash-title">Welcome, Pad Rat.</h1>
-    <p>This is a self-contained electrical engineering toolbox. NEC calculators for the day job — plus two arcade games for breaks.</p>
+    <p>This is a self-contained electrical engineering toolbox. NEC calculators for the day job — plus three arcade games for breaks.</p>
     <div class="splash-actions">
       <button type="button" class="btn splash-primary" data-action="splashEnterToolbox">⚡ Open Toolbox</button>
       <button type="button" class="btn splash-secondary" data-action="splashEnterGame">🚀 Play New Glenn Runner</button>
       <button type="button" class="btn splash-secondary" data-action="splashEnterBinBlaster">🧱 Play Bin Block Blaster</button>
+      <button type="button" class="btn splash-secondary" data-action="splashEnterTryingNormal">🫥 Play Trying To Be Normal</button>
     </div>
     <p class="splash-tip">Tip: use Install or Add to Home Screen to save it as an offline app.</p>
     <button type="button" class="splash-close" data-action="splashClose" aria-label="Close welcome">×</button>
@@ -122,6 +123,7 @@
     <div class="sidebar-section">
       <div class="sidebar-section-title">Extras</div>
       <button class="nav-btn" data-target="sec-bin-blaster" data-keywords="bin block blaster bubble shooter pad rat puzzle">🧱 Bin Block Blaster</button>
+      <button class="nav-btn" data-target="sec-trying-normal" data-keywords="trying to be normal social awkward comedy game suspicion normality">🫥 Trying To Be Normal</button>
       <button class="nav-btn" data-target="sec-starforge" data-keywords="starforge frontier idle strategy space game">🌌 Starforge Frontier</button>
     </div>
     <div class="sidebar-section">
@@ -3968,6 +3970,45 @@
     </section>
 
     <!-- ════════════════════════════════════════
+         TRYING TO BE NORMAL
+         ════════════════════════════════════════ -->
+    <section class="section" id="sec-trying-normal">
+      <div class="section-header">
+        <h2>🫥 Trying To Be Normal</h2>
+        <p>A comedy social-simulation game about surviving tiny awkward moments without getting too suspicious.</p>
+      </div>
+      <div class="card">
+        <div class="card-body">
+          <div id="tbn-game">
+            <canvas id="tbn-bg" aria-hidden="true"></canvas>
+            <div id="tbn-ui">
+              <h3 id="tbn-level">Grocery Store</h3>
+              <div id="tbn-meters">
+                <span>Normality: <strong id="tbn-normality">100</strong></span>
+                <span>Suspicion: <strong id="tbn-suspicion">0</strong></span>
+              </div>
+              <p id="tbn-scenario"></p>
+              <div id="tbn-choices"></div>
+              <div id="tbn-thoughts"></div>
+              <button class="btn" id="tbn-next-btn" type="button">Next</button>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title">How to Play</div>
+        <div class="card-body">
+          <div class="formula-box">
+            Pick one response per awkward moment.<br>
+            Keep Normality above 0 and Suspicion below 100.<br>
+            Move to the next scenario with NEXT.<br><br>
+            If Suspicion maxes out or Normality collapses, society detects your weirdness.
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ════════════════════════════════════════
          STARFORGE FRONTIER
          ════════════════════════════════════════ -->
     <section class="section" id="sec-starforge">
@@ -4034,6 +4075,7 @@
 <script src="js/app.js"></script>
 <script src="js/arcade.js"></script>
 <script src="js/bin-blaster.js"></script>
+<script src="js/trying-to-be-normal.js"></script>
 <script src="js/starforge.js"></script>
 </body>
 </html>

@@ -2014,6 +2014,7 @@ const UI_ACTIONS = Object.freeze({
   splashEnterToolbox: () => { if (typeof window.splashEnterToolbox === 'function') window.splashEnterToolbox(); },
   splashEnterGame: () => { if (typeof window.splashEnterGame === 'function') window.splashEnterGame(); },
   splashEnterBinBlaster: () => { if (typeof window.splashEnterBinBlaster === 'function') window.splashEnterBinBlaster(); },
+  splashEnterTryingNormal: () => { if (typeof window.splashEnterTryingNormal === 'function') window.splashEnterTryingNormal(); },
   copyResult: (event) => {
     const resultEl = event.target.closest('.result');
     if (!resultEl) return;
@@ -2148,6 +2149,10 @@ function setupSplash() {
   window.splashEnterBinBlaster = () => {
     dismiss();
     location.hash = '#sec-bin-blaster';
+  };
+  window.splashEnterTryingNormal = () => {
+    dismiss();
+    location.hash = '#sec-trying-normal';
   };
 
   modal.hidden = false;

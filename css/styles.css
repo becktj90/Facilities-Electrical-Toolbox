@@ -827,6 +827,67 @@ select option {
   max-height: none !important;
 }
 
+/* ── Trying To Be Normal game ── */
+#tbn-game {
+  position: relative;
+  min-height: 420px;
+  border: 1px solid var(--green-dark);
+  overflow: hidden;
+  background: #121820;
+}
+#tbn-bg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+#tbn-ui {
+  position: relative;
+  z-index: 2;
+  max-width: 860px;
+  margin: 20px auto;
+  padding: 18px;
+  background: rgba(0, 0, 0, 0.62);
+  border: 1px solid var(--green-dark);
+}
+#tbn-level {
+  color: var(--amber);
+  text-shadow: var(--glow-amber);
+  letter-spacing: 0.04em;
+}
+#tbn-scenario {
+  margin-top: 14px;
+  font-size: 1.2rem;
+  line-height: 1.45;
+}
+#tbn-choices {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 16px;
+}
+#tbn-choices .tbn-choice {
+  width: 100%;
+  text-align: left;
+}
+#tbn-thoughts {
+  margin-top: 16px;
+  min-height: 52px;
+  color: #ffcb8a;
+  font-style: italic;
+}
+#tbn-meters {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-top: 8px;
+  font-family: var(--font-mono);
+}
+#tbn-next-btn {
+  margin-top: 8px;
+}
+
 @media print {
   body, html {
     background: #fff !important;
