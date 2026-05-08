@@ -18,10 +18,6 @@
   const VOICE_POOL = 8;
   const MAX_PARTICLES = 300;
 
-  // ─── Water cannon ─────────────────────────────────────────────────────────────
-  const WATER_JET_SPEED = 250;   // px/s the jet tip travels across the screen
-  const WATER_JET_THICK = 6;     // visual line width
-
   // ─── Block types ──────────────────────────────────────────────────────────────
   const TYPES = {
     GRAY:        { color: '#9aa5ad', label: 'CONCRETE',       special: false },
@@ -101,9 +97,6 @@
     padWalkIdx: 0,
     endlessDropAccel: 0,
     hoveredMission: -1,
-    waterJets: [],
-    waterCannonTimer: 8,
-    cannonBlinkTimer: 0,
   };
 
   // ─── Audio ────────────────────────────────────────────────────────────────────
@@ -241,7 +234,6 @@
         case 'wall':      tone(320, 0.03, 'square', 0.02); break;
         case 'swap':      tone(660, 0.04, 'square', 0.03); break;
         case 'drop_row':  noise(0.1, 0.03, 600); tone(130, 0.15, 'sine', 0.03, 100); break;
-        case 'water':     noise(0.25, 0.06, 2200); tone(880, 0.08, 'sine', 0.02, 440); break;
       }
     }
 
@@ -759,8 +751,8 @@
         }
       }
     }
-    // Off screen below — only clear once the projectile is heading downward past the launcher
-    if (S.proj.y > GRID_ZONE_BOTTOM + 40 && S.proj.vy > 0) S.proj = null;
+    // Off screen below
+    if (S.proj.y > GRID_ZONE_BOTTOM + 40) S.proj = null;
   }
 
   function landProjectile(proj, hitRow, hitCol) {
@@ -886,81 +878,6 @@
     Audio.SFX('swap');
   }
 
-  // ─── Water cannon ─────────────────────────────────────────────────────────────
-  function spawnWaterJet(mDef) {
-    const fromLeft = Math.random() < 0.5;
-    const yMin = GRID_TOP + ROW_H * 3;
-    const yMax = GRID_ZONE_BOTTOM - ROW_H * 2;
-    const y = rand(yMin, yMax);
-    S.waterJets.push({
-      y,
-      fromLeft,
-      tip: fromLeft ? 0 : CW,
-      alpha: 1.0,
-      active: true,
-    });
-    Audio.SFX('water');
-  }
-
-  function updateWaterCannons(dt, mDef) {
-    if (mDef.id < 2) return;
-
-    S.cannonBlinkTimer += dt;
-
-    // Scale fire interval with mission difficulty
-    const baseInterval = Math.max(4, 13 - mDef.id * 0.9);
-    S.waterCannonTimer -= dt;
-    if (S.waterCannonTimer <= 0) {
-      spawnWaterJet(mDef);
-      S.waterCannonTimer = rand(baseInterval * 0.7, baseInterval * 1.4);
-    }
-
-    for (let i = S.waterJets.length - 1; i >= 0; i--) {
-      const jet = S.waterJets[i];
-      const dir = jet.fromLeft ? 1 : -1;
-      jet.tip += dir * WATER_JET_SPEED * dt;
-
-      // Spawn spray particles at the jet tip while active
-      if (jet.active && Math.random() < 0.4) {
-        spawnParticle({
-          x: jet.tip, y: jet.y + rand(-4, 4),
-          vx: dir * rand(20, 60), vy: rand(-25, 25),
-          color: '130,210,255', size: 1.5 + Math.random() * 2,
-          decay: 0.05, alpha: 0.7,
-        });
-      }
-
-      // Once tip reaches the far wall, start fading
-      if ((jet.fromLeft && jet.tip >= CW) || (!jet.fromLeft && jet.tip <= 0)) {
-        jet.active = false;
-        jet.alpha -= dt * 1.8;
-      }
-
-      // Remove fully faded jets
-      if (jet.alpha <= 0) {
-        S.waterJets.splice(i, 1);
-        continue;
-      }
-
-      // Collision with player's projectile
-      if (jet.active && S.proj) {
-        const jetMinX = jet.fromLeft ? 0 : jet.tip;
-        const jetMaxX = jet.fromLeft ? jet.tip : CW;
-        if (
-          Math.abs(S.proj.y - jet.y) < BLOCK_H * 0.55 &&
-          S.proj.x >= jetMinX && S.proj.x <= jetMaxX
-        ) {
-          // Deflect: push sideways and kill upward momentum
-          S.proj.vx = S.proj.vx * 0.3 + dir * 160;
-          S.proj.vy = -S.proj.vy * 0.15 + 90;
-          Audio.SFX('water');
-          jet.active = false;
-          spawnBurst(S.proj.x, S.proj.y, '120,210,255', 14, 90);
-        }
-      }
-    }
-  }
-
   // ─── Mission 5: Pad Walkdown ──────────────────────────────────────────────────
   function checkPadWalkdown() {
     if (S.mission !== 5 || !S.targetColors.length) return;
@@ -1001,7 +918,6 @@
     }
 
     updateProj(dt);
-    updateWaterCannons(dt, mDef);
 
     // Active timed powerup countdown
     if (S.activePup && PUPS[S.activePup.key] && PUPS[S.activePup.key].dur) {
@@ -1216,79 +1132,6 @@
     ctx.restore();
 
     ctx.restore();
-  }
-
-  // ─── Water cannon drawing ─────────────────────────────────────────────────────
-  function drawWaterCannons(ctx) {
-    const mDef = MISSIONS[S.mission];
-    if (!mDef || mDef.id < 2) return;
-
-    // Cannon nozzle fixtures on walls (left and right, at different heights)
-    const leftNozzleY  = GRID_TOP + 80;
-    const rightNozzleY = GRID_TOP + 180;
-    ctx.fillStyle = '#2a4a5e';
-    ctx.strokeStyle = '#4a8aae';
-    ctx.lineWidth = 1.5;
-    roundRect(ctx,  0,            leftNozzleY  - 9, 14, 18, 3); ctx.fill();
-    roundRect(ctx,  0,            leftNozzleY  - 9, 14, 18, 3); ctx.stroke();
-    roundRect(ctx, CW - 14,       rightNozzleY - 9, 14, 18, 3); ctx.fill();
-    roundRect(ctx, CW - 14,       rightNozzleY - 9, 14, 18, 3); ctx.stroke();
-    // Nozzle tips
-    ctx.fillStyle = '#3a6a8e';
-    ctx.fillRect(13,      leftNozzleY  - 4, 6, 8);
-    ctx.fillRect(CW - 19, rightNozzleY - 4, 6, 8);
-
-    // Indicator light — blinks a few seconds before firing (uses game-time timer)
-    const blinkOn = Math.floor(S.cannonBlinkTimer * 4) % 2 === 0;
-    if (S.waterCannonTimer < 2 && blinkOn) {
-      ctx.fillStyle = '#ff4444';
-      ctx.beginPath(); ctx.arc(6, leftNozzleY - 14, 3, 0, Math.PI * 2); ctx.fill();
-      ctx.beginPath(); ctx.arc(CW - 6, rightNozzleY - 14, 3, 0, Math.PI * 2); ctx.fill();
-    }
-
-    // Draw active jets
-    for (const jet of S.waterJets) {
-      ctx.save();
-      ctx.globalAlpha = Math.min(1, Math.max(0, jet.alpha)) * 0.88;
-
-      const startX = jet.fromLeft ? 0    : jet.tip;
-      const endX   = jet.fromLeft ? jet.tip : CW;
-
-      // Gradient beam: bright at tip, fades toward source
-      const grad = ctx.createLinearGradient(startX, jet.y, endX, jet.y);
-      if (jet.fromLeft) {
-        grad.addColorStop(0,   'rgba(100,180,255,0.25)');
-        grad.addColorStop(0.6, 'rgba(140,210,255,0.70)');
-        grad.addColorStop(1,   'rgba(210,240,255,1.00)');
-      } else {
-        grad.addColorStop(0,   'rgba(210,240,255,1.00)');
-        grad.addColorStop(0.4, 'rgba(140,210,255,0.70)');
-        grad.addColorStop(1,   'rgba(100,180,255,0.25)');
-      }
-      ctx.strokeStyle = grad;
-      ctx.lineWidth = WATER_JET_THICK;
-      ctx.lineCap = 'round';
-      ctx.beginPath();
-      ctx.moveTo(startX, jet.y);
-      ctx.lineTo(endX, jet.y);
-      ctx.stroke();
-
-      // Spray fan at jet tip
-      const tipDir = jet.fromLeft ? 1 : -1;
-      ctx.strokeStyle = 'rgba(180,230,255,0.55)';
-      ctx.lineWidth = 1.5;
-      ctx.setLineDash([2, 3]);
-      for (let k = 0; k < 5; k++) {
-        const angle = (k - 2) * 0.22;
-        const len = 14;
-        ctx.beginPath();
-        ctx.moveTo(endX, jet.y);
-        ctx.lineTo(endX + tipDir * Math.cos(angle) * len, jet.y + Math.sin(angle) * len);
-        ctx.stroke();
-      }
-      ctx.setLineDash([]);
-      ctx.restore();
-    }
   }
 
   // ─── Background ───────────────────────────────────────────────────────────────
@@ -1873,7 +1716,6 @@
       case 'playing':
         drawBackground(ctx);
         drawGrid(ctx);
-        drawWaterCannons(ctx);
         drawTrajectory(ctx);
         drawProjectile(ctx);
         drawFalling(ctx);
@@ -2252,9 +2094,6 @@
     S.endlessDropAccel = 0;
     S.padWalkIdx = 0;
     S.targetColors = mDef.id === 5 ? shuffled(STD.slice(0, mDef.colors)) : [];
-    S.waterJets = [];
-    S.waterCannonTimer = rand(6, 12);
-    S.cannonBlinkTimer = 0;
     clearParticles();
     initGrid(mDef);
     S.screen = 'playing';
