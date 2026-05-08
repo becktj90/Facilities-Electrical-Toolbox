@@ -47,6 +47,7 @@ Open `index.html` in any modern web browser — no build step, no server, no dep
 | **🚀 New Glenn Runner** | Side-scrolling launch arcade — dodge debris, collect propellant |
 | **🧱 Bin Block Blaster** | Bubble-shooter puzzle game with pad-rat flavor |
 | **🫥 Trying To Be Normal** | Comedy social-survival game about awkward everyday interactions |
+| **🌌 Starforge Frontier** | Space-idle strategy game with mining, research, and sector expansion |
 
 ---
 

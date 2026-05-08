@@ -124,6 +124,7 @@
       <div class="sidebar-section-title">Extras</div>
       <button class="nav-btn" data-target="sec-bin-blaster" data-keywords="bin block blaster bubble shooter pad rat puzzle">🧱 Bin Block Blaster</button>
       <button class="nav-btn" data-target="sec-trying-normal" data-keywords="trying to be normal social awkward comedy game suspicion normality">🫥 Trying To Be Normal</button>
+      <button class="nav-btn" data-target="sec-starforge" data-keywords="starforge frontier idle strategy space game">🌌 Starforge Frontier</button>
     </div>
     <div class="sidebar-section">
       <div class="sidebar-section-title">Advanced Tools</div>
@@ -4007,6 +4008,66 @@
       </div>
     </section>
 
+    <!-- ════════════════════════════════════════
+         STARFORGE FRONTIER
+         ════════════════════════════════════════ -->
+    <section class="section" id="sec-starforge">
+      <div class="section-header">
+        <h2>🌌 Starforge Frontier</h2>
+        <p>Deep idle strategy with fleet logistics, research upgrades, and procedural sector expansion.</p>
+      </div>
+
+      <div class="card-grid">
+        <div class="card" style="grid-column:1/-1">
+          <div class="card-title">Command Hub</div>
+          <div class="card-body">
+            <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px;margin-bottom:10px">
+              <div class="formula-box">Credits: <strong id="sf-credits">0</strong></div>
+              <div class="formula-box">Energy: <strong id="sf-energy">0</strong></div>
+              <div class="formula-box">Alloys: <strong id="sf-alloys">0</strong></div>
+              <div class="formula-box">Science: <strong id="sf-science">0</strong></div>
+            </div>
+
+            <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px">
+              <button class="btn btn-sm" onclick="starforgeGame && starforgeGame.mine()">Manual Mine</button>
+              <button class="btn btn-sm" onclick="starforgeGame && starforgeGame.scan()">Deep Scan</button>
+              <button class="btn btn-sm" onclick="starforgeGame && starforgeGame.expand()">Expand Sector</button>
+            </div>
+
+            <div id="sf-log" class="formula-box" style="max-height:180px;overflow:auto;font-size:0.8rem"></div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">Infrastructure</div>
+          <div class="card-body"><div id="sf-buildings"></div></div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">Research Tree</div>
+          <div class="card-body"><div id="sf-research"></div></div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">Fleet Systems</div>
+          <div class="card-body">
+            <div class="formula-box">Sectors: <strong id="sf-sectors">0</strong></div>
+            <div class="formula-box">Mining Drones: <strong id="sf-drones">0</strong></div>
+            <div class="formula-box">Escort Ships: <strong id="sf-escorts">0</strong></div>
+            <div class="formula-box">Cargo Freighters: <strong id="sf-freighters">0</strong></div>
+            <div class="formula-box">Threat Level: <strong id="sf-threat">0</strong>%</div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">Sector Map</div>
+          <div class="card-body" style="text-align:center">
+            <canvas id="sf-starfield" width="700" height="280" style="display:block;margin:0 auto;max-width:100%;border:2px solid var(--green);box-shadow:var(--glow-md)"></canvas>
+          </div>
+        </div>
+      </div>
+    </section>
+
   </main><!-- end .main -->
 </div><!-- end .layout -->
 
@@ -4015,5 +4076,6 @@
 <script src="js/arcade.js"></script>
 <script src="js/bin-blaster.js"></script>
 <script src="js/trying-to-be-normal.js"></script>
+<script src="js/starforge.js"></script>
 </body>
 </html>
