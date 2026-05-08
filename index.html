@@ -51,6 +51,7 @@
         MEM: <span class="status-ok">OK</span>
       </div>
       <div class="header-actions">
+        <button id="sidebar-toggle" class="header-btn sidebar-toggle-btn" type="button" aria-expanded="false" aria-controls="sidebar-nav">[≡ MENU]</button>
         <button id="share-btn" class="header-btn" type="button" data-action="shareApp" aria-label="Share">↗ Share</button>
         <button id="install-btn" class="header-btn" type="button" style="display:none">📲 Install</button>
       </div>
@@ -61,7 +62,7 @@
 <div class="layout">
 
   <!-- ── SIDEBAR NAV ── -->
-  <nav class="sidebar">
+  <nav class="sidebar" id="sidebar-nav">
     <div class="sidebar-search">
       <label for="nav-search">Search Calculators</label>
       <input type="search" id="nav-search" placeholder="/ search calculators…">

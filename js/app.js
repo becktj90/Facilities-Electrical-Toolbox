@@ -30,11 +30,22 @@ function setActiveSection(sectionId) {
   });
 }
 
+const SIDEBAR_OPEN_KEY = 'toolbox-sidebar-open';
+
+function closeMobileSidebar() {
+  document.body.classList.remove('sidebar-open');
+  const toggle = document.getElementById('sidebar-toggle');
+  if (toggle) toggle.setAttribute('aria-expanded', 'false');
+  try { localStorage.setItem(SIDEBAR_OPEN_KEY, '0'); } catch (_) {}
+}
+
 document.querySelectorAll('.nav-btn').forEach(btn => {
   btn.addEventListener('click', () => {
     const target = btn.dataset.target || DEFAULT_SECTION_ID;
     if (location.hash !== '#' + target) location.hash = target;
     else setActiveSection(target);
+    /* Close sidebar after navigation on mobile */
+    if (window.matchMedia('(max-width: 768px)').matches) closeMobileSidebar();
   });
 });
 
@@ -66,7 +77,22 @@ function showResult(id, rows) {
   el.className = 'result show';
   el.innerHTML = rows.map(r =>
     `<div class="res-row"><span class="res-label">${escapeHtml(r[0])}</span><span class="res-val">${escapeHtml(r[1])}</span></div>`
-  ).join('');
+  ).join('') + '<div class="result-copy-row"><button class="btn-copy" type="button" data-action="copyResult">[COPY]</button></div>';
+}
+
+function appendCopyBtn(el) {
+  if (!el) return;
+  const existing = el.querySelector('.result-copy-row');
+  if (existing) existing.remove();
+  const row = document.createElement('div');
+  row.className = 'result-copy-row';
+  const btn = document.createElement('button');
+  btn.className = 'btn-copy';
+  btn.type = 'button';
+  btn.setAttribute('data-action', 'copyResult');
+  btn.textContent = '[COPY]';
+  row.appendChild(btn);
+  el.appendChild(row);
 }
 
 function showError(id, msg) {
@@ -88,8 +114,9 @@ function fmt(n, decimals = 4) {
   if (abs >= 1e9) return (n / 1e9).toFixed(2) + 'G';
   if (abs >= 1e6) return (n / 1e6).toFixed(2) + 'M';
   if (abs >= 1000) return n.toLocaleString('en-US', { maximumFractionDigits: 2 });
-  const d = Math.abs(n) < 0.01 ? 6 : decimals;
-  return parseFloat(n.toFixed(d)).toString();
+  // Scientific notation for very small non-zero values
+  if (abs !== 0 && abs < 0.001) return n.toExponential(3);
+  return parseFloat(n.toFixed(decimals)).toString();
 }
 
 function deg(rad) { return rad * 180 / Math.PI; }
@@ -596,6 +623,7 @@ window.calcXfmr = function () {
       const valStyle = isWarn ? 'color:var(--amber)' : '';
       return `<div class="res-row"><span class="res-label" style="${lblStyle}">${escapeHtml(r[0])}</span><span class="res-val" style="${valStyle}">${escapeHtml(r[1])}</span></div>`;
     }).join('');
+    appendCopyBtn(el);
   }
 };
 
@@ -1804,6 +1832,7 @@ window.verifyISLoop = function () {
                          r[1].includes('FAIL') ? 'color:var(--red);text-shadow:var(--glow-red)' : '';
       return `<div class="res-row"><span class="res-label" style="${labelStyle}">${escapeHtml(r[0])}</span><span class="res-val" style="${valStyle}">${escapeHtml(r[1])}</span></div>`;
     }).join('');
+    appendCopyBtn(el);
   }
 };
 
@@ -1982,7 +2011,23 @@ const UI_ACTIONS = Object.freeze({
   shareApp: () => shareApp(),
   splashClose: () => { if (typeof window.splashClose === 'function') window.splashClose(); },
   splashEnterToolbox: () => { if (typeof window.splashEnterToolbox === 'function') window.splashEnterToolbox(); },
-  splashEnterGame: () => { if (typeof window.splashEnterGame === 'function') window.splashEnterGame(); }
+  splashEnterGame: () => { if (typeof window.splashEnterGame === 'function') window.splashEnterGame(); },
+  copyResult: (event) => {
+    const resultEl = event.target.closest('.result');
+    if (!resultEl) return;
+    const text = Array.from(resultEl.querySelectorAll('.res-row')).map(row => {
+      const lbl = row.querySelector('.res-label');
+      const v   = row.querySelector('.res-val');
+      const lblText = lbl ? lbl.textContent.replace(/^> /, '').trim() : '';
+      const valText = v   ? v.textContent.trim() : '';
+      return lblText + '\t' + valText;
+    }).filter(line => line.trim() !== '\t').join('\n');
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(() => showToast('Result copied to clipboard')).catch(() => showToast('Could not copy — try selecting manually'));
+    } else {
+      showToast('Clipboard not available in this context');
+    }
+  }
 });
 let toastHideTimer = 0;
 let toastRemoveTimer = 0;
@@ -2144,6 +2189,24 @@ document.addEventListener('DOMContentLoaded', () => {
     setActiveSection(getHashSectionId() || DEFAULT_SECTION_ID);
   });
   setActiveSection(getHashSectionId() || DEFAULT_SECTION_ID);
+
+  /* ── Mobile sidebar hamburger ── */
+  const sidebarToggle = document.getElementById('sidebar-toggle');
+  if (sidebarToggle) {
+    /* Restore persisted state on mobile */
+    try {
+      if (window.matchMedia('(max-width: 768px)').matches && localStorage.getItem(SIDEBAR_OPEN_KEY) === '1') {
+        document.body.classList.add('sidebar-open');
+        sidebarToggle.setAttribute('aria-expanded', 'true');
+      }
+    } catch (_) {}
+
+    sidebarToggle.addEventListener('click', () => {
+      const isOpen = document.body.classList.toggle('sidebar-open');
+      sidebarToggle.setAttribute('aria-expanded', String(isOpen));
+      try { localStorage.setItem(SIDEBAR_OPEN_KEY, isOpen ? '1' : '0'); } catch (_) {}
+    });
+  }
 
   const navSearch = document.getElementById('nav-search');
   if (navSearch) {

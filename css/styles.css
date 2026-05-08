@@ -730,6 +730,34 @@ select option {
 }
 .section-info-body li::marker { color: var(--amber); }
 
+/* ── Copy button on result blocks ── */
+.result-copy-row {
+  display: flex;
+  justify-content: flex-end;
+  padding-top: 6px;
+  border-top: 1px dashed var(--green-dark);
+  margin-top: 4px;
+}
+.btn-copy {
+  background: transparent;
+  color: var(--green-mid);
+  border: 1px solid var(--green-dark);
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  padding: 2px 8px;
+  cursor: pointer;
+  letter-spacing: 0.06em;
+  transition: background 0.1s, color 0.1s, border-color 0.1s;
+}
+.btn-copy:hover {
+  background: var(--green-dark);
+  color: var(--green);
+  border-color: var(--green);
+}
+
+/* ── Mobile hamburger toggle (hidden on desktop) ── */
+.sidebar-toggle-btn { display: none; }
+
 /* ── Responsive ── */
 @media (max-width: 768px) {
   .layout { flex-direction: column; }
@@ -738,13 +766,18 @@ select option {
     height: auto;
     position: relative;
     top: 0;
-    display: flex;
+    /* Hidden by default — shown via body.sidebar-open */
+    display: none;
     flex-wrap: wrap;
     padding: 6px;
     gap: 3px;
     border-right: none;
     border-bottom: 2px solid var(--green-dark);
   }
+  body.sidebar-open .sidebar {
+    display: flex;
+  }
+  .sidebar-toggle-btn { display: inline-block; }
   .sidebar-section { padding: 0; }
   .sidebar-section-title { display: none; }
   .sidebar-search {
