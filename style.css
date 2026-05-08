@@ -1,0 +1,96 @@
+
+html,body{
+  margin:0;
+  overflow:hidden;
+  background:#060b12;
+  color:#eaf4ff;
+  font-family:Arial,sans-serif;
+}
+
+#game{
+  position:fixed;
+  inset:0;
+}
+
+#hud{
+  position:fixed;
+  top:0;
+  left:0;
+  width:100%;
+  z-index:10;
+  display:flex;
+  gap:14px;
+  padding:14px;
+  box-sizing:border-box;
+}
+
+.panel{
+  background:rgba(5,10,20,0.75);
+  border:1px solid rgba(255,255,255,0.08);
+  backdrop-filter:blur(8px);
+  border-radius:14px;
+  padding:14px;
+  min-width:240px;
+  box-shadow:0 8px 30px rgba(0,0,0,0.4);
+}
+
+.panel h1,h2{
+  margin:0 0 10px;
+}
+
+.meters{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:6px;
+}
+
+#log{
+  height:140px;
+  overflow:auto;
+  font-size:0.9rem;
+}
+
+.log-entry{
+  padding:4px 0;
+  border-bottom:1px solid rgba(255,255,255,0.05);
+}
+
+.objectives ul{
+  margin:0;
+  padding-left:20px;
+}
+
+#interaction{
+  position:fixed;
+  bottom:20px;
+  left:50%;
+  transform:translateX(-50%);
+  width:min(700px,90vw);
+  background:rgba(0,0,0,0.75);
+  border-radius:18px;
+  padding:18px;
+  z-index:20;
+  display:none;
+}
+
+#dialogue{
+  margin-bottom:12px;
+  font-size:1.1rem;
+}
+
+.choice{
+  width:100%;
+  padding:12px;
+  border:none;
+  margin:6px 0;
+  border-radius:10px;
+  background:#1f5fa8;
+  color:white;
+  font-weight:bold;
+}
+
+@media(max-width:800px){
+  #hud{
+    flex-direction:column;
+  }
+}
