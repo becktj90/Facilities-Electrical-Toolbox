@@ -46,6 +46,7 @@ Open `index.html` in any modern web browser — no build step, no server, no dep
 | **Conduit Fill Tables** | EMT dimensions, max fill areas, THHN max conductor counts |
 | **🚀 New Glenn Runner** | Side-scrolling launch arcade — dodge debris, collect propellant |
 | **🧱 Bin Block Blaster** | Bubble-shooter puzzle game with pad-rat flavor |
+| **🌌 Starforge Frontier** | Space-idle strategy game with mining, research, and sector expansion |
 
 ---
 
