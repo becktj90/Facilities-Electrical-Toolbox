@@ -262,7 +262,13 @@ function isPanelMetadataLine(line) {
 
 function findSecondaryCircuitIndex(columns) {
   for (let index = 2; index < columns.length - 1; index += 1) {
-    if (looksLikeCircuit(columns[index])) {
+    const candidate = columns[index];
+    const previous = columns[index - 1] || '';
+    if (
+      looksLikeCircuit(candidate)
+      && !/P$/i.test(String(candidate).trim())
+      && (looksLikeTrip(previous) || looksLikePoles(previous))
+    ) {
       return index;
     }
   }
@@ -626,4 +632,24 @@ function escapeHtml(value) {
     .replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&#39;');
+}
+
+if (typeof window !== 'undefined' && window.__ENABLE_PANEL_SCHEDULE_TEST_API__) {
+  window.__panelScheduleTestApi = {
+    parseScheduleText,
+    splitColumns,
+    parseColumnsToRow,
+    parseFreeformRow,
+    normalizeRows,
+    normalizeTrip,
+    normalizeCircuit,
+    firstCircuitNumber,
+    extractMetadata,
+    buildCircuitSlots,
+    humanizeStatus,
+    isIgnoredLine,
+    findSecondaryCircuitIndex,
+    createEmptyRow,
+    createPlaceholderRow
+  };
 }
