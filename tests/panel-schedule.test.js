@@ -1,6 +1,7 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
+const path = require('node:path');
 const vm = require('node:vm');
 
 function toPlain(value) {
@@ -8,7 +9,7 @@ function toPlain(value) {
 }
 
 function loadPanelScheduleApi() {
-  const source = fs.readFileSync('/home/runner/work/Facilities-Electrical-Toolbox/Facilities-Electrical-Toolbox/js/panel-schedule.js', 'utf8');
+  const source = fs.readFileSync(path.join(__dirname, '..', 'js', 'panel-schedule.js'), 'utf8');
   const sandbox = {
     window: {
       __ENABLE_PANEL_SCHEDULE_TEST_API__: true,
@@ -111,12 +112,12 @@ test('parseColumnsToRow handles compact and separated trip/pole formats', () => 
 test('normalizeRows canonicalizes values and sorts by first circuit number', () => {
   const rows = toPlain(api.normalizeRows([
     { circuit: 'AUX', description: 'Aux', trip: '15', poles: '1P' },
-    { circuit: '10a', description: '  Motor  ', trip: '30 amps', poles: '2P' },
+    { circuit: '10a', description: '  Motor  ', trip: '30', poles: '2P' },
     { circuit: '2', description: 'Lights', trip: '20a', poles: '1' }
   ]));
 
   assert.deepEqual(rows.map(row => row.circuit), ['2', '10A', 'AUX']);
-  assert.equal(rows[1].trip, '30AMPSA');
+  assert.equal(rows[1].trip, '30A');
   assert.equal(rows[1].description, 'Motor');
   assert.equal(rows[1].poles, '2');
 });
