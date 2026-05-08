@@ -1228,7 +1228,7 @@
       h: type === 'balloon' ? 30 : type === 'ice' ? 14 : type === 'debris' ? 12 : type === 'lightning' ? 40 : 14,
       vx: rand(-0.6, 0.6) + homeVx,
       vy: baseVy,
-      waveAmp: type === 'lightning' ? rand(0.05, 0.12) : rand(0.08, 0.2),
+      waveAmplitude: type === 'lightning' ? rand(0.05, 0.12) : rand(0.08, 0.2),
       waveFreq: rand(1.2, 2.6),
       wavePhase: rand(0, Math.PI * 2),
       waveTime: 0,
@@ -1245,7 +1245,7 @@
         h: type === 'balloon' ? 30 : type === 'ice' ? 14 : type === 'debris' ? 12 : 14,
         vx: rand(-0.6, 0.6),
         vy: baseVy * rand(0.88, 1.12),
-        waveAmp: rand(0.06, 0.16),
+        waveAmplitude: rand(0.06, 0.16),
         waveFreq: rand(1.2, 2.6),
         wavePhase: rand(0, Math.PI * 2),
         waveTime: 0,
@@ -1777,7 +1777,7 @@
     for (let i = state.obstacles.length - 1; i >= 0; i--) {
       const o = state.obstacles[i];
       o.waveTime = (o.waveTime || 0) + dt;
-      const waveDrift = Math.sin((o.wavePhase || 0) + (o.waveTime || 0) * (o.waveFreq || 0)) * (o.waveAmp || 0);
+      const waveDrift = Math.sin((o.wavePhase || 0) + (o.waveTime || 0) * (o.waveFreq || 0)) * (o.waveAmplitude || 0);
       o.y += (o.vy + state.world.cameraVy) * step;
       o.x += (o.vx + waveDrift) * step;
       if (o.x < OBSTACLE_EDGE_MARGIN || o.x > CW - OBSTACLE_EDGE_MARGIN) {
@@ -2630,10 +2630,15 @@
     });
     ctx.fillStyle = '#33ff33';
     ctx.font = '10px "Share Tech Mono", monospace';
+    const launchPhase = state.session.phase === 'PAD' || state.session.phase === 'ASCENT';
+    const dynamicMetricLabel = launchPhase ? 'CHARGE' : 'FLOW';
+    const dynamicMetricValue = launchPhase
+      ? state.session.launchCharge * 100
+      : clamp((state.session.obstacleStreak / 15) * 100, 0, 100);
     ctx.fillText(`ALT ${(state.telemetry.altitude / 1000).toFixed(1)} km`, 10, 54);
     ctx.fillText(`VEL ${Math.round(state.telemetry.velocity)} m/s`, 10, 68);
     ctx.fillText(`Q ${state.telemetry.q.toFixed(1)} kPa`, 10, 82);
-    ctx.fillText(`CHARGE ${(state.session.launchCharge * 100).toFixed(0)}%`, 170, 54);
+    ctx.fillText(`${dynamicMetricLabel} ${dynamicMetricValue.toFixed(0)}%`, 170, 54);
     ctx.fillText(`GUIDE ${(state.upper.targetLock * 100).toFixed(0)}%`, 170, 68);
     ctx.fillText(`STRESS ${(state.session.structuralStress * 100).toFixed(0)}%`, 170, 82);
     ctx.fillStyle = '#ffcf5d';
