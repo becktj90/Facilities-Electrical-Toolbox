@@ -9,13 +9,13 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="Toolbox">
   <link rel="apple-touch-icon" href="icons/icon-192.png">
-  <meta property="og:title" content="Facilities Electrical Toolbox + New Glenn Runner">
-  <meta property="og:description" content="NEC calculators for the day job, and a New Glenn launch arcade for breaks. Installable as a home-screen app.">
+  <meta property="og:title" content="Facilities Electrical Toolbox + Arcade Games">
+  <meta property="og:description" content="NEC calculators for the day job, plus New Glenn Runner and Bin Block Blaster for breaks. Installable as a home-screen app.">
   <meta property="og:image" content="https://becktj90.github.io/Facilities-Electrical-Toolbox/icons/icon-512.png">
   <meta property="og:type" content="website">
   <meta property="og:url" content="https://becktj90.github.io/Facilities-Electrical-Toolbox/">
   <meta name="twitter:card" content="summary_large_image">
-  <meta name="description" content="Electrical engineering reference toolbox with built-in New Glenn launch game.">
+  <meta name="description" content="Electrical engineering reference toolbox with built-in New Glenn Runner and Bin Block Blaster games.">
   <title>Facilities Electrical Toolbox</title>
   <link rel="stylesheet" href="css/styles.css">
 </head>
@@ -24,10 +24,11 @@
 <div id="splash-modal" class="splash-modal" role="dialog" aria-labelledby="splash-title" aria-modal="true" hidden>
   <div class="splash-card">
     <h1 id="splash-title">Welcome, Pad Rat.</h1>
-    <p>This is a self-contained electrical engineering toolbox. NEC calculators for the day job — plus a launch arcade for breaks.</p>
+    <p>This is a self-contained electrical engineering toolbox. NEC calculators for the day job — plus two arcade games for breaks.</p>
     <div class="splash-actions">
       <button type="button" class="btn splash-primary" data-action="splashEnterToolbox">⚡ Open Toolbox</button>
       <button type="button" class="btn splash-secondary" data-action="splashEnterGame">🚀 Play New Glenn Runner</button>
+      <button type="button" class="btn splash-secondary" data-action="splashEnterBinBlaster">🧱 Play Bin Block Blaster</button>
     </div>
     <p class="splash-tip">Tip: use Install or Add to Home Screen to save it as an offline app.</p>
     <button type="button" class="splash-close" data-action="splashClose" aria-label="Close welcome">×</button>
@@ -116,7 +117,7 @@
       <button class="nav-btn" data-target="sec-cm">Circular Mils</button>
       <button class="nav-btn" data-target="sec-photometrics">Photometrics</button>
       <button class="nav-btn" data-target="sec-panel-schedule" data-keywords="panel schedule ocr revit circuit directory print">Panel Schedule OCR</button>
-      <button class="nav-btn" data-target="sec-arcade">🚀 New Glenn Runner</button>
+      <button class="nav-btn" data-target="sec-arcade" data-keywords="new glenn runner Odyssey Blue Moon launch game rocket arcade" title="Odyssey-inspired rocket arcade">🚀 New Glenn Runner</button>
     </div>
     <div class="sidebar-section">
       <div class="sidebar-section-title">Extras</div>
