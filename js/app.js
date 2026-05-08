@@ -2013,6 +2013,7 @@ const UI_ACTIONS = Object.freeze({
   splashClose: () => { if (typeof window.splashClose === 'function') window.splashClose(); },
   splashEnterToolbox: () => { if (typeof window.splashEnterToolbox === 'function') window.splashEnterToolbox(); },
   splashEnterGame: () => { if (typeof window.splashEnterGame === 'function') window.splashEnterGame(); },
+  splashEnterBinBlaster: () => { if (typeof window.splashEnterBinBlaster === 'function') window.splashEnterBinBlaster(); },
   copyResult: (event) => {
     const resultEl = event.target.closest('.result');
     if (!resultEl) return;
@@ -2057,7 +2058,7 @@ async function shareApp() {
   const url = location.origin + location.pathname;
   const shareData = {
     title: 'Facilities Electrical Toolbox',
-    text: 'Electrical calculators + a New Glenn launch arcade. Built by a pad rat.',
+    text: 'Electrical calculators + New Glenn Runner and Bin Block Blaster. Built by a pad rat.',
     url
   };
 
@@ -2143,6 +2144,10 @@ function setupSplash() {
   window.splashEnterGame = () => {
     dismiss();
     location.hash = '#sec-arcade';
+  };
+  window.splashEnterBinBlaster = () => {
+    dismiss();
+    location.hash = '#sec-bin-blaster';
   };
 
   modal.hidden = false;
