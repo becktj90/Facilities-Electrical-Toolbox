@@ -71,15 +71,6 @@ function escapeHtml(s) {
     .replace(/"/g, '&quot;');
 }
 
-function showResult(id, rows) {
-  const el = document.getElementById(id);
-  if (!el) return;
-  el.className = 'result show';
-  el.innerHTML = rows.map(r =>
-    `<div class="res-row"><span class="res-label">${escapeHtml(r[0])}</span><span class="res-val">${escapeHtml(r[1])}</span></div>`
-  ).join('') + '<div class="result-copy-row"><button class="btn-copy" type="button" data-action="copyResult">[COPY]</button></div>';
-}
-
 function appendCopyBtn(el) {
   if (!el) return;
   const existing = el.querySelector('.result-copy-row');
@@ -93,6 +84,16 @@ function appendCopyBtn(el) {
   btn.textContent = '[COPY]';
   row.appendChild(btn);
   el.appendChild(row);
+}
+
+function showResult(id, rows) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.className = 'result show';
+  el.innerHTML = rows.map(r =>
+    `<div class="res-row"><span class="res-label">${escapeHtml(r[0])}</span><span class="res-val">${escapeHtml(r[1])}</span></div>`
+  ).join('');
+  appendCopyBtn(el);
 }
 
 function showError(id, msg) {
@@ -2018,6 +2019,7 @@ const UI_ACTIONS = Object.freeze({
     const text = Array.from(resultEl.querySelectorAll('.res-row')).map(row => {
       const lbl = row.querySelector('.res-label');
       const v   = row.querySelector('.res-val');
+      /* CSS ::before injects '> ' before every .res-label — strip it from textContent */
       const lblText = lbl ? lbl.textContent.replace(/^> /, '').trim() : '';
       const valText = v   ? v.textContent.trim() : '';
       return lblText + '\t' + valText;
