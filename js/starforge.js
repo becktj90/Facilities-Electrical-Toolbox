@@ -1,6 +1,8 @@
 (function () {
   'use strict';
 
+  const RAID_CREDIT_PENALTY = 0.7;
+
   class StarforgeGame {
     constructor() {
       this.state = {
@@ -32,6 +34,7 @@
       };
 
       this.tickTimer = null;
+      this.stars = [];
       this.init();
     }
 
@@ -40,12 +43,9 @@
       this.renderResearch();
       this.drawGalaxy();
       this.log('Frontier command initialized.');
-      this.loop();
-      this.tickTimer = setInterval(() => this.tick(), 1000);
-    }
-
-    loop() {
       this.updateUI();
+      this.refreshActionButtons();
+      this.tickTimer = setInterval(() => this.tick(), 1000);
     }
 
     fmt(value, digits = 1) {
@@ -75,9 +75,9 @@
       const log = document.getElementById('sf-log');
       if (!log) return;
       const row = document.createElement('div');
-      row.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+      row.textContent = `[${new Date().toLocaleTimeString('en-US')}] ${message}`;
       log.prepend(row);
-      while (log.children.length > 120) log.removeChild(log.lastChild);
+      while (log.children.length > 50) log.removeChild(log.lastChild);
     }
 
     mine() {
@@ -86,6 +86,7 @@
       this.state.alloys += 1;
       this.log(`Mining team extracted ${gain} credits worth of ore.`);
       this.updateUI();
+      this.refreshActionButtons();
     }
 
     scan() {
@@ -97,6 +98,7 @@
         this.log('Pirate activity detected in nearby sectors.');
       }
       this.updateUI();
+      this.refreshActionButtons();
     }
 
     expand() {
@@ -108,6 +110,7 @@
       this.log(`Sector ${this.state.sectors} colonized.`);
       this.drawGalaxy();
       this.updateUI();
+      this.refreshActionButtons();
     }
 
     buildingCost(key) {
@@ -123,6 +126,7 @@
       this.log(`${this.buildingDefs[key].name} constructed.`);
       this.renderBuildings();
       this.updateUI();
+      this.refreshActionButtons();
     }
 
     unlockResearch(key) {
@@ -133,6 +137,7 @@
       this.log(`Research completed: ${r.name}`);
       this.renderResearch();
       this.updateUI();
+      this.refreshActionButtons();
     }
 
     renderBuildings() {
@@ -153,6 +158,7 @@
         const btn = document.createElement('button');
         btn.className = 'btn btn-sm';
         btn.type = 'button';
+        btn.dataset.sfBuilding = key;
         btn.textContent = `Build (${cost} credits)`;
         btn.disabled = this.state.credits < cost;
         btn.addEventListener('click', () => this.buyBuilding(key));
@@ -177,11 +183,28 @@
         const btn = document.createElement('button');
         btn.className = 'btn btn-sm';
         btn.type = 'button';
+        btn.dataset.sfResearch = key;
         btn.textContent = this.state.research[key] ? 'Unlocked' : `Research (${r.cost} science)`;
         btn.disabled = this.state.research[key] || this.state.science < r.cost;
         btn.addEventListener('click', () => this.unlockResearch(key));
         card.appendChild(btn);
         root.appendChild(card);
+      });
+    }
+
+    refreshActionButtons() {
+      document.querySelectorAll('[data-sf-building]').forEach(btn => {
+        const key = btn.dataset.sfBuilding;
+        const cost = this.buildingCost(key);
+        btn.textContent = `Build (${cost} credits)`;
+        btn.disabled = this.state.credits < cost;
+      });
+      document.querySelectorAll('[data-sf-research]').forEach(btn => {
+        const key = btn.dataset.sfResearch;
+        const r = this.researchDefs[key];
+        const unlocked = this.state.research[key];
+        btn.textContent = unlocked ? 'Unlocked' : `Research (${r.cost} science)`;
+        btn.disabled = unlocked || this.state.science < r.cost;
       });
     }
 
@@ -213,12 +236,11 @@
       if (this.state.threat > 100) {
         this.log('Raiders overwhelmed frontier defenses. Threat reset.');
         this.state.threat = 20;
-        this.state.credits *= 0.7;
+        this.state.credits *= RAID_CREDIT_PENALTY;
       }
 
-      this.renderBuildings();
-      this.renderResearch();
       this.updateUI();
+      this.refreshActionButtons();
     }
 
     drawGalaxy() {
@@ -231,12 +253,21 @@
       ctx.fillStyle = '#000';
       ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-      for (let i = 0; i < 140; i++) {
-        ctx.fillStyle = '#fff';
-        ctx.fillRect(Math.random() * canvas.width, Math.random() * canvas.height, 2, 2);
+      if (!this.stars.length) {
+        for (let i = 0; i < 140; i++) {
+          this.stars.push({
+            x: Math.random() * canvas.width,
+            y: Math.random() * canvas.height
+          });
+        }
       }
 
-      const sectors = Math.max(1, this.state.sectors);
+      for (const star of this.stars) {
+        ctx.fillStyle = '#fff';
+        ctx.fillRect(star.x, star.y, 2, 2);
+      }
+
+      const sectors = this.state.sectors;
       const radius = 7;
       let prev = null;
       for (let s = 0; s < sectors; s++) {
